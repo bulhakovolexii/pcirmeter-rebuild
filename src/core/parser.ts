@@ -7,6 +7,8 @@ const FILE_PARA_SIZE = 0xa0
 const BLOCK_TABLE_SIZE = 16 * 16
 const IR_HEADER_SIZE = 0x700
 const LUT_MAX_POINTS = 60
+/** `File_Type`, за якого видимим фото є головний JPEG. */
+const FILE_TYPE_MAIN_VISIBLE = 3
 
 /** Типи блоків у таблиці `Type_Data_t`. */
 export const BlockType = {
@@ -108,6 +110,7 @@ export interface Thermogram {
   /** Головний JPEG (байти до `File_Para_t`). */
   jpeg: Uint8Array
   ir: IrImage
+  /** Видиме фото: блок type 4, а при `File_Type = 3` — головний JPEG (як в оригіналі). */
   visibleJpeg?: Uint8Array
   /** Сирі байти тексту користувача; кодування не визначено — декодує UI. */
   userText?: Uint8Array
@@ -149,12 +152,13 @@ export function parseThermogram(input: ArrayBuffer | Uint8Array): Thermogram {
     return b && bytes.slice(b.offset, b.offset + b.length)
   }
 
+  const jpeg = bytes.slice(0, t0)
   return {
     info,
     blocks,
-    jpeg: bytes.slice(0, t0),
+    jpeg,
     ir: readIr(bytes, view, irBlock, info.sensorWidth, info.sensorHeight),
-    visibleJpeg: part(BlockType.visibleJpeg),
+    visibleJpeg: info.fileType === FILE_TYPE_MAIN_VISIBLE ? jpeg : part(BlockType.visibleJpeg),
     userText: part(BlockType.userText),
     audio: part(BlockType.audio),
     custom: part(BlockType.custom),

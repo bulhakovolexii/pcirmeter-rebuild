@@ -19,6 +19,7 @@
   } from '../core/temperature'
   import { fromCelsius, toCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
+  import { audioType, decodeUserText } from './attachments'
   import ColorBar from './ColorBar.svelte'
   import type { OpenedFile } from './files'
   import {
@@ -33,6 +34,7 @@
   import { defaultIsotherms, isothermBand, toIsotherm, type IsothermState } from './isotherms'
   import type { Units } from './params'
   import ParamsPanel from './ParamsPanel.svelte'
+  import PhotoPanel from './PhotoPanel.svelte'
   import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
   import { lineProfile, measureObjects, profileCsv, resultsCsv } from './results'
@@ -50,6 +52,7 @@
     type MeasureObject,
     type ShapeKind,
   } from './tools'
+  import { fitView, ZOOM_STEP, zoomAt } from './view'
 
   interface Props {
     file: OpenedFile
@@ -57,12 +60,22 @@
 
   let { file }: Props = $props()
 
-  const MIN_ZOOM = 0.25
-  const MAX_ZOOM = 64
-  const ZOOM_STEP = 1.25
-
   const ir = $derived(file.thermogram.ir)
   const info = $derived(file.thermogram.info)
+
+  // Вкладення (docs/spec/features.md §2.6)
+  const photo = $derived(file.thermogram.visibleJpeg)
+  let showPhoto = $state(true)
+  const note = $derived(file.thermogram.userText ? decodeUserText(file.thermogram.userText) : '')
+  const audio = $derived(file.thermogram.audio)
+  const audioMime = $derived(audio ? audioType(audio) : '')
+  let audioUrl = $state<string | undefined>()
+  $effect(() => {
+    if (!audio) return
+    const u = URL.createObjectURL(new Blob([audio as Uint8Array<ArrayBuffer>], { type: audioMime }))
+    audioUrl = u
+    return () => URL.revokeObjectURL(u)
+  })
 
   // Параметри кадру: модель отримує лише змінені користувачем значення, решта — з файлу
   const fileParams = $derived(objectParams(ir.params))
@@ -128,17 +141,11 @@
 
   $effect(() => {
     if (!autoFit || viewWidth === 0 || viewHeight === 0) return
-    const z = Math.min(viewWidth / ir.width, viewHeight / ir.height)
-    zoom = z
-    panX = (viewWidth - ir.width * z) / 2
-    panY = (viewHeight - ir.height * z) / 2
+    ;({ zoom, panX, panY } = fitView(ir.width, ir.height, viewWidth, viewHeight))
   })
 
   function zoomTo(next: number, cx = viewWidth / 2, cy = viewHeight / 2) {
-    const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next))
-    panX = cx - ((cx - panX) * z) / zoom
-    panY = cy - ((cy - panY) * z) / zoom
-    zoom = z
+    ;({ zoom, panX, panY } = zoomAt({ zoom, panX, panY }, next, cx, cy))
     autoFit = false
   }
 
@@ -231,12 +238,16 @@
     profileHover !== null && profileHover < profile.length ? profile[profileHover]! : null,
   )
 
+  function download(href: string, suffix: string) {
+    const a = document.createElement('a')
+    a.href = href
+    a.download = `${file.name.replace(/\.[^.]+$/, '')}_${suffix}`
+    a.click()
+  }
+
   function downloadCsv(csv: string, suffix: string) {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${file.name.replace(/\.[^.]+$/, '')}_${suffix}.csv`
-    a.click()
+    download(url, `${suffix}.csv`)
     URL.revokeObjectURL(url)
   }
 
@@ -592,7 +603,25 @@
         <dt>{$tr('info.frameMin')}</dt>
         <dd>{fmt(model.toCelsius(extremes.min.ad))}</dd>
       </dl>
+      {#if note}
+        <h3>{$tr('info.note')}</h3>
+        <p class="note-text">{note}</p>
+      {/if}
     </section>
+
+    {#if audio}
+      <section>
+        <h2>{$tr('audio.title')}</h2>
+        <audio controls src={audioUrl}></audio>
+        <button
+          type="button"
+          disabled={!audioUrl}
+          onclick={() =>
+            audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
+          >{$tr('audio.save')}</button
+        >
+      </section>
+    {/if}
   </aside>
 
   <section class="image-area">
@@ -616,6 +645,12 @@
       <button type="button" disabled={objects.length === 0} onclick={deleteAll}
         >{$tr('tools.deleteAll')}</button
       >
+      {#if photo}
+        <label class="check">
+          <input type="checkbox" bind:checked={showPhoto} />
+          {$tr('photo.show')}
+        </label>
+      {/if}
       <span class="sep"></span>
       <button type="button" onclick={() => zoomTo(zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}>−</button>
       <span class="zoom">{Math.round(zoom * 100)} %</span>
@@ -624,95 +659,100 @@
       <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
     </div>
     <p class="muted hint">{$tr(`tools.hint.${tool}`)}. {$tr('view.hint')}. {$tr('tools.keys')}.</p>
-    <div class="stage">
-      <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-      <div
-        class="viewport"
-        bind:this={viewport}
-        bind:clientWidth={viewWidth}
-        bind:clientHeight={viewHeight}
-        role="application"
-        aria-label={$tr('view.image')}
-        tabindex="0"
-        onpointerdown={onPointerDown}
-        onmousedown={(e) => {
-          // Середня кнопка — зсув, а не автопрокрутка браузера
-          if (e.button === 1) e.preventDefault()
-        }}
-        onpointermove={onPointerMove}
-        onpointerup={onPointerUp}
-        onpointercancel={onPointerUp}
-        onpointerleave={() => (hover = null)}
-        onkeydown={onKeyDown}
-        style:cursor={viewportCursor}
-      >
-        <canvas
-          bind:this={canvas}
-          width={ir.width}
-          height={ir.height}
-          style:left="{panX}px"
-          style:top="{panY}px"
-          style:width="{ir.width * zoom}px"
-          style:height="{ir.height * zoom}px"
-        ></canvas>
-        <svg class="overlay" aria-hidden="true">
-          {#each objects as o (o.id)}
-            {@const sh = o.shape}
-            {@const sel = o.id === selectedId}
-            <g class="object" class:selected={sel}>
-              {#if sh.kind === 'point'}
-                <path class="shape" d="M {sx(sh.x) - 6} {sy(sh.y) - 6} l 12 12 m 0 -12 l -12 12" />
-                <text x={sx(sh.x) + 8} y={sy(sh.y) + 14}>{o.name}</text>
-              {:else if sh.kind === 'rect'}
-                {@const x = panX + sh.x0 * zoom}
-                {@const y = panY + sh.y0 * zoom}
-                {@const w = (sh.x1 - sh.x0 + 1) * zoom}
-                {@const h = (sh.y1 - sh.y0 + 1) * zoom}
-                <rect class="shape" {x} {y} width={w} height={h} />
-                <text x={x + 4} y={y + 14}>{o.name}</text>
-                {#if sel}
-                  {#each [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as [hx, hy], i (i)}
-                    <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
-                  {/each}
+    <div class="views">
+      <div class="stage">
+        <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+        <div
+          class="viewport"
+          bind:this={viewport}
+          bind:clientWidth={viewWidth}
+          bind:clientHeight={viewHeight}
+          role="application"
+          aria-label={$tr('view.image')}
+          tabindex="0"
+          onpointerdown={onPointerDown}
+          onmousedown={(e) => {
+            // Середня кнопка — зсув, а не автопрокрутка браузера
+            if (e.button === 1) e.preventDefault()
+          }}
+          onpointermove={onPointerMove}
+          onpointerup={onPointerUp}
+          onpointercancel={onPointerUp}
+          onpointerleave={() => (hover = null)}
+          onkeydown={onKeyDown}
+          style:cursor={viewportCursor}
+        >
+          <canvas
+            bind:this={canvas}
+            width={ir.width}
+            height={ir.height}
+            style:left="{panX}px"
+            style:top="{panY}px"
+            style:width="{ir.width * zoom}px"
+            style:height="{ir.height * zoom}px"
+          ></canvas>
+          <svg class="overlay" aria-hidden="true">
+            {#each objects as o (o.id)}
+              {@const sh = o.shape}
+              {@const sel = o.id === selectedId}
+              <g class="object" class:selected={sel}>
+                {#if sh.kind === 'point'}
+                  <path class="shape" d="M {sx(sh.x) - 6} {sy(sh.y) - 6} l 12 12 m 0 -12 l -12 12" />
+                  <text x={sx(sh.x) + 8} y={sy(sh.y) + 14}>{o.name}</text>
+                {:else if sh.kind === 'rect'}
+                  {@const x = panX + sh.x0 * zoom}
+                  {@const y = panY + sh.y0 * zoom}
+                  {@const w = (sh.x1 - sh.x0 + 1) * zoom}
+                  {@const h = (sh.y1 - sh.y0 + 1) * zoom}
+                  <rect class="shape" {x} {y} width={w} height={h} />
+                  <text x={x + 4} y={y + 14}>{o.name}</text>
+                  {#if sel}
+                    {#each [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as [hx, hy], i (i)}
+                      <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                    {/each}
+                  {/if}
+                {:else}
+                  <line class="shape" x1={sx(sh.x0)} y1={sy(sh.y0)} x2={sx(sh.x1)} y2={sy(sh.y1)} />
+                  <text x={sx(sh.x0) + 6} y={sy(sh.y0) - 6}>{o.name}</text>
+                  {#if sel}
+                    {#each [[sx(sh.x0), sy(sh.y0)], [sx(sh.x1), sy(sh.y1)]] as [hx, hy], i (i)}
+                      <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                    {/each}
+                  {/if}
                 {/if}
-              {:else}
-                <line class="shape" x1={sx(sh.x0)} y1={sy(sh.y0)} x2={sx(sh.x1)} y2={sy(sh.y1)} />
-                <text x={sx(sh.x0) + 6} y={sy(sh.y0) - 6}>{o.name}</text>
-                {#if sel}
-                  {#each [[sx(sh.x0), sy(sh.y0)], [sx(sh.x1), sy(sh.y1)]] as [hx, hy], i (i)}
-                    <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
-                  {/each}
-                {/if}
-              {/if}
-            </g>
-          {/each}
-          {#each objectMarkers as m (m.key)}
-            <g class="marker small {m.kind}" transform="translate({m.x} {m.y})">
-              <path d="M -6 0 H 6 M 0 -6 V 6" />
-            </g>
-          {/each}
-          {#if profileMarker}
-            <rect
-              class="profile-marker"
-              x={panX + profileMarker.x * zoom - 3}
-              y={panY + profileMarker.y * zoom - 3}
-              width={zoom + 6}
-              height={zoom + 6}
-            />
-          {/if}
-          {#if showExtremes}
-            {#each markers as m (m.kind)}
-              <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
-                <circle r="7" />
-                <path d="M -11 0 H -4 M 4 0 H 11 M 0 -11 V -4 M 0 4 V 11" />
-                <text x="12" y="-8">{m.label}</text>
               </g>
             {/each}
-          {/if}
-        </svg>
+            {#each objectMarkers as m (m.key)}
+              <g class="marker small {m.kind}" transform="translate({m.x} {m.y})">
+                <path d="M -6 0 H 6 M 0 -6 V 6" />
+              </g>
+            {/each}
+            {#if profileMarker}
+              <rect
+                class="profile-marker"
+                x={panX + profileMarker.x * zoom - 3}
+                y={panY + profileMarker.y * zoom - 3}
+                width={zoom + 6}
+                height={zoom + 6}
+              />
+            {/if}
+            {#if showExtremes}
+              {#each markers as m (m.kind)}
+                <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
+                  <circle r="7" />
+                  <path d="M -11 0 H -4 M 4 0 H 11 M 0 -11 V -4 M 0 4 V 11" />
+                  <text x="12" y="-8">{m.label}</text>
+                </g>
+              {/each}
+            {/if}
+          </svg>
+        </div>
+        <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
       </div>
-      <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
+      {#if photo && showPhoto}
+        <PhotoPanel {photo} frame={frame.rgba} frameWidth={ir.width} frameHeight={ir.height} id={file.id} />
+      {/if}
     </div>
 
     <div class="bottom">
@@ -881,11 +921,36 @@
     margin: 0;
     font-size: 0.8rem;
   }
-  .stage {
+  .views {
     flex: 1;
+    display: flex;
+    gap: 12px;
+    min-height: 0;
+  }
+  .views > :global(*) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .stage {
     display: flex;
     gap: 10px;
     min-height: 0;
+  }
+  h3 {
+    margin: 8px 0 2px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .note-text {
+    margin: 0;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  audio {
+    width: 100%;
+    margin-bottom: 6px;
   }
   .viewport {
     position: relative;
@@ -977,7 +1042,11 @@
     .image-area {
       order: -1;
     }
-    .stage {
+    .views {
+      flex-direction: column;
+      flex: none;
+    }
+    .views > :global(*) {
       height: 60vh;
       flex: none;
     }

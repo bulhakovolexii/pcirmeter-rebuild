@@ -108,6 +108,17 @@ export const uk = {
   'isotherm.share': 'Частка кадру',
   'isotherm.priority': 'Ізотерма 1 малюється поверх ізотерми 2.',
   'histogram.title': 'Гістограма кадру',
+  'photo.show': 'Видиме фото',
+  'photo.title': 'Видиме фото',
+  'photo.mode': 'Показ фото',
+  'photo.mode.photo': 'Фото',
+  'photo.mode.overlay': 'Накладення',
+  'photo.blend': 'Фото ↔ ІЧ',
+  'photo.resetAlign': 'Скинути суміщення',
+  'photo.hint.overlay': 'Перетягніть ІЧ-шар, щоб сумістити з фото; поза шаром або середньою кнопкою — зсув',
+  'info.note': 'Примітка з камери',
+  'audio.title': 'Аудіонотатка',
+  'audio.save': 'Зберегти аудіо',
 } as const
 
 export type MessageKey = keyof typeof uk

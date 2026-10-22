@@ -110,4 +110,16 @@ export const en: Record<MessageKey, string> = {
   'isotherm.share': 'Share of frame',
   'isotherm.priority': 'Isotherm 1 is drawn over isotherm 2.',
   'histogram.title': 'Frame histogram',
+  'photo.show': 'Visible photo',
+  'photo.title': 'Visible photo',
+  'photo.mode': 'Photo display',
+  'photo.mode.photo': 'Photo',
+  'photo.mode.overlay': 'Overlay',
+  'photo.blend': 'Photo ↔ IR',
+  'photo.resetAlign': 'Reset alignment',
+  'photo.hint.overlay':
+    'Drag the IR layer to align it with the photo; outside the layer or with the middle button — pan',
+  'info.note': 'Note from camera',
+  'audio.title': 'Voice note',
+  'audio.save': 'Save audio',
 }
