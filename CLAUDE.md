@@ -50,6 +50,8 @@
   τ (таблиці пари/відстані) → радіометричне рівняння ε/T_відб/T_пов. Усі параметри — у файлі.
 - Дослідницькі скрипти: `tools/dump_ir.py` (дамп структури), `tools/irtemp.py` (еталонний розрахунок),
   `tools/compare_golden.py` (звірка з еталонами оригіналу `tests/golden/pcirmeter_reference.csv`).
+- Парсер (TS): `src/core/parser.ts` (`parseThermogram`). Фікстури: `python3 -I tools/export_fixtures.py`
+  → `tests/fixtures/parser/*.json` (перегенерувати після змін у форматі).
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;
   **поза git** — фото кафедри не публікуються). Скриншоти оригіналу `tests/golden/screens/` — теж поза git.
   Репозиторій публічний (лише заради GitHub Pages): нічого з цих тек, `reference/` чи ресурсів оригіналу не комітити.
@@ -102,7 +104,8 @@ npm run build          # check (svelte-check + tsc для core/app/node) + vite 
 npx -y rea-agents@latest --help              # REA CLI (Node >= 22.19)
 ```
 
-Node — через `bash -l -c "..."` (див. вище). CI: `.github/workflows/ci.yml` (lint + test + build на кожен push).
+Node — через `bash -l -c "..."` (див. вище). `node_modules` ставиться на хості (macOS): якщо Vitest/Vite у sandbox
+падають з `Cannot find native binding` — `npm install --no-save @rolldown/binding-linux-arm64-gnu@<версія rolldown>`. CI: `.github/workflows/ci.yml` (lint + test + build на кожен push).
 
 ### Структура коду
 

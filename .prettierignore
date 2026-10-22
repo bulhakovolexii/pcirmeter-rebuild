@@ -7,3 +7,4 @@ docs/
 tests/golden/
 package-lock.json
 *.md
+tests/fixtures/

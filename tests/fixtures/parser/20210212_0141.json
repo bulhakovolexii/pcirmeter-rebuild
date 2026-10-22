@@ -1,0 +1,144 @@
+{
+ "file": "latest-2021/20210212_0141.JPG",
+ "size": 743070,
+ "jpegLength": 233359,
+ "info": {
+  "model": "DT-980",
+  "producer": "CEM",
+  "calibrationDate": "2017-04-06",
+  "serial": "170409786",
+  "firmware": "3.0.5",
+  "savedAt": "20210212131052",
+  "imageWidth": 1280,
+  "imageHeight": 960,
+  "additionWidth": 1280,
+  "additionHeight": 960,
+  "sensorWidth": 80,
+  "sensorHeight": 80,
+  "fileType": 1,
+  "typeNum": 2
+ },
+ "blocks": [
+  {
+   "type": 4,
+   "offset": 233775,
+   "length": 494699
+  },
+  {
+   "type": 0,
+   "offset": 728474,
+   "length": 14592
+  }
+ ],
+ "ir": {
+  "width": 80,
+  "height": 80,
+  "params": {
+   "emissivity": 0.98,
+   "distance": 5,
+   "airTemp": 25.0,
+   "humidity": 0.5,
+   "reflectedTemp": 18.0,
+   "offset": 0.0,
+   "level": 14.8,
+   "span": 7.1,
+   "maxTemp": 18.4,
+   "minTemp": 11.3,
+   "lens": 0,
+   "tempRange": 0,
+   "fpgaLevel": 32143,
+   "fpgaSpan": 254,
+   "shutterTemp": 25.3,
+   "deltaAd": -79
+  },
+  "calibration": {
+   "ad": [
+    31009,
+    31211,
+    31413,
+    31711,
+    32041,
+    32387,
+    32768,
+    33201,
+    33637,
+    34126,
+    34649,
+    35197,
+    35777,
+    36374,
+    37014,
+    37700,
+    38382,
+    39140,
+    39910,
+    40680
+   ],
+   "temp": [
+    -30,
+    -20,
+    -10,
+    0,
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150,
+    160
+   ]
+  },
+  "adStats": {
+   "min": 32178,
+   "max": 32358,
+   "sum": 206569731
+  },
+  "adProbes": [
+   [
+    0,
+    0,
+    32295
+   ],
+   [
+    79,
+    0,
+    32336
+   ],
+   [
+    0,
+    79,
+    32321
+   ],
+   [
+    79,
+    79,
+    32274
+   ],
+   [
+    40,
+    40,
+    32301
+   ],
+   [
+    26,
+    20,
+    32338
+   ],
+   [
+    53,
+    60,
+    32244
+   ]
+  ],
+  "extraLength": 0
+ }
+}

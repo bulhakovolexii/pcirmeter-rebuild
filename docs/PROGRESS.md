@@ -5,6 +5,35 @@
 
 ---
 
+## 2026-10-22 · I-05 Парсер ✅
+
+**Зроблено**
+- `src/core/parser.ts`: `parseThermogram(ArrayBuffer | Uint8Array)` → `info` (`File_Para_t`), `blocks`, головний `jpeg`,
+  `ir` (`params`, `calibration` {ad, temp}, `ad: Uint16Array`, сирий `header` 0x700, `extra`), `visibleJpeg`,
+  `userText`/`audio`/`custom` (сирі байти). Помилки — `ThermogramError` з кодом
+  (`too-short`, `no-trailer`, `bad-block`, `no-ir-block`, `ir-truncated`, `bad-calibration`) і українським повідомленням.
+- `tools/export_fixtures.py` → `tests/fixtures/parser/*.json` (26 зразків: метадані, параметри, LUT, статистика й проби AD).
+  Фікстури в git (без зображень), у `.prettierignore` як згенеровані.
+- `tests/core/parser.test.ts`: локально 26 `.JPG` + 19 `.hir` + негативні випадки — усе проходить; без `latest-2021`
+  (як у CI) — 17 пройдено, 19 пропущено. `lint` і `build` — зелені.
+
+**Знахідки**
+- Level / Span у заголовку ІЧ-блоку — теж `/10 − 100`: центр і ширина шкали (узгоджено з Max/Min на всіх 26), див. `file-format.md`.
+- Блоки йдуть після таблиці `Type_Data_t`; ІЧ-блок може мати непарний зсув → AD читаються через `DataView`.
+- Рядки `File_Para_t` декодуються вручну (ASCII), `TextDecoder` у ядрі не знадобився. Текст користувача (type 3) — сирі байти,
+  декодуватиме UI, коли з'явиться зразок.
+
+**Середовище**
+- `node_modules` встановлено на хості (macOS) → у sandbox бракувало нативного `rolldown` для linux. Виправлено
+  `npm install --no-save @rolldown/binding-linux-arm64-gnu@<версія rolldown>` (package.json/lock не змінюються).
+  Після `npm install` на хості, можливо, доведеться повторити.
+
+**Лишилось:** нічого з I-05. Наступний — I-06 (AD → °C).
+
+**Від викладача:** нічого.
+
+---
+
 ## 2026-10-22 · Публікація на GitHub (продовження сесії I-04)
 
 **Зроблено**

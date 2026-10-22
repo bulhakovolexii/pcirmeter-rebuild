@@ -1,0 +1,124 @@
+{
+ "file": "legacy-2013/130604_0001T.jpg",
+ "size": 123297,
+ "jpegLength": 31951,
+ "info": {
+  "model": "",
+  "producer": "",
+  "calibrationDate": "2011-10-25",
+  "serial": "000001",
+  "firmware": "1.0.0",
+  "savedAt": "20130604173834",
+  "imageWidth": 640,
+  "imageHeight": 480,
+  "additionWidth": 640,
+  "additionHeight": 480,
+  "sensorWidth": 160,
+  "sensorHeight": 120,
+  "fileType": 1,
+  "typeNum": 2
+ },
+ "blocks": [
+  {
+   "type": 4,
+   "offset": 32367,
+   "length": 49710
+  },
+  {
+   "type": 0,
+   "offset": 82077,
+   "length": 41216
+  }
+ ],
+ "ir": {
+  "width": 160,
+  "height": 120,
+  "params": {
+   "emissivity": 0.95,
+   "distance": 5,
+   "airTemp": 25.0,
+   "humidity": 0.6,
+   "reflectedTemp": 25.0,
+   "offset": 0.0,
+   "level": 29.0,
+   "span": 12.8,
+   "maxTemp": 35.5,
+   "minTemp": 22.6,
+   "lens": 0,
+   "tempRange": 0,
+   "fpgaLevel": 31886,
+   "fpgaSpan": 674,
+   "shutterTemp": 38.6,
+   "deltaAd": 503
+  },
+  "calibration": {
+   "ad": [
+    30450,
+    30751,
+    31052,
+    31394,
+    31796,
+    32253,
+    32768,
+    33310,
+    33941,
+    45056
+   ],
+   "temp": [
+    -30,
+    -20,
+    -10,
+    0,
+    10,
+    20,
+    30,
+    40,
+    50,
+    150
+   ]
+  },
+  "adStats": {
+   "min": 31884,
+   "max": 32557,
+   "sum": 619008353
+  },
+  "adProbes": [
+   [
+    0,
+    0,
+    31934
+   ],
+   [
+    159,
+    0,
+    32197
+   ],
+   [
+    0,
+    119,
+    32054
+   ],
+   [
+    159,
+    119,
+    32248
+   ],
+   [
+    80,
+    60,
+    32266
+   ],
+   [
+    53,
+    30,
+    32357
+   ],
+   [
+    106,
+    90,
+    32204
+   ]
+  ],
+  "extraLength": 1024
+ }
+}
