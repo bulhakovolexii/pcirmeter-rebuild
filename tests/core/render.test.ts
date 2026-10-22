@@ -8,6 +8,7 @@ import {
   celsiusToAd,
   frameExtremes,
   manualDisplayScale,
+  paletteHistogram,
   paletteIndex,
   renderFrame,
 } from '../../src/core/render'
@@ -62,6 +63,15 @@ describe('індекс палітри', () => {
 
 describe.each(legacy)('$name', ({ ir }) => {
   const model = temperatureModel(ir)
+
+  it('гістограма: усі пікселі, стовпець — індекс палітри', () => {
+    const scale = autoDisplayScale(ir)
+    const bins = paletteHistogram(ir.ad, scale)
+    expect(bins.length).toBe(256)
+    expect(bins.reduce((a, b) => a + b, 0)).toBe(ir.ad.length)
+    const { max } = frameExtremes(ir)
+    expect(bins[paletteIndex(max.ad, scale)]).toBeGreaterThan(0)
+  })
 
   it('автошкала — FPGA_Level / FPGA_Span', () => {
     expect(autoDisplayScale(ir)).toEqual({ level: ir.params.fpgaLevel, span: ir.params.fpgaSpan })

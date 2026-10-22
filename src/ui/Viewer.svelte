@@ -1,9 +1,17 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { DEFAULT_PALETTE, PALETTE_IDS, palette, type PaletteId } from '../core/palettes'
-  import { autoDisplayScale, frameExtremes, manualDisplayScale, renderFrame } from '../core/render'
+  import { isValidIsotherm, paintIsotherms } from '../core/isotherms'
+  import {
+    autoDisplayScale,
+    frameExtremes,
+    manualDisplayScale,
+    paletteHistogram,
+    renderFrame,
+  } from '../core/render'
   import {
     autoScale,
+    frameTemperatures,
     measurementRange,
     objectParams,
     temperatureModel,
@@ -20,10 +28,14 @@
     TEMPERATURE_SYMBOL,
     temperatureStatus,
   } from './format'
+  import Histogram from './Histogram.svelte'
+  import IsothermPanel from './IsothermPanel.svelte'
+  import { defaultIsotherms, isothermBand, toIsotherm, type IsothermState } from './isotherms'
   import type { Units } from './params'
   import ParamsPanel from './ParamsPanel.svelte'
+  import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
-  import { measureObjects, resultsCsv } from './results'
+  import { lineProfile, measureObjects, profileCsv, resultsCsv } from './results'
   import { units } from './settings'
   import {
     dragShape,
@@ -130,13 +142,40 @@
     autoFit = false
   }
 
+  // Ізотерми (docs/spec/features.md §2.5): межі — °C, стартові — від автошкали файлу
+  let isotherms = $state<IsothermState[]>(untrack(() => defaultIsotherms(auto)))
+  const temps = $derived(frameTemperatures(ir, model))
+  const shownIsotherms = $derived(
+    isotherms.map((s) => (s.enabled && isValidIsotherm(toIsotherm(s)) ? toIsotherm(s) : null)),
+  )
+
+  /** Кадр у кольорах палітри з ізотермами і частка кадру в межах кожної ізотерми. */
+  const frame = $derived.by(() => {
+    const rgba = renderFrame(ir.ad, palette(paletteId), scale)
+    const active = shownIsotherms.filter((i) => i !== null)
+    const counts = paintIsotherms(temps, rgba, active)
+    let k = 0
+    const shares = shownIsotherms.map((i) => (i === null ? null : counts[k++]! / ir.ad.length))
+    return { rgba, shares }
+  })
+
+  const histogram = $derived(paletteHistogram(ir.ad, scale))
+  /** Смуги ізотерм на шкалі й гістограмі: ізотерма 1 — останньою (поверх). */
+  const bands = $derived(
+    isotherms
+      .flatMap((s, k) => {
+        const band = shownIsotherms[k] ? isothermBand(s, scaleLabels) : null
+        return band ? [{ ...band, color: s.color }] : []
+      })
+      .reverse(),
+  )
+
   let canvas: HTMLCanvasElement | undefined = $state()
 
   $effect(() => {
     const ctx = canvas?.getContext('2d')
     if (!ctx) return
-    const rgba = renderFrame(ir.ad, palette(paletteId), scale)
-    ctx.putImageData(new ImageData(rgba, ir.width, ir.height), 0, 0)
+    ctx.putImageData(new ImageData(frame.rgba, ir.width, ir.height), 0, 0)
   })
 
   // Колесо — непасивний обробник, щоб не прокручувати сторінку
@@ -182,14 +221,33 @@
     viewport?.focus()
   }
 
-  function exportCsv() {
-    const csv = resultsCsv(results, $locale, $units, $tr)
+  // Профіль: вибрана лінія, а якщо вибрано не лінію — остання додана
+  const profileObject = $derived(
+    selected?.shape.kind === 'line' ? selected : objects.findLast((o) => o.shape.kind === 'line'),
+  )
+  const profile = $derived(profileObject ? lineProfile(ir, profileObject, overrides) : [])
+  let profileHover = $state<number | null>(null)
+  const profileMarker = $derived(
+    profileHover !== null && profileHover < profile.length ? profile[profileHover]! : null,
+  )
+
+  function downloadCsv(csv: string, suffix: string) {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = `${file.name.replace(/\.[^.]+$/, '')}_results.csv`
+    a.download = `${file.name.replace(/\.[^.]+$/, '')}_${suffix}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  function exportCsv() {
+    downloadCsv(resultsCsv(results, $locale, $units, $tr), 'results')
+  }
+
+  function exportProfile() {
+    if (profileObject) {
+      downloadCsv(profileCsv(profile, $locale, $units.temperature, $tr), `profile_${profileObject.name}`)
+    }
   }
 
   /** Зсув перетягуванням або редагування об'єкта: `start` — фігура на початку перетягування. */
@@ -444,6 +502,28 @@
           <p class="warning" role="alert">{$tr('scale.invalid')}</p>
         {/if}
       {/if}
+      <Histogram
+        bins={histogram}
+        rgb={palette(paletteId)}
+        {bands}
+        minLabel={fmt(scaleLabels.min)}
+        maxLabel={fmt(scaleLabels.max)}
+      />
+    </fieldset>
+
+    <fieldset class="isotherms">
+      <legend>{$tr('isotherm.section')}</legend>
+      {#each isotherms as iso, k (k)}
+        <IsothermPanel
+          index={k + 1}
+          value={iso}
+          onchange={(v) => (isotherms[k] = v)}
+          share={frame.shares[k] ?? null}
+        />
+      {/each}
+      {#if isotherms.every((i) => i.enabled)}
+        <p class="note">{$tr('isotherm.priority')}</p>
+      {/if}
     </fieldset>
 
     <ParamsPanel
@@ -612,6 +692,15 @@
               <path d="M -6 0 H 6 M 0 -6 V 6" />
             </g>
           {/each}
+          {#if profileMarker}
+            <rect
+              class="profile-marker"
+              x={panX + profileMarker.x * zoom - 3}
+              y={panY + profileMarker.y * zoom - 3}
+              width={zoom + 6}
+              height={zoom + 6}
+            />
+          {/if}
           {#if showExtremes}
             {#each markers as m (m.kind)}
               <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
@@ -623,10 +712,21 @@
           {/if}
         </svg>
       </div>
-      <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} />
+      <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
     </div>
 
-    <ResultsTable {results} {selectedId} onselect={(id) => (selectedId = id)} onexport={exportCsv} />
+    <div class="bottom">
+      <ResultsTable {results} {selectedId} onselect={(id) => (selectedId = id)} onexport={exportCsv} />
+      {#if profileObject}
+        <ProfileChart
+          name={profileObject.name}
+          points={profile}
+          hoverIndex={profileHover}
+          onhover={(k) => (profileHover = k)}
+          onexport={exportProfile}
+        />
+      {/if}
+    </div>
   </section>
 </div>
 
@@ -664,6 +764,11 @@
     border-radius: 6px;
     padding: 8px 10px 10px;
     margin: 0;
+  }
+  .isotherms {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
   legend {
     font-size: 0.9rem;
@@ -820,6 +925,22 @@
   .marker.min path {
     stroke: #0ff;
   }
+  .profile-marker {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 1px #000);
+  }
+  .bottom {
+    display: flex;
+    gap: 12px;
+    max-height: 34%;
+    min-height: 0;
+  }
+  .bottom > :global(*) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
   .marker.small path {
     stroke-width: 1.5;
   }
@@ -859,6 +980,10 @@
     .stage {
       height: 60vh;
       flex: none;
+    }
+    .bottom {
+      flex-direction: column;
+      max-height: none;
     }
     .hint {
       display: none;

@@ -9,7 +9,7 @@ import {
   temperatureModel,
   type ObjectParams,
 } from '../core/temperature'
-import { fromCelsius } from '../core/units'
+import { fromCelsius, type TemperatureUnit } from '../core/units'
 import type { Locale } from '../i18n'
 import type { MessageKey } from '../i18n/uk'
 import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL, type TemperatureStatus } from './format'
@@ -67,6 +67,30 @@ export function measureObjects(
   })
 }
 
+/** Точка профілю лінії: піксель кадру і його температура, °C (`NaN` — поза калібруванням). */
+export interface ProfilePoint {
+  x: number
+  y: number
+  t: number
+}
+
+/**
+ * Профіль лінії від початку до кінця (точки — `objectPixels`, як у таблиці результатів),
+ * з параметрами об'єкта поверх параметрів кадру.
+ */
+export function lineProfile(
+  ir: IrImage,
+  object: MeasureObject,
+  frameOverrides: Partial<ObjectParams> = {},
+): ProfilePoint[] {
+  const model = temperatureModel(ir, { ...frameOverrides, ...object.overrides })
+  return Array.from(objectPixels(object.shape, ir.width, ir.height), (i) => ({
+    x: i % ir.width,
+    y: Math.floor(i / ir.width),
+    t: model.toCelsius(ir.ad[i]!),
+  }))
+}
+
 /** Координати фігури в пікселях кадру: `x, y` або `x0, y0 – x1, y1`. */
 export function shapeCoords(shape: Shape): string {
   return shape.kind === 'point'
@@ -83,6 +107,11 @@ function csvNumber(value: number, locale: Locale, digits: number): string {
 
 function csvCell(value: string): string {
   return /[;"\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value
+}
+
+/** Таблиця для Excel: UTF-8 з BOM, роздільник `;`, рядки — CRLF. */
+function csvTable(lines: readonly (readonly string[])[]): string {
+  return '\uFEFF' + lines.map((cells) => cells.map(csvCell).join(';')).join('\r\n') + '\r\n'
 }
 
 const PARAM_HEADER: Record<(typeof PARAM_FIELDS)[number], MessageKey> = {
@@ -141,5 +170,24 @@ export function resultsCsv(
           : '',
     ])
   }
-  return '﻿' + lines.map((cells) => cells.map(csvCell).join(';')).join('\r\n') + '\r\n'
+  return csvTable(lines)
+}
+
+/** Профіль лінії в CSV (формат як у `resultsCsv`): №, x, y, T в одиницях показу. */
+export function profileCsv(
+  points: readonly ProfilePoint[],
+  locale: Locale,
+  unit: TemperatureUnit,
+  t: (key: MessageKey) => string,
+): string {
+  const header = [t('profile.index'), 'x', 'y', `T, ${TEMPERATURE_SYMBOL[unit]}`]
+  return csvTable([
+    header,
+    ...points.map((p, k) => [
+      String(k + 1),
+      String(p.x),
+      String(p.y),
+      csvNumber(fromCelsius(p.t, unit), locale, 1),
+    ]),
+  ])
 }

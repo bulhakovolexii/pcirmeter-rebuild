@@ -105,6 +105,18 @@ describe('App', () => {
     expect(body).toContain('Додайте точку')
   })
 
+  it('показує гістограму й ізотерми (вимкнені за замовчуванням)', async () => {
+    const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
+    const { body } = render(App, { props: { initialFiles: opened } })
+    expect(body).toContain('Гістограма кадру')
+    expect(body).toContain('Ізотерми')
+    expect(body).toContain('Ізотерма 1')
+    expect(body).toContain('Ізотерма 2')
+    expect(body).not.toContain('Частка кадру')
+    // Профіль — лише коли є лінія
+    expect(body).not.toContain('Профіль')
+  })
+
   it('показує температури у вибраних одиницях', async () => {
     const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
     units.set({ temperature: 'F', length: 'ft' })

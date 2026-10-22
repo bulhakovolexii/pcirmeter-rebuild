@@ -82,7 +82,6 @@
   .results {
     display: flex;
     flex-direction: column;
-    max-height: 32%;
     min-height: 0;
   }
   .head {
@@ -157,11 +156,5 @@
   }
   .own {
     color: var(--accent);
-  }
-
-  @media (max-width: 720px) {
-    .results {
-      max-height: none;
-    }
   }
 </style>

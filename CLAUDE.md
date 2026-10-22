@@ -62,8 +62,10 @@
 - UI переглядача: `src/ui/App.svelte` (файли, вкладки, одиниці), `Viewer.svelte` (зображення, інструменти, накладення),
   `ParamsPanel.svelte` (параметри кадру / об'єкта), `ResultsTable.svelte`, `ColorBar.svelte`;
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
-  об'єктів), `results.ts` (вимірювання, CSV), store одиниць — `settings.ts` (тестуються в Node).
-- Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур і статистика по пікселях кадру (`temperature.md`).
+  об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
+  store одиниць — `settings.ts` (тестуються в Node). Аналіз: `ProfileChart.svelte`, `IsothermPanel.svelte`, `Histogram.svelte`.
+- Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур і статистика по пікселях кадру (`temperature.md`);
+  ізотерми — `src/core/isotherms.ts`, гістограма — `paletteHistogram` у `render.ts` (семантика — `features.md` §2.5).
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Браузера в sandbox немає — UI перевіряє викладач.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
@@ -80,7 +82,7 @@
 - TypeScript (strict) + Vite; UI — Svelte; рендеринг — Canvas 2D (WebGL лише за потреби).
 - Ядро (`src/core/`) — чистий TS без залежностей від DOM: парсер, обчислення температур, статистика. Важкі обчислення — у Web Worker.
 - Тести: Vitest; «золоті» значення температур отримуються з оригінальної програми (див. PLAN, фаза 2).
-- PDF-звіти: pdf-lib; графіки: uPlot. Офлайн — PWA. Деплой — статичний (GitHub Pages).
+- PDF-звіти: pdf-lib; графіки — власний SVG у Svelte (`ProfileChart`, `Histogram`; поділки осі — `src/ui/chart.ts`). Офлайн — PWA. Деплой — статичний (GitHub Pages).
 - Інтерфейс: українська (основна), англійська. Тексти — в `src/i18n/`.
 
 ## Правила роботи

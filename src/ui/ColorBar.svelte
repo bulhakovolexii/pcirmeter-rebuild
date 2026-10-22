@@ -6,9 +6,11 @@
     /** Підписи меж (уже відформатовані). */
     maxLabel: string
     minLabel: string
+    /** Смуги ізотерм: частки шкали 0…1 знизу вгору і колір CSS; пізніші — поверх. */
+    bands?: readonly { lo: number; hi: number; color: string }[]
   }
 
-  let { paletteId, maxLabel, minLabel }: Props = $props()
+  let { paletteId, maxLabel, minLabel, bands = [] }: Props = $props()
 
   let canvas: HTMLCanvasElement | undefined = $state()
 
@@ -28,7 +30,17 @@
 
 <div class="bar">
   <span class="label">{maxLabel}</span>
-  <canvas bind:this={canvas} width="1" height="256"></canvas>
+  <div class="strip">
+    <canvas bind:this={canvas} width="1" height="256"></canvas>
+    {#each bands as band, k (k)}
+      <span
+        class="band"
+        style:bottom="{band.lo * 100}%"
+        style:height="max(2px, {(band.hi - band.lo) * 100}%)"
+        style:background={band.color}
+      ></span>
+    {/each}
+  </div>
   <span class="label">{minLabel}</span>
 </div>
 
@@ -41,12 +53,23 @@
     height: 100%;
     min-height: 0;
   }
-  canvas {
+  .strip {
+    position: relative;
     flex: 1;
     width: 24px;
     min-height: 0;
     border: 1px solid var(--border);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
     image-rendering: pixelated;
+  }
+  .band {
+    position: absolute;
+    left: 0;
+    right: 0;
   }
   .label {
     font-size: 0.85rem;

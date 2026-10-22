@@ -57,6 +57,16 @@ export function renderFrame(
 }
 
 /**
+ * Гістограма кадру за індексом палітри (256 стовпців), як в оригіналі (`IrAdjust`): пікселі поза шкалою
+ * потрапляють у крайні стовпці 0 і 255.
+ */
+export function paletteHistogram(ad: Uint16Array, scale: DisplayScale): Uint32Array {
+  const bins = new Uint32Array(256)
+  for (let i = 0; i < ad.length; i++) bins[paletteIndex(ad[i]!, scale)]!++
+  return bins
+}
+
+/**
  * Найменший AD, для якого T(AD) ≥ `celsius` (обернене до `toCelsius`); поза калібруванням — крайній AD таблиці.
  * Аналог нативного `getAD` оригіналу (його округлення не відновлено — [г], різниця ≤ 1 AD).
  */
