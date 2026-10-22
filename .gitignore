@@ -7,3 +7,7 @@ __pycache__/
 *.pyc
 coverage/
 *.tsbuildinfo
+
+# Локальні дані, не для публічного репозиторію (фото кафедри 2021, скриншоти оригіналу)
+samples/latest-2021/
+tests/golden/screens/
