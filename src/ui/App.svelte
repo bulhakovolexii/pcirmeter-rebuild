@@ -2,6 +2,8 @@
   import { untrack } from 'svelte'
   import { locale, tr } from '../i18n'
   import { openFiles, type FileSource, type OpenError, type OpenedFile } from './files'
+  import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
+  import { units } from './settings'
   import Viewer from './Viewer.svelte'
 
   interface Props {
@@ -80,6 +82,16 @@
         hidden
         onchange={onInputChange}
       />
+      <select bind:value={$units.temperature} aria-label={$tr('units.temperature')}>
+        {#each ['C', 'F', 'K'] as const as u (u)}
+          <option value={u}>{TEMPERATURE_SYMBOL[u]}</option>
+        {/each}
+      </select>
+      <select bind:value={$units.length} aria-label={$tr('units.length')}>
+        {#each ['m', 'ft'] as const as u (u)}
+          <option value={u}>{LENGTH_SYMBOL[u][$locale]}</option>
+        {/each}
+      </select>
       <select bind:value={$locale} aria-label={$tr('app.language')}>
         <option value="uk">Українська</option>
         <option value="en">English</option>

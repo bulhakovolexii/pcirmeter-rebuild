@@ -1,11 +1,40 @@
 <script lang="ts">
+  import { untrack } from 'svelte'
   import { DEFAULT_PALETTE, PALETTE_IDS, palette, type PaletteId } from '../core/palettes'
   import { autoDisplayScale, frameExtremes, manualDisplayScale, renderFrame } from '../core/render'
-  import { autoScale, measurementRange, temperatureModel } from '../core/temperature'
+  import {
+    autoScale,
+    measurementRange,
+    objectParams,
+    PARAM_LIMITS,
+    temperatureModel,
+    type EditableParam,
+    type ObjectParams,
+  } from '../core/temperature'
+  import { fromCelsius, toCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
   import ColorBar from './ColorBar.svelte'
   import type { OpenedFile } from './files'
-  import { formatCelsius, formatNumber, formatSavedAt, temperatureStatus } from './format'
+  import {
+    formatNumber,
+    formatSavedAt,
+    formatTemperature,
+    LENGTH_SYMBOL,
+    TEMPERATURE_SYMBOL,
+    temperatureStatus,
+  } from './format'
+  import {
+    displayLimits,
+    displayValue,
+    isChanged,
+    PARAM_FIELDS,
+    paramDigits,
+    paramsForm,
+    paramStep,
+    parseParam,
+    type Units,
+  } from './params'
+  import { units } from './settings'
 
   interface Props {
     file: OpenedFile
@@ -19,32 +48,86 @@
 
   const ir = $derived(file.thermogram.ir)
   const info = $derived(file.thermogram.info)
-  const model = $derived(temperatureModel(ir))
+
+  // Параметри об'єкта: модель отримує лише змінені користувачем значення, решта — з файлу
+  const fileParams = $derived(objectParams(ir.params))
+  let overrides = $state<Partial<ObjectParams>>({})
+  const params = $derived({ ...fileParams, ...overrides })
+  const model = $derived(temperatureModel(ir, overrides))
+  /** Значення полів в одиницях показу; модель змінюється лише при введенні, не при зміні одиниць. */
+  let paramsInput = $state<Record<EditableParam, number | null>>(
+    untrack(() => paramsForm(objectParams(ir.params), $units)),
+  )
+  const paramsChanged = $derived(PARAM_FIELDS.some((k) => isChanged(k, params[k], fileParams[k], $units)))
+
+  function setParam(key: EditableParam, input: number) {
+    const value = parseParam(key, input, $units)
+    if (value !== null) overrides = { ...overrides, [key]: value }
+  }
+
+  function resetParams() {
+    overrides = {}
+    paramsInput = paramsForm(fileParams, $units)
+  }
+
+  function paramUnit(key: EditableParam, u: Units): string {
+    switch (key) {
+      case 'emissivity':
+        return ''
+      case 'humidity':
+        return '%'
+      case 'distance':
+        return LENGTH_SYMBOL[u.length][$locale]
+      default:
+        return TEMPERATURE_SYMBOL[u.temperature]
+    }
+  }
   const auto = $derived(autoScale(ir, model))
   const range = $derived(measurementRange(ir.params.tempRange))
   const extremes = $derived(frameExtremes(ir))
 
   let paletteId = $state<PaletteId>(DEFAULT_PALETTE)
   let scaleMode = $state<'auto' | 'manual'>('auto')
-  // Ручна шкала стартує з меж автошкали, округлених до 0,1 °C
-  let manualMin = $state(0)
-  let manualMax = $state(0)
+  // Межі ручної шкали — у °C (не залежать від одиниць і параметрів); поля — в одиницях показу
+  let manualLimits = $state({ min: 0, max: 0 })
+  let scaleInput = $state<{ min: number | null; max: number | null }>({ min: 0, max: 0 })
   let showExtremes = $state(true)
 
+  const showTemp = (celsius: number, u: Units) => Math.round(fromCelsius(celsius, u.temperature) * 10) / 10
+
   const manualValid = $derived(
-    Number.isFinite(manualMin) && Number.isFinite(manualMax) && manualMin < manualMax,
+    Number.isFinite(scaleInput.min) && Number.isFinite(scaleInput.max) && manualLimits.min < manualLimits.max,
   )
   const manual = $derived(scaleMode === 'manual' && manualValid)
-  const scale = $derived(manual ? manualDisplayScale(ir, model, manualMin, manualMax) : autoDisplayScale(ir))
-  const scaleLabels = $derived(manual ? { min: manualMin, max: manualMax } : auto)
+  const scale = $derived(
+    manual ? manualDisplayScale(ir, model, manualLimits.min, manualLimits.max) : autoDisplayScale(ir),
+  )
+  const scaleLabels = $derived(manual ? manualLimits : auto)
 
   function setScaleMode(mode: 'auto' | 'manual') {
+    // Ручна шкала стартує з меж автошкали, округлених до 0,1 в одиницях показу
     if (mode === 'manual' && scaleMode === 'auto') {
-      manualMin = Math.round(auto.min * 10) / 10
-      manualMax = Math.round(auto.max * 10) / 10
+      scaleInput = { min: showTemp(auto.min, $units), max: showTemp(auto.max, $units) }
+      manualLimits = {
+        min: toCelsius(scaleInput.min!, $units.temperature),
+        max: toCelsius(scaleInput.max!, $units.temperature),
+      }
     }
     scaleMode = mode
   }
+
+  function setScaleLimit(which: 'min' | 'max', input: number) {
+    if (Number.isFinite(input)) manualLimits[which] = toCelsius(input, $units.temperature)
+  }
+
+  // Зміна одиниць — лише перерахунок полів; модель і межі шкали не змінюються
+  $effect(() => {
+    const u = $units
+    untrack(() => {
+      paramsInput = paramsForm(params, u)
+      scaleInput = { min: showTemp(manualLimits.min, u), max: showTemp(manualLimits.max, u) }
+    })
+  })
 
   // Масштаб: CSS-пікселів на піксель кадру; зсув — положення лівого верхнього кута кадру у вікні
   let viewport: HTMLDivElement | undefined = $state()
@@ -170,12 +253,12 @@
         kind,
         cx: panX + (p.x + 0.5) * zoom,
         cy: panY + (p.y + 0.5) * zoom,
-        label: `${kind === 'max' ? 'Max' : 'Min'} ${formatCelsius(model.toCelsius(p.ad), $locale)}`,
+        label: `${kind === 'max' ? 'Max' : 'Min'} ${fmt(model.toCelsius(p.ad))}`,
       }
     }),
   )
 
-  const fmt = (t: number) => formatCelsius(t, $locale)
+  const fmt = (t: number) => formatTemperature(t, $locale, $units.temperature)
 </script>
 
 <div class="viewer">
@@ -214,18 +297,60 @@
       {#if scaleMode === 'manual'}
         <div class="limits">
           <label class="field">
-            <span>{$tr('scale.max')}</span>
-            <input type="number" step="0.1" bind:value={manualMax} />
+            <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+            <input
+              type="number"
+              step="0.1"
+              bind:value={scaleInput.max}
+              oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
+            />
           </label>
           <label class="field">
-            <span>{$tr('scale.min')}</span>
-            <input type="number" step="0.1" bind:value={manualMin} />
+            <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+            <input
+              type="number"
+              step="0.1"
+              bind:value={scaleInput.min}
+              oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
+            />
           </label>
         </div>
         {#if !manualValid}
           <p class="warning" role="alert">{$tr('scale.invalid')}</p>
         {/if}
       {/if}
+    </fieldset>
+
+    <fieldset class="params">
+      <legend>{$tr('params.title')}</legend>
+      {#each PARAM_FIELDS as key (key)}
+        {@const unit = paramUnit(key, $units)}
+        {@const invalid = parseParam(key, paramsInput[key], $units) === null}
+        {@const changed = isChanged(key, params[key], fileParams[key], $units)}
+        {@const show = (v: number) =>
+          `${formatNumber(displayValue(key, v, $units), $locale, paramDigits(key))}${unit ? ` ${unit}` : ''}`}
+        <label class="field" class:changed>
+          <span>{$tr(`params.${key}`)}{unit ? `, ${unit}` : ''}</span>
+          <input
+            type="number"
+            min={displayLimits(key, $units).min}
+            max={displayLimits(key, $units).max}
+            step={paramStep(key)}
+            aria-invalid={invalid}
+            bind:value={paramsInput[key]}
+            oninput={(e) => setParam(key, e.currentTarget.valueAsNumber)}
+          />
+        </label>
+        {#if invalid}
+          <p class="warning" role="alert">
+            {$tr('params.allowed')}: {show(PARAM_LIMITS[key].min)} … {show(PARAM_LIMITS[key].max)}
+          </p>
+        {:else if changed}
+          <p class="note">{$tr('params.fromFile')}: {show(fileParams[key])}</p>
+        {/if}
+      {/each}
+      <p class="note">{$tr('params.tau')} = {formatNumber(model.tau, $locale, 3)}</p>
+      <button type="button" disabled={!paramsChanged} onclick={resetParams}>{$tr('params.reset')}</button>
     </fieldset>
 
     <label class="check">
@@ -260,7 +385,11 @@
           <dd>{[info.producer, info.model].filter(Boolean).join(' ')}</dd>
         {/if}
         <dt>{$tr('info.range')}</dt>
-        <dd>{formatNumber(range.min, $locale, 0)} … {formatNumber(range.max, $locale, 0)} °C</dd>
+        <dd>
+          {formatNumber(fromCelsius(range.min, $units.temperature), $locale, 0)} …
+          {formatNumber(fromCelsius(range.max, $units.temperature), $locale, 0)}
+          {TEMPERATURE_SYMBOL[$units.temperature]}
+        </dd>
         <dt>{$tr('info.frameMax')}</dt>
         <dd>{fmt(model.toCelsius(extremes.max.ad))}</dd>
         <dt>{$tr('info.frameMin')}</dt>
@@ -371,9 +500,32 @@
     gap: 8px;
     margin-top: 8px;
   }
-  .limits input {
+  .limits input,
+  .params input {
     width: 100%;
     box-sizing: border-box;
+  }
+  .params {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .params .changed span {
+    font-weight: 600;
+  }
+  .params .changed input {
+    border-color: var(--accent);
+  }
+  .params .warning,
+  .note {
+    margin: -2px 0 2px;
+    font-size: 0.8rem;
+  }
+  .note {
+    color: var(--muted);
+  }
+  .params button {
+    align-self: flex-start;
   }
   .check {
     display: flex;

@@ -4,7 +4,8 @@ import { render } from 'svelte/server'
 import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
 import { openFiles, type FileSource } from '../../src/ui/files'
-import { formatCelsius, formatSavedAt, temperatureStatus } from '../../src/ui/format'
+import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
+import { units } from '../../src/ui/settings'
 
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
 
@@ -42,9 +43,9 @@ describe('openFiles', () => {
 
 describe('форматування', () => {
   it('температура з комою для uk і крапкою для en', () => {
-    expect(formatCelsius(25.04, 'uk')).toBe('25,0 °C')
-    expect(formatCelsius(-3.25, 'en')).toMatch(/^-3\.[23] °C$/)
-    expect(formatCelsius(NaN, 'uk')).toBe('—')
+    expect(formatTemperature(25.04, 'uk')).toBe('25,0 °C')
+    expect(formatTemperature(-3.25, 'en')).toMatch(/^-3\.[23] °C$/)
+    expect(formatTemperature(NaN, 'uk')).toBe('—')
   })
 
   it('дата зйомки', () => {
@@ -78,5 +79,35 @@ describe('App', () => {
     expect(body).toContain('34,5 °C')
     expect(body).toContain('25,8 °C')
     expect(body).toContain('Залізо')
+  })
+
+  it("показує параметри об'єкта з файлу і τ", async () => {
+    const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
+    const { body } = render(App, { props: { initialFiles: opened } })
+    expect(body).toContain("Параметри об'єкта")
+    // Значення з файлу: ε 0,95, T_відб 25 °C, RH 60 %, d 5 м
+    expect(body).toContain('value="0.95"')
+    expect(body).toContain('value="60"')
+    expect(body).toContain('Коефіцієнт випромінювання ε')
+    expect(body).toContain('Відстань, м')
+    expect(body).toContain('Пропускання атмосфери τ')
+    expect(body).toContain('Скинути до значень із файлу')
+  })
+
+  it('показує температури у вибраних одиницях', async () => {
+    const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
+    units.set({ temperature: 'F', length: 'ft' })
+    try {
+      const { body } = render(App, { props: { initialFiles: opened } })
+      // 34,5 / 25,8 °C (автошкала) → °F
+      expect(body).toMatch(/94,\d °F/)
+      expect(body).toMatch(/78,\d °F/)
+      expect(body).toContain('Відстань, фут')
+      expect(body).toContain('value="16.4"')
+      expect(body).toContain('value="77"')
+      expect(body).not.toContain(' °C<')
+    } finally {
+      units.set({ temperature: 'C', length: 'm' })
+    }
   })
 })

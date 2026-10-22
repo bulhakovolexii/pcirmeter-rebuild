@@ -1,6 +1,14 @@
 /** Форматування чисел і дат для інтерфейсу. */
 
+import { fromCelsius, type LengthUnit, type TemperatureUnit } from '../core/units'
 import type { Locale } from '../i18n'
+
+/** Позначення одиниць (однакові для uk і en). */
+export const TEMPERATURE_SYMBOL: Record<TemperatureUnit, string> = { C: '°C', F: '°F', K: 'K' }
+export const LENGTH_SYMBOL: Record<LengthUnit, Record<Locale, string>> = {
+  m: { uk: 'м', en: 'm' },
+  ft: { uk: 'фут', en: 'ft' },
+}
 
 const formatters = new Map<string, Intl.NumberFormat>()
 
@@ -15,9 +23,10 @@ export function formatNumber(value: number, locale: Locale, digits = 1): string 
   return f.format(value)
 }
 
-/** Температура в °C з одним знаком; `NaN` → «—». */
-export function formatCelsius(value: number, locale: Locale): string {
-  return Number.isNaN(value) ? '—' : `${formatNumber(value, locale)} °C`
+/** Температура (вхід — °C) у заданій одиниці з одним знаком; `NaN` → «—». */
+export function formatTemperature(celsius: number, locale: Locale, unit: TemperatureUnit = 'C'): string {
+  if (Number.isNaN(celsius)) return '—'
+  return `${formatNumber(fromCelsius(celsius, unit), locale)} ${TEMPERATURE_SYMBOL[unit]}`
 }
 
 /** `YYYYMMDDhhmmss` із файлу → `YYYY-MM-DD hh:mm:ss`; інше — як є. */

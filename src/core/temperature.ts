@@ -25,6 +25,30 @@ export interface ObjectParams {
   offset: number
 }
 
+/** Параметри, які користувач може змінювати в інтерфейсі (`offset` — лише з файлу). */
+export type EditableParam = Exclude<keyof ObjectParams, 'offset'>
+
+/**
+ * Допустимі межі параметрів (°C, м, частки) — як у полях форми оригіналу (`IRControl1`:
+ * `emissNuneric`, `reflecNuneric`, `envNuneric`, `humidNumeric`, `distNumeric`).
+ */
+export const PARAM_LIMITS: Readonly<Record<EditableParam, { min: number; max: number }>> = {
+  emissivity: { min: 0.1, max: 1 },
+  reflectedTemp: { min: -100, max: 2000 },
+  airTemp: { min: -40, max: 2000 },
+  humidity: { min: 0, max: 1 },
+  distance: { min: 0, max: 5000 },
+}
+
+/**
+ * Чи допустиме значення параметра (скінченне й у межах `PARAM_LIMITS`).
+ * Допуск 1e-9 — щоб межа, введена в °F / K / футах, не відкидалася через похибку перерахунку.
+ */
+export function isValidParam(key: EditableParam, value: number): boolean {
+  const { min, max } = PARAM_LIMITS[key]
+  return Number.isFinite(value) && value >= min - 1e-9 && value <= max + 1e-9
+}
+
 /** Параметри об'єкта із заголовка файлу з можливими змінами користувача. */
 export function objectParams(params: IrParams, overrides: Partial<ObjectParams> = {}): ObjectParams {
   return {

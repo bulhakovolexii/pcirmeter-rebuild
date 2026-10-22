@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fromCelsius, toCelsius, type TemperatureUnit } from '../../src/core/units'
+import { fromCelsius, fromMeters, toCelsius, toMeters, type TemperatureUnit } from '../../src/core/units'
 
 describe('units', () => {
   it('переводить опорні точки', () => {
@@ -16,5 +16,11 @@ describe('units', () => {
         expect(toCelsius(fromCelsius(c, unit), unit)).toBeCloseTo(c, 10)
       }
     }
+  })
+
+  it('відстань: метри ↔ фути (стала оригіналу 3,28084)', () => {
+    expect(fromMeters(1, 'ft')).toBe(3.28084)
+    expect(fromMeters(5, 'm')).toBe(5)
+    expect(toMeters(fromMeters(123.4, 'ft'), 'ft')).toBeCloseTo(123.4, 10)
   })
 })
