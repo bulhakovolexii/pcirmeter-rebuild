@@ -57,6 +57,10 @@
 - Температура (TS): `src/core/temperature.ts` (`temperatureModel(ir, overrides)` → `toCelsius(ad)`, `NaN` = поза
   калібруванням; `frameTemperatures`, `autoScale`, `measurementRange`), таблиці атмосфери — `src/core/atmosphere.ts`.
   Фікстури з `irtemp.py`: `python3 -I tools/export_temperature_fixtures.py` → `tests/fixtures/temperature/*.json`.
+- Палітри: `python3 -I tools/export_palettes.py` → `tools/palettes.json` → `src/core/palettes.ts`; рендер кадру —
+  `src/core/render.ts`. Візуальна звірка без браузера: `tools/render_png.ts` (запуск — у шапці файлу, через rolldown).
+- UI переглядача: `src/ui/App.svelte` (файли, вкладки), `Viewer.svelte`, `ColorBar.svelte`; логіка без DOM —
+  `src/ui/files.ts`, `src/ui/format.ts` (тестуються в Node). Браузера в sandbox немає — UI перевіряє викладач.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;
