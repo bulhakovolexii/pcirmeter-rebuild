@@ -48,7 +48,8 @@
   ІЧ-блок = заголовок 0x700 + `uint16 AD[W×H]`. `.hir` = побайтова копія `.JPG`.
 - `docs/spec/temperature.md`: AD+ΔAD → калібрувальна LUT (зберігається в кожному файлі) → поправка 0,95/0,05 →
   τ (таблиці пари/відстані) → радіометричне рівняння ε/T_відб/T_пов. Усі параметри — у файлі.
-- Дослідницькі скрипти: `tools/dump_ir.py` (дамп структури), `tools/irtemp.py` (еталонний розрахунок).
+- Дослідницькі скрипти: `tools/dump_ir.py` (дамп структури), `tools/irtemp.py` (еталонний розрахунок),
+  `tools/compare_golden.py` (звірка з еталонами оригіналу `tests/golden/pcirmeter_reference.csv`).
 - Зразки: `samples/legacy-2013/` (160×120, 384×288), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри).
 - Декомпільований C#: `reference/decompiled/{IrMeter,PCIRMeter}/`; знімок Ghidra-аналізу DLL:
   `reference/FPGA_CalcTemp_List.rea-snapshot` (передавати в `open_binary` як `snapshot_path`).
