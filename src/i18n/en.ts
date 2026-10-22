@@ -100,7 +100,7 @@ export const en: Record<MessageKey, string> = {
   'profile.points': 'points; hover over the chart',
   'profile.index': 'No.',
   'profile.export': 'Save profile CSV',
-  'profile.hint': 'The profile is shown for the selected line (or the last one added).',
+  'profile.hint': 'The profile is shown for the selected line.',
   'distribution.title': 'Temperature distribution',
   'distribution.pixels': 'pixels; hover over a bar',
   'distribution.from': 'From',

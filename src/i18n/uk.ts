@@ -98,7 +98,7 @@ export const uk = {
   'profile.points': 'точок; наведіть курсор на графік',
   'profile.index': '№',
   'profile.export': 'Зберегти профіль CSV',
-  'profile.hint': 'Профіль показується для вибраної лінії (або останньої доданої).',
+  'profile.hint': 'Профіль показується для вибраної лінії.',
   'distribution.title': 'Розподіл температур',
   'distribution.pixels': 'пікселів; наведіть курсор на стовпець',
   'distribution.from': 'Від',

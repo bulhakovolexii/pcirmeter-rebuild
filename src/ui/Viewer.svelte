@@ -249,20 +249,15 @@
     viewport?.focus()
   }
 
-  // Профіль: вибрана лінія, а якщо вибрано не лінію — остання додана
-  const profileObject = $derived(
-    selected?.shape.kind === 'line' ? selected : objects.findLast((o) => o.shape.kind === 'line'),
-  )
+  // Профіль — лише для вибраної лінії, розподіл температур — лише для вибраного прямокутника
+  const profileObject = $derived(selected?.shape.kind === 'line' ? selected : undefined)
   const profile = $derived(profileObject ? lineProfile(ir, profileObject, overrides) : [])
   let profileHover = $state<number | null>(null)
   const profileMarker = $derived(
     profileHover !== null && profileHover < profile.length ? profile[profileHover]! : null,
   )
 
-  // Розподіл температур: вибраний прямокутник, а якщо вибрано не його — останній доданий
-  const distributionObject = $derived(
-    selected?.shape.kind === 'rect' ? selected : objects.findLast((o) => o.shape.kind === 'rect'),
-  )
+  const distributionObject = $derived(selected?.shape.kind === 'rect' ? selected : undefined)
   const distribution = $derived(distributionObject ? areaDistribution(ir, distributionObject, overrides) : [])
 
   function download(href: string, suffix: string) {
