@@ -6,9 +6,7 @@
     autoScale,
     measurementRange,
     objectParams,
-    PARAM_LIMITS,
     temperatureModel,
-    type EditableParam,
     type ObjectParams,
   } from '../core/temperature'
   import { fromCelsius, toCelsius } from '../core/units'
@@ -19,22 +17,27 @@
     formatNumber,
     formatSavedAt,
     formatTemperature,
-    LENGTH_SYMBOL,
     TEMPERATURE_SYMBOL,
     temperatureStatus,
   } from './format'
-  import {
-    displayLimits,
-    displayValue,
-    isChanged,
-    PARAM_FIELDS,
-    paramDigits,
-    paramsForm,
-    paramStep,
-    parseParam,
-    type Units,
-  } from './params'
+  import type { Units } from './params'
+  import ParamsPanel from './ParamsPanel.svelte'
+  import ResultsTable from './ResultsTable.svelte'
+  import { measureObjects, resultsCsv } from './results'
   import { units } from './settings'
+  import {
+    dragShape,
+    drawingHandle,
+    framePixel,
+    hitTest,
+    isDegenerate,
+    newShape,
+    nextName,
+    type Handle,
+    type Hit,
+    type MeasureObject,
+    type ShapeKind,
+  } from './tools'
 
   interface Props {
     file: OpenedFile
@@ -49,39 +52,12 @@
   const ir = $derived(file.thermogram.ir)
   const info = $derived(file.thermogram.info)
 
-  // Параметри об'єкта: модель отримує лише змінені користувачем значення, решта — з файлу
+  // Параметри кадру: модель отримує лише змінені користувачем значення, решта — з файлу
   const fileParams = $derived(objectParams(ir.params))
   let overrides = $state<Partial<ObjectParams>>({})
   const params = $derived({ ...fileParams, ...overrides })
   const model = $derived(temperatureModel(ir, overrides))
-  /** Значення полів в одиницях показу; модель змінюється лише при введенні, не при зміні одиниць. */
-  let paramsInput = $state<Record<EditableParam, number | null>>(
-    untrack(() => paramsForm(objectParams(ir.params), $units)),
-  )
-  const paramsChanged = $derived(PARAM_FIELDS.some((k) => isChanged(k, params[k], fileParams[k], $units)))
 
-  function setParam(key: EditableParam, input: number) {
-    const value = parseParam(key, input, $units)
-    if (value !== null) overrides = { ...overrides, [key]: value }
-  }
-
-  function resetParams() {
-    overrides = {}
-    paramsInput = paramsForm(fileParams, $units)
-  }
-
-  function paramUnit(key: EditableParam, u: Units): string {
-    switch (key) {
-      case 'emissivity':
-        return ''
-      case 'humidity':
-        return '%'
-      case 'distance':
-        return LENGTH_SYMBOL[u.length][$locale]
-      default:
-        return TEMPERATURE_SYMBOL[u.temperature]
-    }
-  }
   const auto = $derived(autoScale(ir, model))
   const range = $derived(measurementRange(ir.params.tempRange))
   const extremes = $derived(frameExtremes(ir))
@@ -124,7 +100,6 @@
   $effect(() => {
     const u = $units
     untrack(() => {
-      paramsInput = paramsForm(params, u)
       scaleInput = { min: showTemp(manualLimits.min, u), max: showTemp(manualLimits.max, u) }
     })
   })
@@ -177,24 +152,127 @@
     return () => el.removeEventListener('wheel', onWheel)
   })
 
+  // Об'єкти аналізу (docs/spec/features.md §2.4)
+  /** Допуск попадання в об'єкт, екранних пікселів. */
+  const HIT_PX = 6
+  let tool = $state<'select' | ShapeKind>('select')
+  let objects = $state<MeasureObject[]>([])
+  let selectedId = $state<number | null>(null)
+  let nextId = 1
+  const selected = $derived(objects.find((o) => o.id === selectedId) ?? null)
+  const results = $derived(measureObjects(ir, objects, overrides))
+  const selectedResult = $derived(results.find((r) => r.object.id === selectedId) ?? null)
+
+  function updateObject(id: number, patch: Partial<MeasureObject>) {
+    objects = objects.map((o) => (o.id === id ? { ...o, ...patch } : o))
+  }
+
+  function deleteSelected() {
+    objects = objects.filter((o) => o.id !== selectedId)
+    selectedId = null
+  }
+
+  function deleteAll() {
+    objects = []
+    selectedId = null
+  }
+
+  function selectTool(next: 'select' | ShapeKind) {
+    tool = next
+    viewport?.focus()
+  }
+
+  function exportCsv() {
+    const csv = resultsCsv(results, $locale, $units, $tr)
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${file.name.replace(/\.[^.]+$/, '')}_results.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  /** Зсув перетягуванням або редагування об'єкта: `start` — фігура на початку перетягування. */
   let drag: { x: number; y: number; panX: number; panY: number } | null = null
+  let edit: {
+    id: number
+    handle: Handle
+    from: [number, number]
+    start: MeasureObject['shape']
+    creating: boolean
+  } | null = null
   let hover: { x: number; y: number } | null = $state(null)
+  let hoverHit = $state<Hit | null>(null)
+
+  /** Неперервні координати кадру під курсором. */
+  function framePoint(e: PointerEvent): [number, number] {
+    const rect = viewport!.getBoundingClientRect()
+    return [(e.clientX - rect.left - panX) / zoom, (e.clientY - rect.top - panY) / zoom]
+  }
 
   function updateHover(e: PointerEvent) {
-    const rect = viewport!.getBoundingClientRect()
-    const x = Math.floor((e.clientX - rect.left - panX) / zoom)
-    const y = Math.floor((e.clientY - rect.top - panY) / zoom)
+    const [fx, fy] = framePoint(e)
+    const x = Math.floor(fx)
+    const y = Math.floor(fy)
     hover = x >= 0 && y >= 0 && x < ir.width && y < ir.height ? { x, y } : null
+    hoverHit =
+      tool === 'select' && !drag && !edit ? hitTest(objects, fx, fy, HIT_PX / zoom, selectedId) : null
+  }
+
+  function startPan(e: PointerEvent) {
+    drag = { x: e.clientX, y: e.clientY, panX, panY }
   }
 
   function onPointerDown(e: PointerEvent) {
-    if (e.button !== 0) return
-    drag = { x: e.clientX, y: e.clientY, panX, panY }
+    if (e.button !== 0 && e.button !== 1) return
     viewport!.setPointerCapture(e.pointerId)
+    // Середня кнопка — зсув у будь-якому режимі
+    if (e.button === 1) {
+      e.preventDefault()
+      startPan(e)
+      return
+    }
+    const [fx, fy] = framePoint(e)
+    if (tool === 'select') {
+      const hit = hitTest(objects, fx, fy, HIT_PX / zoom, selectedId)
+      if (hit) {
+        selectedId = hit.id
+        const shape = objects.find((o) => o.id === hit.id)!.shape
+        edit = {
+          id: hit.id,
+          handle: hit.handle,
+          from: framePixel(fx, fy, ir.width, ir.height),
+          start: shape,
+          creating: false,
+        }
+      } else {
+        selectedId = null
+        startPan(e)
+      }
+      return
+    }
+    if (fx < 0 || fy < 0 || fx >= ir.width || fy >= ir.height) {
+      startPan(e)
+      return
+    }
+    const px = framePixel(fx, fy, ir.width, ir.height)
+    const object: MeasureObject = {
+      id: nextId++,
+      name: nextName(objects, tool),
+      shape: newShape(tool, px),
+      overrides: {},
+    }
+    objects = [...objects, object]
+    selectedId = object.id
+    edit = { id: object.id, handle: drawingHandle(tool), from: px, start: object.shape, creating: true }
   }
 
   function onPointerMove(e: PointerEvent) {
-    if (drag) {
+    if (edit) {
+      const [fx, fy] = framePoint(e)
+      const to = framePixel(fx, fy, ir.width, ir.height)
+      updateObject(edit.id, { shape: dragShape(edit.start, edit.handle, edit.from, to, ir.width, ir.height) })
+    } else if (drag) {
       panX = drag.panX + e.clientX - drag.x
       panY = drag.panY + e.clientY - drag.y
       autoFit = false
@@ -203,13 +281,43 @@
   }
 
   function onPointerUp(e: PointerEvent) {
+    // Клік без перетягування в режимі прямокутника/лінії нічого не додає
+    if (edit?.creating) {
+      const id = edit.id
+      const created = objects.find((o) => o.id === id)
+      if (created && isDegenerate(created.shape)) {
+        objects = objects.filter((o) => o.id !== id)
+        selectedId = null
+      }
+    }
+    edit = null
     drag = null
     if (viewport!.hasPointerCapture(e.pointerId)) viewport!.releasePointerCapture(e.pointerId)
   }
 
+  const CURSORS: Record<Handle, string> = {
+    move: 'move',
+    nw: 'nwse-resize',
+    se: 'nwse-resize',
+    ne: 'nesw-resize',
+    sw: 'nesw-resize',
+    start: 'pointer',
+    end: 'pointer',
+  }
+  const viewportCursor = $derived(hoverHit ? CURSORS[hoverHit.handle] : 'crosshair')
+
   function onKeyDown(e: KeyboardEvent) {
     const step = 40
     switch (e.key) {
+      case 'Delete':
+      case 'Backspace':
+        if (selectedId === null) return
+        deleteSelected()
+        break
+      case 'Escape':
+        selectedId = null
+        tool = 'select'
+        break
       case '+':
       case '=':
         zoomTo(zoom * ZOOM_STEP)
@@ -259,6 +367,23 @@
   )
 
   const fmt = (t: number) => formatTemperature(t, $locale, $units.temperature)
+
+  /** Екранна точка центру пікселя кадру. */
+  const sx = (x: number) => panX + (x + 0.5) * zoom
+  const sy = (y: number) => panY + (y + 0.5) * zoom
+  const pixelAt = (i: number) => ({ x: sx(i % ir.width), y: sy(Math.floor(i / ir.width)) })
+
+  // Max/Min усередині прямокутників і ліній
+  const objectMarkers = $derived(
+    results.flatMap((r) =>
+      r.object.shape.kind === 'point' || r.stats.maxAt < 0
+        ? []
+        : [
+            { key: `${r.object.id}-max`, kind: 'max', ...pixelAt(r.stats.maxAt) },
+            { key: `${r.object.id}-min`, kind: 'min', ...pixelAt(r.stats.minAt) },
+          ],
+    ),
+  )
 </script>
 
 <div class="viewer">
@@ -321,37 +446,29 @@
       {/if}
     </fieldset>
 
-    <fieldset class="params">
-      <legend>{$tr('params.title')}</legend>
-      {#each PARAM_FIELDS as key (key)}
-        {@const unit = paramUnit(key, $units)}
-        {@const invalid = parseParam(key, paramsInput[key], $units) === null}
-        {@const changed = isChanged(key, params[key], fileParams[key], $units)}
-        {@const show = (v: number) =>
-          `${formatNumber(displayValue(key, v, $units), $locale, paramDigits(key))}${unit ? ` ${unit}` : ''}`}
-        <label class="field" class:changed>
-          <span>{$tr(`params.${key}`)}{unit ? `, ${unit}` : ''}</span>
-          <input
-            type="number"
-            min={displayLimits(key, $units).min}
-            max={displayLimits(key, $units).max}
-            step={paramStep(key)}
-            aria-invalid={invalid}
-            bind:value={paramsInput[key]}
-            oninput={(e) => setParam(key, e.currentTarget.valueAsNumber)}
-          />
-        </label>
-        {#if invalid}
-          <p class="warning" role="alert">
-            {$tr('params.allowed')}: {show(PARAM_LIMITS[key].min)} … {show(PARAM_LIMITS[key].max)}
-          </p>
-        {:else if changed}
-          <p class="note">{$tr('params.fromFile')}: {show(fileParams[key])}</p>
-        {/if}
-      {/each}
-      <p class="note">{$tr('params.tau')} = {formatNumber(model.tau, $locale, 3)}</p>
-      <button type="button" disabled={!paramsChanged} onclick={resetParams}>{$tr('params.reset')}</button>
-    </fieldset>
+    <ParamsPanel
+      title={$tr('params.title')}
+      base={fileParams}
+      {overrides}
+      onchange={(o) => (overrides = o)}
+      baseLabel={$tr('params.fromFile')}
+      resetLabel={$tr('params.reset')}
+      tau={model.tau}
+    />
+
+    {#if selected && selectedResult}
+      {#key selected.id}
+        <ParamsPanel
+          title="{$tr('objectParams.title')} {selected.name}"
+          base={params}
+          overrides={selected.overrides}
+          onchange={(o) => updateObject(selected.id, { overrides: o })}
+          baseLabel={$tr('objectParams.inherit')}
+          resetLabel={$tr('objectParams.reset')}
+          tau={temperatureModel(ir, { ...overrides, ...selected.overrides }).tau}
+        />
+      {/key}
+    {/if}
 
     <label class="check">
       <input type="checkbox" bind:checked={showExtremes} />
@@ -400,13 +517,33 @@
 
   <section class="image-area">
     <div class="toolbar">
+      <div class="tools" role="radiogroup" aria-label={$tr('tools.title')}>
+        {#each ['select', 'point', 'rect', 'line'] as const as t (t)}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={tool === t}
+            class:active={tool === t}
+            onclick={() => selectTool(t)}
+          >
+            {$tr(`tools.${t}`)}
+          </button>
+        {/each}
+      </div>
+      <button type="button" disabled={selectedId === null} onclick={deleteSelected}
+        >{$tr('tools.deleteSelected')}</button
+      >
+      <button type="button" disabled={objects.length === 0} onclick={deleteAll}
+        >{$tr('tools.deleteAll')}</button
+      >
+      <span class="sep"></span>
       <button type="button" onclick={() => zoomTo(zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}>−</button>
       <span class="zoom">{Math.round(zoom * 100)} %</span>
       <button type="button" onclick={() => zoomTo(zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button>
       <button type="button" onclick={() => (autoFit = true)}>{$tr('view.fit')}</button>
       <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
-      <span class="muted hint">{$tr('view.hint')}</span>
     </div>
+    <p class="muted hint">{$tr(`tools.hint.${tool}`)}. {$tr('view.hint')}. {$tr('tools.keys')}.</p>
     <div class="stage">
       <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -419,11 +556,16 @@
         aria-label={$tr('view.image')}
         tabindex="0"
         onpointerdown={onPointerDown}
+        onmousedown={(e) => {
+          // Середня кнопка — зсув, а не автопрокрутка браузера
+          if (e.button === 1) e.preventDefault()
+        }}
         onpointermove={onPointerMove}
         onpointerup={onPointerUp}
         onpointercancel={onPointerUp}
         onpointerleave={() => (hover = null)}
         onkeydown={onKeyDown}
+        style:cursor={viewportCursor}
       >
         <canvas
           bind:this={canvas}
@@ -434,8 +576,43 @@
           style:width="{ir.width * zoom}px"
           style:height="{ir.height * zoom}px"
         ></canvas>
-        {#if showExtremes}
-          <svg class="overlay" aria-hidden="true">
+        <svg class="overlay" aria-hidden="true">
+          {#each objects as o (o.id)}
+            {@const sh = o.shape}
+            {@const sel = o.id === selectedId}
+            <g class="object" class:selected={sel}>
+              {#if sh.kind === 'point'}
+                <path class="shape" d="M {sx(sh.x) - 6} {sy(sh.y) - 6} l 12 12 m 0 -12 l -12 12" />
+                <text x={sx(sh.x) + 8} y={sy(sh.y) + 14}>{o.name}</text>
+              {:else if sh.kind === 'rect'}
+                {@const x = panX + sh.x0 * zoom}
+                {@const y = panY + sh.y0 * zoom}
+                {@const w = (sh.x1 - sh.x0 + 1) * zoom}
+                {@const h = (sh.y1 - sh.y0 + 1) * zoom}
+                <rect class="shape" {x} {y} width={w} height={h} />
+                <text x={x + 4} y={y + 14}>{o.name}</text>
+                {#if sel}
+                  {#each [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as [hx, hy], i (i)}
+                    <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                  {/each}
+                {/if}
+              {:else}
+                <line class="shape" x1={sx(sh.x0)} y1={sy(sh.y0)} x2={sx(sh.x1)} y2={sy(sh.y1)} />
+                <text x={sx(sh.x0) + 6} y={sy(sh.y0) - 6}>{o.name}</text>
+                {#if sel}
+                  {#each [[sx(sh.x0), sy(sh.y0)], [sx(sh.x1), sy(sh.y1)]] as [hx, hy], i (i)}
+                    <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                  {/each}
+                {/if}
+              {/if}
+            </g>
+          {/each}
+          {#each objectMarkers as m (m.key)}
+            <g class="marker small {m.kind}" transform="translate({m.x} {m.y})">
+              <path d="M -6 0 H 6 M 0 -6 V 6" />
+            </g>
+          {/each}
+          {#if showExtremes}
             {#each markers as m (m.kind)}
               <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
                 <circle r="7" />
@@ -443,11 +620,13 @@
                 <text x="12" y="-8">{m.label}</text>
               </g>
             {/each}
-          </svg>
-        {/if}
+          {/if}
+        </svg>
       </div>
       <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} />
     </div>
+
+    <ResultsTable {results} {selectedId} onselect={(id) => (selectedId = id)} onexport={exportCsv} />
   </section>
 </div>
 
@@ -500,32 +679,14 @@
     gap: 8px;
     margin-top: 8px;
   }
-  .limits input,
-  .params input {
+  .limits input {
     width: 100%;
     box-sizing: border-box;
   }
-  .params {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .params .changed span {
-    font-weight: 600;
-  }
-  .params .changed input {
-    border-color: var(--accent);
-  }
-  .params .warning,
   .note {
-    margin: -2px 0 2px;
+    margin: 4px 0 0;
     font-size: 0.8rem;
-  }
-  .note {
     color: var(--muted);
-  }
-  .params button {
-    align-self: flex-start;
   }
   .check {
     display: flex;
@@ -588,8 +749,31 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
   }
+  .tools {
+    display: flex;
+  }
+  .tools button {
+    border-radius: 0;
+    margin-left: -1px;
+  }
+  .tools button:first-child {
+    border-radius: 4px 0 0 4px;
+    margin-left: 0;
+  }
+  .tools button:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+  .tools button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    position: relative;
+  }
+  .sep {
+    flex: 1;
+  }
   .hint {
-    margin-left: auto;
+    margin: 0;
     font-size: 0.8rem;
   }
   .stage {
@@ -636,6 +820,25 @@
   .marker.min path {
     stroke: #0ff;
   }
+  .marker.small path {
+    stroke-width: 1.5;
+  }
+  .object .shape {
+    fill: none;
+    stroke: #a6ff4d;
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 1px #000);
+  }
+  .object.selected .shape {
+    stroke: #ffd60a;
+    stroke-width: 2.5;
+  }
+  .object .handle {
+    fill: #ffd60a;
+    stroke: #000;
+    stroke-width: 1;
+  }
+  .object text,
   .marker text {
     fill: #fff;
     font-size: 12px;

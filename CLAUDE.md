@@ -59,9 +59,12 @@
   Фікстури з `irtemp.py`: `python3 -I tools/export_temperature_fixtures.py` → `tests/fixtures/temperature/*.json`.
 - Палітри: `python3 -I tools/export_palettes.py` → `tools/palettes.json` → `src/core/palettes.ts`; рендер кадру —
   `src/core/render.ts`. Візуальна звірка без браузера: `tools/render_png.ts` (запуск — у шапці файлу, через rolldown).
-- UI переглядача: `src/ui/App.svelte` (файли, вкладки, одиниці), `Viewer.svelte` (у т.ч. панель параметрів), `ColorBar.svelte`;
-  логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), store одиниць — `settings.ts`
-  (тестуються в Node). Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Браузера в sandbox немає — UI перевіряє викладач.
+- UI переглядача: `src/ui/App.svelte` (файли, вкладки, одиниці), `Viewer.svelte` (зображення, інструменти, накладення),
+  `ParamsPanel.svelte` (параметри кадру / об'єкта), `ResultsTable.svelte`, `ColorBar.svelte`;
+  логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
+  об'єктів), `results.ts` (вимірювання, CSV), store одиниць — `settings.ts` (тестуються в Node).
+- Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур і статистика по пікселях кадру (`temperature.md`).
+- У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Браузера в sandbox немає — UI перевіряє викладач.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;

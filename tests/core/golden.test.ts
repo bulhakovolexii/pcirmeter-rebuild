@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parseThermogram, type IrImage } from '../../src/core/parser'
+import { objectPixels, pixelStats, rectFromCorners } from '../../src/core/objects'
 import { autoScale, frameTemperatures, temperatureModel, type ObjectParams } from '../../src/core/temperature'
 
 // Еталони оригінальної програми (docs/golden-guide.md, частина А): tools/export_golden.py → reference.json.
@@ -67,9 +68,16 @@ describe('ядро проти оригінальної програми (час�
 })
 
 // Частина Б: положення об'єктів відновлено зі скриншотів (tools/fit_objects.py → objects.json).
-// Область і лінія — у I-11, коли з'явиться статистика об'єктів.
+type Stats = Record<'max' | 'min' | 'avg', number>
 const objects = JSON.parse(readFileSync(join(root, 'tests', 'golden', 'objects.json'), 'utf8')) as {
-  files: { id: string; file: string; points: { name: string; x: number; y: number; expected: number }[] }[]
+  files: {
+    id: string
+    file: string
+    control: [number, number]
+    points: { name: string; x: number; y: number; expected: number }[]
+    rect: { irRect: [number, number, number, number]; expected: Stats }
+    line: { control: [number, number, number, number]; expected: Stats }
+  }[]
 }
 
 describe('ядро проти оригінальної програми (частина Б, точки)', () => {
@@ -83,6 +91,49 @@ describe('ядро проти оригінальної програми (час�
         expect(Math.abs(t - p.expected), `${p.name}: ядро ${t}, оригінал ${p.expected}`).toBeLessThanOrEqual(
           DISPLAY_TOL,
         )
+      }
+    })
+  }
+})
+
+/**
+ * Оригінал рахує по екранних пікселях, ми — по пікселях кадру (docs/spec/temperature.md, «Об'єкти аналізу»).
+ * Прямокутник і середнє лінії: різняться лише ваги крайніх пікселів — округлення показу + 0,1 °C.
+ * Max/min лінії: екранна дискретизація оригіналу захоплює сусідні з ідеальною лінією пікселі кадру
+ * (F5: 80 точок проти 72), на різкому краї це до 0,5 °C.
+ */
+const SEMANTICS_TOL = 0.15 + 1e-6
+const LINE_EXTREMES_TOL = 0.55
+
+describe('ядро проти оригінальної програми (частина Б, прямокутник і лінія)', () => {
+  for (const f of objects.files) {
+    const path = join(root, 'samples', f.file)
+    it.skipIf(!existsSync(path))(`${f.id} ${f.file}`, () => {
+      const ir = loadIr(path)
+      const temps = frameTemperatures(ir, temperatureModel(ir))
+      const [x0, y0, x1, y1] = f.rect.irRect
+      const rect = pixelStats(temps, objectPixels(rectFromCorners(x0, y0, x1, y1), ir.width, ir.height))
+      // Кінці лінії: екранна точка → піксель кадру, як в оригіналі (int(x / zoom))
+      const zx = f.control[0] / ir.width
+      const zy = f.control[1] / ir.height
+      const [lx0, ly0, lx1, ly1] = f.line.control
+      const shape = {
+        kind: 'line' as const,
+        x0: Math.trunc(lx0 / zx),
+        y0: Math.trunc(ly0 / zy),
+        x1: Math.trunc(lx1 / zx),
+        y1: Math.trunc(ly1 / zy),
+      }
+      const line = pixelStats(temps, objectPixels(shape, ir.width, ir.height))
+      for (const [name, got, expected] of [
+        ['R1', rect, f.rect.expected],
+        ['L1', line, f.line.expected],
+      ] as const) {
+        for (const key of ['max', 'min', 'avg'] as const) {
+          const diff = Math.abs(got[key] - expected[key])
+          const tol = name === 'L1' && key !== 'avg' ? LINE_EXTREMES_TOL : SEMANTICS_TOL
+          expect(diff, `${name} ${key}: ядро ${got[key]}, оригінал ${expected[key]}`).toBeLessThanOrEqual(tol)
+        }
       }
     })
   }

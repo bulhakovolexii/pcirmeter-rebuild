@@ -84,7 +84,7 @@ describe('App', () => {
   it("показує параметри об'єкта з файлу і τ", async () => {
     const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
     const { body } = render(App, { props: { initialFiles: opened } })
-    expect(body).toContain("Параметри об'єкта")
+    expect(body).toContain('Параметри кадру')
     // Значення з файлу: ε 0,95, T_відб 25 °C, RH 60 %, d 5 м
     expect(body).toContain('value="0.95"')
     expect(body).toContain('value="60"')
@@ -92,6 +92,17 @@ describe('App', () => {
     expect(body).toContain('Відстань, м')
     expect(body).toContain('Пропускання атмосфери τ')
     expect(body).toContain('Скинути до значень із файлу')
+  })
+
+  it('показує інструменти аналізу й порожню таблицю результатів', async () => {
+    const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
+    const { body } = render(App, { props: { initialFiles: opened } })
+    for (const label of ['Вибір', 'Точка', 'Прямокутник', 'Лінія', 'Видалити вибране', 'Видалити все']) {
+      expect(body).toContain(label)
+    }
+    expect(body).toContain('Результати')
+    expect(body).toContain('Зберегти CSV')
+    expect(body).toContain('Додайте точку')
   })
 
   it('показує температури у вибраних одиницях', async () => {
