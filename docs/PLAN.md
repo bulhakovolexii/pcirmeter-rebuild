@@ -179,6 +179,8 @@ MVP (погоджено в I-07, див. `docs/spec/features.md` §4) = I-09…I
   `src/ui/{isotherms,chart}.ts`, `lineProfile`/`profileCsv` у `results.ts`; компоненти `ProfileChart.svelte`,
   `IsothermPanel.svelte`, `Histogram.svelte`; смуги ізотерм на `ColorBar`; профіль поруч із таблицею результатів.
   Викладач перевірив у браузері — все ок, рішення щодо ізотерм прийнято (2026-10-22). I-12 ✅.
+- **Поза планом (2026-10-22):** розподіл температур прямокутника (стовпчаста діаграма оригіналу, 5 діапазонів між
+  Min і Max) — `temperatureBins`, `areaDistribution`, `DistributionChart.svelte`, CSV; `features.md` §2.4. Чекає перевірки в браузері.
 
 ### I-13 Видиме фото поруч, накладення, текст, аудіо
 - Що є у зразках: видиме фото (блок type 4, JPEG 640×480 / 1280×960) — у всіх 26 файлах; тексту (type 3) й аудіо

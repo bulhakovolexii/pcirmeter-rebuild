@@ -1,6 +1,13 @@
 /** Результати вимірювань об'єктів і їхній експорт у CSV — без DOM. */
 
-import { objectPixels, pixelStats, type PixelStats, type Shape } from '../core/objects'
+import {
+  objectPixels,
+  pixelStats,
+  temperatureBins,
+  type PixelStats,
+  type Shape,
+  type TemperatureBin,
+} from '../core/objects'
 import type { IrImage } from '../core/parser'
 import {
   frameTemperatures,
@@ -89,6 +96,23 @@ export function lineProfile(
     y: Math.floor(i / ir.width),
     t: model.toCelsius(ir.ad[i]!),
   }))
+}
+
+/** Кількість діапазонів розподілу температур прямокутника — як в оригіналі. */
+export const DISTRIBUTION_BINS = 5
+
+/**
+ * Розподіл температур прямокутника (кількість пікселів у рівних діапазонах між його min і max),
+ * з параметрами об'єкта поверх параметрів кадру — ті самі min/max, що в таблиці результатів.
+ */
+export function areaDistribution(
+  ir: IrImage,
+  object: MeasureObject,
+  frameOverrides: Partial<ObjectParams> = {},
+  bins = DISTRIBUTION_BINS,
+): TemperatureBin[] {
+  const temps = frameTemperatures(ir, temperatureModel(ir, { ...frameOverrides, ...object.overrides }))
+  return temperatureBins(temps, objectPixels(object.shape, ir.width, ir.height), bins)
 }
 
 /** Координати фігури в пікселях кадру: `x, y` або `x0, y0 – x1, y1`. */
@@ -188,6 +212,32 @@ export function profileCsv(
       String(p.x),
       String(p.y),
       csvNumber(fromCelsius(p.t, unit), locale, 1),
+    ]),
+  ])
+}
+
+/** Розподіл температур у CSV (формат як у `resultsCsv`): від, до (в одиницях показу), пікселів, частка %. */
+export function distributionCsv(
+  bins: readonly TemperatureBin[],
+  locale: Locale,
+  unit: TemperatureUnit,
+  t: (key: MessageKey) => string,
+): string {
+  const symbol = TEMPERATURE_SYMBOL[unit]
+  const total = bins.reduce((sum, b) => sum + b.count, 0)
+  const temp = (c: number) => csvNumber(fromCelsius(c, unit), locale, 1)
+  return csvTable([
+    [
+      `${t('distribution.from')}, ${symbol}`,
+      `${t('distribution.to')}, ${symbol}`,
+      t('results.pixels'),
+      t('distribution.share'),
+    ],
+    ...bins.map((b) => [
+      temp(b.from),
+      temp(b.to),
+      String(b.count),
+      csvNumber(total ? (b.count / total) * 100 : 0, locale, 1),
     ]),
   ])
 }

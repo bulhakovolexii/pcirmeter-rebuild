@@ -21,6 +21,7 @@
   import { locale, tr } from '../i18n'
   import { audioType, decodeUserText } from './attachments'
   import ColorBar from './ColorBar.svelte'
+  import DistributionChart from './DistributionChart.svelte'
   import type { OpenedFile } from './files'
   import {
     formatNumber,
@@ -38,7 +39,14 @@
   import PhotoPanel from './PhotoPanel.svelte'
   import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
-  import { lineProfile, measureObjects, profileCsv, resultsCsv } from './results'
+  import {
+    areaDistribution,
+    distributionCsv,
+    lineProfile,
+    measureObjects,
+    profileCsv,
+    resultsCsv,
+  } from './results'
   import {
     clampPhotoSplit,
     clampSidebarWidth,
@@ -251,6 +259,12 @@
     profileHover !== null && profileHover < profile.length ? profile[profileHover]! : null,
   )
 
+  // Розподіл температур: вибраний прямокутник, а якщо вибрано не його — останній доданий
+  const distributionObject = $derived(
+    selected?.shape.kind === 'rect' ? selected : objects.findLast((o) => o.shape.kind === 'rect'),
+  )
+  const distribution = $derived(distributionObject ? areaDistribution(ir, distributionObject, overrides) : [])
+
   function download(href: string, suffix: string) {
     const a = document.createElement('a')
     a.href = href
@@ -271,6 +285,15 @@
   function exportProfile() {
     if (profileObject) {
       downloadCsv(profileCsv(profile, $locale, $units.temperature, $tr), `profile_${profileObject.name}`)
+    }
+  }
+
+  function exportDistribution() {
+    if (distributionObject) {
+      downloadCsv(
+        distributionCsv(distribution, $locale, $units.temperature, $tr),
+        `distribution_${distributionObject.name}`,
+      )
     }
   }
 
@@ -824,6 +847,14 @@
           hoverIndex={profileHover}
           onhover={(k) => (profileHover = k)}
           onexport={exportProfile}
+        />
+      {/if}
+      {#if distributionObject}
+        <DistributionChart
+          name={distributionObject.name}
+          bins={distribution}
+          rgb={palette(paletteId)}
+          onexport={exportDistribution}
         />
       {/if}
     </div>

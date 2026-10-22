@@ -8,11 +8,18 @@ import { palette } from '../../src/core/palettes'
 import { temperatureModel } from '../../src/core/temperature'
 import { uk } from '../../src/i18n/uk'
 import { niceTicks, tickDigits } from '../../src/ui/chart'
+import DistributionChart from '../../src/ui/DistributionChart.svelte'
 import Histogram from '../../src/ui/Histogram.svelte'
 import IsothermPanel from '../../src/ui/IsothermPanel.svelte'
 import { defaultIsotherms, hexToRgb, isothermBand, type IsothermState } from '../../src/ui/isotherms'
 import ProfileChart from '../../src/ui/ProfileChart.svelte'
-import { lineProfile, measureObjects, profileCsv } from '../../src/ui/results'
+import {
+  areaDistribution,
+  distributionCsv,
+  lineProfile,
+  measureObjects,
+  profileCsv,
+} from '../../src/ui/results'
 import { units } from '../../src/ui/settings'
 import type { MeasureObject } from '../../src/ui/tools'
 
@@ -52,6 +59,41 @@ describe('профіль лінії', () => {
     ]
     expect(profileCsv(points, 'uk', 'C', t)).toBe('﻿№;x;y;T, °C\r\n1;1;2;25,0\r\n2;2;2;\r\n')
     expect(profileCsv(points.slice(0, 1), 'en', 'F', t)).toContain('1;1;2;77.1\r\n')
+  })
+})
+
+describe('розподіл температур прямокутника', () => {
+  const rect: MeasureObject = {
+    id: 2,
+    name: 'R1',
+    shape: { kind: 'rect', x0: 20, y0: 30, x1: 69, y1: 59 },
+    overrides: {},
+  }
+
+  it('5 діапазонів між min і max таблиці результатів, сума — усі пікселі', () => {
+    const bins = areaDistribution(ir, rect)
+    const [row] = measureObjects(ir, [rect])
+    expect(bins).toHaveLength(5)
+    expect(bins[0]!.from).toBeCloseTo(row!.stats.min, 4)
+    expect(bins[4]!.to).toBeCloseTo(row!.stats.max, 4)
+    expect(bins.reduce((sum, b) => sum + b.count, 0)).toBe(row!.stats.count - row!.stats.invalid)
+  })
+
+  it('з параметрами об’єкта поверх параметрів кадру', () => {
+    const own = { ...rect, overrides: { emissivity: 0.5 } }
+    const [row] = measureObjects(ir, [own], { reflectedTemp: 10 })
+    expect(areaDistribution(ir, own, { reflectedTemp: 10 })[4]!.to).toBeCloseTo(row!.stats.max, 4)
+  })
+
+  it('CSV: від, до (в одиницях показу), пікселів, частка', () => {
+    const bins = [
+      { from: 20, to: 22.5, count: 3 },
+      { from: 22.5, to: 25, count: 1 },
+    ]
+    expect(distributionCsv(bins, 'uk', 'C', t)).toBe(
+      '﻿Від, °C;До, °C;Пікселів;Частка, %\r\n20,0;22,5;3;75,0\r\n22,5;25,0;1;25,0\r\n',
+    )
+    expect(distributionCsv(bins, 'en', 'K', t)).toContain('293.1;295.6;3;75.0\r\n')
   })
 })
 
@@ -156,5 +198,31 @@ describe('компоненти аналізу (смоук)', () => {
     expect(body).toMatch(/<rect x="200" y="50" width="1" height="50"/)
     expect(body).toContain('fill="#008000"')
     expect(body).toContain('40,0 °C')
+  })
+
+  it('розподіл температур: назва, стовпці з градієнтом палітри, межі діапазонів, кількість', () => {
+    const bins = [
+      { from: 20, to: 22, count: 7 },
+      { from: 22, to: 24, count: 0 },
+      { from: 24, to: 26, count: 3 },
+    ]
+    const { body } = render(DistributionChart, {
+      props: { name: 'R1', bins, rgb: palette('grey'), onexport: () => {} },
+    })
+    expect(body).toContain('Розподіл температур R1')
+    expect(body).toContain('10 пікселів')
+    expect(body).toContain('Зберегти розподіл CSV')
+    expect(body.match(/<linearGradient/g)).toHaveLength(3)
+    expect(body).toContain('stop-color="rgb(0,0,0)"')
+    expect(body).toContain('stop-color="rgb(255,255,255)"')
+    for (const edge of ['20,0', '22,0', '24,0', '26,0']) expect(body).toContain(`>${edge}</text>`)
+    expect(body).toContain('>7</text>')
+  })
+
+  it('розподіл температур: без коректних пікселів', () => {
+    const { body } = render(DistributionChart, {
+      props: { name: 'R2', bins: [], rgb: palette('grey'), onexport: () => {} },
+    })
+    expect(body).toContain('Немає пікселів у межах калібрування')
   })
 })

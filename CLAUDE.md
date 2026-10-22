@@ -63,11 +63,11 @@
   `ParamsPanel.svelte` (параметри кадру / об'єкта), `ResultsTable.svelte`, `ColorBar.svelte`;
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
   об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
-  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`. Аналіз: `ProfileChart.svelte`, `IsothermPanel.svelte`, `Histogram.svelte`.
+  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`. Аналіз: `ProfileChart.svelte`, `DistributionChart.svelte` (розподіл температур прямокутника), `IsothermPanel.svelte`, `Histogram.svelte`.
   Видиме фото й накладення — `PhotoPanel.svelte` + `photo.ts` (розміщення, розмір JPEG); масштаб/зсув — `view.ts`;
   текст і аудіо з камери — `attachments.ts`. Синтетичні термограми з додатковими блоками (тексту/аудіо у зразках
   немає) — `tests/support/blocks.ts`.
-- Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур і статистика по пікселях кадру (`temperature.md`);
+- Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур, статистика по пікселях кадру (`temperature.md`) і розподіл на діапазони (`temperatureBins`);
   ізотерми — `src/core/isotherms.ts`, гістограма — `paletteHistogram` у `render.ts` (семантика — `features.md` §2.5).
 - PWA: service worker `src/sw/sw.ts` (окремий `tsconfig.sw.json`, lib `WebWorker`) збирає плагін `vite.pwa.ts`
   у `dist/sw.js` зі списком передкешування й версією-хешем; реєстрація й банер оновлення — `src/ui/pwa.ts` (лише

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { linePoints, objectPixels, pixelStats, rectFromCorners } from '../../src/core/objects'
+import {
+  linePoints,
+  objectPixels,
+  pixelStats,
+  rectFromCorners,
+  temperatureBins,
+} from '../../src/core/objects'
 
 describe('linePoints', () => {
   it('включає обидва кінці й іде від початку до кінця', () => {
@@ -78,5 +84,31 @@ describe('pixelStats', () => {
 
   it('перший піксель з екстремумом — за порядком індексів', () => {
     expect(pixelStats([5, 5, 5], [2, 0, 1]).maxAt).toBe(2)
+  })
+})
+
+describe('temperatureBins', () => {
+  it('рівні діапазони між min і max; межа — у верхньому діапазоні, max — в останньому; NaN не враховується', () => {
+    const temps = [20, 21, 22, 24, 25, 28, 30, NaN, 99]
+    const bins = temperatureBins(temps, [0, 1, 2, 3, 4, 5, 6, 7], 5)
+    expect(bins.map((b) => [b.from, b.to])).toEqual([
+      [20, 22],
+      [22, 24],
+      [24, 26],
+      [26, 28],
+      [28, 30],
+    ])
+    expect(bins.map((b) => b.count)).toEqual([2, 1, 2, 0, 2])
+  })
+
+  it('межі не обрізаються до цілих градусів (на відміну від оригіналу)', () => {
+    const bins = temperatureBins([25, 25.25, 25.5, 25.75, 26, 26.25], [0, 1, 2, 3, 4, 5], 5)
+    expect(bins.map((b) => b.from)).toEqual([25, 25.25, 25.5, 25.75, 26])
+    expect(bins.map((b) => b.count)).toEqual([1, 1, 1, 1, 2])
+  })
+
+  it('однакові температури — усе в першому діапазоні; немає коректних пікселів — порожньо', () => {
+    expect(temperatureBins([5, 5, 5], [0, 1, 2], 5).map((b) => b.count)).toEqual([3, 0, 0, 0, 0])
+    expect(temperatureBins([NaN, NaN], [0, 1], 5)).toEqual([])
   })
 })

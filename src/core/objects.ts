@@ -144,3 +144,45 @@ export function pixelStats(temps: ArrayLike<number>, indices: ArrayLike<number>)
   }
   return { max, min, avg: sum / valid, maxAt, minAt, count: indices.length, invalid: indices.length - valid }
 }
+
+/** Діапазон розподілу температур: [from, to), останній — [from, to]; °C. */
+export interface TemperatureBin {
+  from: number
+  to: number
+  count: number
+}
+
+/**
+ * Розподіл температур фігури на `n` рівних діапазонів між її min і max (`features.md` §2.4). Пікселі поза
+ * калібруванням (`NaN`) не враховуються. Якщо всі пікселі однакові — усе в першому діапазоні нульової ширини;
+ * немає жодного коректного пікселя — порожній масив.
+ */
+export function temperatureBins(
+  temps: ArrayLike<number>,
+  indices: ArrayLike<number>,
+  n: number,
+): TemperatureBin[] {
+  const { min, max } = pixelStats(temps, indices)
+  if (Number.isNaN(min)) return []
+  const step = (max - min) / n
+  const bins = Array.from({ length: n }, (_, k) => ({
+    from: min + step * k,
+    to: k === n - 1 ? max : min + step * (k + 1),
+    count: 0,
+  }))
+  for (let k = 0; k < indices.length; k++) {
+    const t = temps[indices[k]!]!
+    if (Number.isNaN(t)) continue
+    if (step === 0) {
+      bins[0]!.count++
+      continue
+    }
+    // min(…, n − 1): max потрапляє в останній діапазон; звірка з межами — щоб похибка ділення не перенесла
+    // значення, рівне межі, у нижній діапазон
+    let b = Math.min(n - 1, Math.floor((t - min) / step))
+    if (b < n - 1 && t >= bins[b + 1]!.from) b++
+    else if (b > 0 && t < bins[b]!.from) b--
+    bins[b]!.count++
+  }
+  return bins
+}
