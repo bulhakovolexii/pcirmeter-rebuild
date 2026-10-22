@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import { locale, tr } from '../i18n'
   import { openFiles, type FileSource, type OpenError, type OpenedFile } from './files'
   import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
+  import { applyUpdate, dismissOfflineReady, onLaunchFiles, pwa } from './pwa'
   import { units } from './settings'
   import Viewer from './Viewer.svelte'
 
@@ -28,6 +29,9 @@
       activeId = opened[0]!.id
     }
   }
+
+  // Файли, відкриті з ОС через встановлений застосунок
+  onMount(() => onLaunchFiles((launched) => void open(launched)))
 
   function close(id: number) {
     const i = files.findIndex((f) => f.id === id)
@@ -98,6 +102,18 @@
       </select>
     </div>
   </header>
+
+  {#if $pwa.update}
+    <div class="notice" role="status">
+      <span>{$tr('pwa.update')}</span>
+      <button type="button" class="primary" onclick={applyUpdate}>{$tr('pwa.reload')}</button>
+    </div>
+  {:else if $pwa.offlineReady}
+    <div class="notice" role="status">
+      <span>{$tr('pwa.offlineReady')}</span>
+      <button type="button" onclick={dismissOfflineReady}>{$tr('error.dismiss')}</button>
+    </div>
+  {/if}
 
   {#if errors.length > 0}
     <div class="errors" role="alert">
@@ -181,6 +197,17 @@
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
+  }
+  .notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--surface);
   }
   .errors {
     display: flex;

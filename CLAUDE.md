@@ -69,6 +69,11 @@
   немає) — `tests/support/blocks.ts`.
 - Об'єкти аналізу (ядро): `src/core/objects.ts` — пікселі фігур і статистика по пікселях кадру (`temperature.md`);
   ізотерми — `src/core/isotherms.ts`, гістограма — `paletteHistogram` у `render.ts` (семантика — `features.md` §2.5).
+- PWA: service worker `src/sw/sw.ts` (окремий `tsconfig.sw.json`, lib `WebWorker`) збирає плагін `vite.pwa.ts`
+  у `dist/sw.js` зі списком передкешування й версією-хешем; реєстрація й банер оновлення — `src/ui/pwa.ts` (лише
+  production; нова версія чекає на кнопку «Оновити»). Маніфест — `public/manifest.webmanifest`, іконки
+  `public/icons/` генерує `tools/make_icons.ts` (запуск — у шапці файлу). Деплой — job `deploy` у `ci.yml`
+  на push у `main` → https://bulhakov.dev/pcirmeter-rebuild/.
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Браузера в sandbox немає — UI перевіряє викладач.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
@@ -125,7 +130,8 @@ npx -y rea-agents@latest --help              # REA CLI (Node >= 22.19)
 ```
 
 Node — через `bash -l -c "..."` (див. вище). `node_modules` ставиться на хості (macOS): якщо Vitest/Vite у sandbox
-падають з `Cannot find native binding` — `npm install --no-save @rolldown/binding-linux-arm64-gnu@<версія rolldown>`. CI: `.github/workflows/ci.yml` (lint + test + build на кожен push).
+падають з `Cannot find native binding` — `npm install --no-save @rolldown/binding-linux-arm64-gnu@<версія rolldown>`. CI: `.github/workflows/ci.yml` (lint + test + build на кожен push; push у `main` ще й публікує `dist/` на GitHub Pages).
+Перевірити офлайн-збірку локально: `npm run build && npm run preview` (SW у `npm run dev` не реєструється).
 
 ### Структура коду
 
