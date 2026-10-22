@@ -1,0 +1,197 @@
+{
+ "note": "Part B of docs/golden-guide.md. Positions recovered by tools/fit_objects.py (one of several matching candidates nearest to the screenshot estimate). control = size of the original image control, px (hypothesis: screenshot box / 2); rect/line in control px as the original stores them; irRect = IR pixels covered (inclusive). Model: docs/spec/temperature.md.",
+ "files": [
+  {
+   "id": "F1",
+   "file": "latest-2021/20210212_0131.JPG",
+   "control": [
+    497,
+    497
+   ],
+   "points": [
+    {
+     "name": "P1",
+     "x": 26,
+     "y": 17,
+     "ad": 34100,
+     "expected": 56.0
+    },
+    {
+     "name": "P2",
+     "x": 78,
+     "y": 46,
+     "ad": 32719,
+     "expected": 22.9
+    },
+    {
+     "name": "P3",
+     "x": 50,
+     "y": 30,
+     "ad": 33092,
+     "expected": 32.6
+    }
+   ],
+   "rect": {
+    "control": [
+     238,
+     5,
+     483,
+     243
+    ],
+    "irRect": [
+     38,
+     0,
+     77,
+     38
+    ],
+    "expected": {
+     "max": 54.0,
+     "min": 23.6,
+     "avg": 37.6
+    }
+   },
+   "line": {
+    "control": [
+     12,
+     54,
+     203,
+     35
+    ],
+    "pixels": 35,
+    "expected": {
+     "max": 55.4,
+     "min": 52.9,
+     "avg": 54.4
+    }
+   }
+  },
+  {
+   "id": "F5",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "control": [
+    664,
+    498
+   ],
+   "points": [
+    {
+     "name": "P1",
+     "x": 48,
+     "y": 97,
+     "ad": 32513,
+     "expected": 34.6
+    },
+    {
+     "name": "P2",
+     "x": 93,
+     "y": 115,
+     "ad": 32059,
+     "expected": 26.0
+    },
+    {
+     "name": "P3",
+     "x": 97,
+     "y": 39,
+     "ad": 32394,
+     "expected": 32.4
+    }
+   ],
+   "rect": {
+    "control": [
+     9,
+     4,
+     366,
+     263
+    ],
+    "irRect": [
+     2,
+     0,
+     87,
+     63
+    ],
+    "expected": {
+     "max": 34.5,
+     "min": 26.7,
+     "avg": 29.7
+    }
+   },
+   "line": {
+    "control": [
+     225,
+     279,
+     522,
+     328
+    ],
+    "pixels": 80,
+    "expected": {
+     "max": 33.1,
+     "min": 29.0,
+     "avg": 32.2
+    }
+   }
+  },
+  {
+   "id": "F7",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "control": [
+    665,
+    499
+   ],
+   "points": [
+    {
+     "name": "P1",
+     "x": 31,
+     "y": 276,
+     "ad": 32797,
+     "expected": 48.3
+    },
+    {
+     "name": "P2",
+     "x": 267,
+     "y": 67,
+     "ad": 31906,
+     "expected": 18.9
+    },
+    {
+     "name": "P3",
+     "x": 176,
+     "y": 142,
+     "ad": 32077,
+     "expected": 25.3
+    }
+   ],
+   "rect": {
+    "control": [
+     307,
+     231,
+     639,
+     489
+    ],
+    "irRect": [
+     177,
+     133,
+     368,
+     281
+    ],
+    "expected": {
+     "max": 35.9,
+     "min": 22.7,
+     "avg": 26.6
+    }
+   },
+   "line": {
+    "control": [
+     31,
+     450,
+     371,
+     29
+    ],
+    "pixels": 322,
+    "expected": {
+     "max": 37.3,
+     "min": 22.2,
+     "avg": 26.5
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,516 @@
+{
+ "source": "PCIRMeter version: 1.0.8.0; Windows: Windows 11 Pro 25H2 26200.9711; UI language: English; date: 22.10.2026",
+ "steps": [
+  {
+   "id": "F1-S01",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 56.1,
+    "scaleMin": 22.3,
+    "frameMax": 56.0,
+    "frameMin": 22.3
+   }
+  },
+  {
+   "id": "F1-S02",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.9,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 58.9,
+    "scaleMin": 22.6,
+    "frameMax": 58.8,
+    "frameMin": 22.7
+   }
+  },
+  {
+   "id": "F1-S03",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.7,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 68.2,
+    "scaleMin": 23.9,
+    "frameMax": 68.1,
+    "frameMin": 23.9
+   }
+  },
+  {
+   "id": "F1-S04",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.5,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 83.2,
+    "scaleMin": 26.2,
+    "frameMax": 83.1,
+    "frameMin": 26.2
+   }
+  },
+  {
+   "id": "F1-S05",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": -20.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 56.5,
+    "scaleMin": 22.9,
+    "frameMax": 56.4,
+    "frameMin": 22.9
+   }
+  },
+  {
+   "id": "F1-S06",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 60.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 55.3,
+    "scaleMin": 21.2,
+    "frameMax": 55.3,
+    "frameMin": 21.3
+   }
+  },
+  {
+   "id": "F1-S07",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 100.0
+   },
+   "expected": {
+    "scaleMax": 56.7,
+    "scaleMin": 22.2,
+    "frameMax": 56.7,
+    "frameMin": 22.2
+   }
+  },
+  {
+   "id": "F1-S08",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 63.4,
+    "scaleMin": 21.4,
+    "frameMax": 63.3,
+    "frameMin": 21.5
+   }
+  },
+  {
+   "id": "F1-S09",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 1.0,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 69.5,
+    "scaleMin": 20.7,
+    "frameMax": 69.4,
+    "frameMin": 20.7
+   }
+  },
+  {
+   "id": "F1-S10",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 0.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 60.6,
+    "scaleMin": 24.4,
+    "frameMax": 60.6,
+    "frameMin": 24.4
+   }
+  },
+  {
+   "id": "F1-S11",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 40.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 64.2,
+    "scaleMin": 9.9,
+    "frameMax": 64.1,
+    "frameMin": 10.0
+   }
+  },
+  {
+   "id": "F1-S12",
+   "file": "latest-2021/20210212_0131.JPG",
+   "params": {
+    "emissivity": 0.85,
+    "airTemp": 10.0,
+    "reflectedTemp": 30.0,
+    "humidity": 0.8,
+    "distance": 50.0
+   },
+   "expected": {
+    "scaleMax": 59.7,
+    "scaleMin": 20.9,
+    "frameMax": 59.6,
+    "frameMin": 20.9
+   }
+  },
+  {
+   "id": "F2-S01",
+   "file": "latest-2021/20210212_0135.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 23.1,
+    "scaleMin": 15.8,
+    "frameMax": 26.8,
+    "frameMin": 16.2
+   }
+  },
+  {
+   "id": "F3-S01",
+   "file": "latest-2021/20210212_0148.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 5.1,
+    "scaleMin": -2.5,
+    "frameMax": 4.4,
+    "frameMin": -1.8
+   }
+  },
+  {
+   "id": "F3-S02",
+   "file": "latest-2021/20210212_0148.JPG",
+   "params": {
+    "emissivity": 0.7,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": -0.6,
+    "scaleMin": -12.2,
+    "frameMax": 0.0,
+    "frameMin": -11.1
+   }
+  },
+  {
+   "id": "F3-S03",
+   "file": "latest-2021/20210212_0148.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 60.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 3.9,
+    "scaleMin": -3.8,
+    "frameMax": 3.2,
+    "frameMin": -3.1
+   }
+  },
+  {
+   "id": "F3-S05",
+   "file": "latest-2021/20210212_0148.JPG",
+   "params": {
+    "emissivity": 0.85,
+    "airTemp": 10.0,
+    "reflectedTemp": 30.0,
+    "humidity": 0.8,
+    "distance": 50.0
+   },
+   "expected": {
+    "scaleMax": 0.2,
+    "scaleMin": -9.1,
+    "frameMax": 0.0,
+    "frameMin": -8.3
+   }
+  },
+  {
+   "id": "F4-S01",
+   "file": "latest-2021/20210212_0144.JPG",
+   "params": {
+    "emissivity": 0.98,
+    "airTemp": 25.0,
+    "reflectedTemp": 18.0,
+    "humidity": 0.5,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 56.3,
+    "scaleMin": 16.7,
+    "frameMax": 56.3,
+    "frameMin": 17.0
+   }
+  },
+  {
+   "id": "F5-S01",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 34.5,
+    "scaleMin": 25.8,
+    "frameMax": 34.6,
+    "frameMin": 25.8
+   }
+  },
+  {
+   "id": "F5-S02",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "params": {
+    "emissivity": 0.7,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 37.7,
+    "scaleMin": 26.1,
+    "frameMax": 37.8,
+    "frameMin": 26.1
+   }
+  },
+  {
+   "id": "F5-S03",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 60.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 32.5,
+    "scaleMin": 23.6,
+    "frameMax": 32.6,
+    "frameMin": 23.6
+   }
+  },
+  {
+   "id": "F5-S04",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 1.0,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 39.2,
+    "scaleMin": 26.2,
+    "frameMax": 39.3,
+    "frameMin": 26.2
+   }
+  },
+  {
+   "id": "F5-S05",
+   "file": "legacy-2013/130604_0002T.jpg",
+   "params": {
+    "emissivity": 0.85,
+    "airTemp": 10.0,
+    "reflectedTemp": 30.0,
+    "humidity": 0.8,
+    "distance": 50.0
+   },
+   "expected": {
+    "scaleMax": 35.0,
+    "scaleMin": 25.2,
+    "frameMax": 35.1,
+    "frameMin": 25.2
+   }
+  },
+  {
+   "id": "F6-S01",
+   "file": "legacy-2013/130604_0001T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 35.5,
+    "scaleMin": 22.6,
+    "frameMax": 35.4,
+    "frameMin": 22.6
+   }
+  },
+  {
+   "id": "F7-S01",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 31.7,
+    "scaleMin": 20.4,
+    "frameMax": 48.3,
+    "frameMin": 18.5
+   }
+  },
+  {
+   "id": "F7-S02",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "params": {
+    "emissivity": 0.7,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 34.0,
+    "scaleMin": 18.7,
+    "frameMax": 55.5,
+    "frameMin": 16.1
+   }
+  },
+  {
+   "id": "F7-S03",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 60.0,
+    "humidity": 0.6,
+    "distance": 5.0
+   },
+   "expected": {
+    "scaleMax": 29.7,
+    "scaleMin": 18.1,
+    "frameMax": 46.5,
+    "frameMin": 16.1
+   }
+  },
+  {
+   "id": "F7-S04",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "params": {
+    "emissivity": 0.95,
+    "airTemp": 25.0,
+    "reflectedTemp": 25.0,
+    "humidity": 1.0,
+    "distance": 1000.0
+   },
+   "expected": {
+    "scaleMax": 35.1,
+    "scaleMin": 17.9,
+    "frameMax": 58.8,
+    "frameMin": 14.8
+   }
+  },
+  {
+   "id": "F7-S05",
+   "file": "legacy-2013/130924_0002T.jpg",
+   "params": {
+    "emissivity": 0.85,
+    "airTemp": 10.0,
+    "reflectedTemp": 30.0,
+    "humidity": 0.8,
+    "distance": 50.0
+   },
+   "expected": {
+    "scaleMax": 31.9,
+    "scaleMin": 19.0,
+    "frameMax": 50.3,
+    "frameMin": 16.8
+   }
+  }
+ ],
+ "skipped": [
+  {
+   "id": "F3-S04-scale_max",
+   "note": "встановлення дистанції понад 930.9м призводить до помилки `System.ArgumentOutOfRangeException: Value of '-1' is not valid for 'Value'. 'Value' should be between 'Minimum' and 'Maximum'. Parameter name: Value at System.Windows.Forms.NumericUpDown.set_Value(Decimal value) at PCIRMeter.IRControl1.setmaxandminnum(Double max, Double min, Boolean isopen) at PCIRMeter.IRControl1.IRParaSetupOK_Click(Object sender, EventArgs e) at System.Windows.Forms.Control.OnClick(EventArgs e)`"
+  },
+  {
+   "id": "F3-S04-scale_min",
+   "note": "встановлення дистанції понад 930.9м призводить до помилки `System.ArgumentOutOfRangeException: Value of '-1' is not valid for 'Value'. 'Value' should be between 'Minimum' and 'Maximum'. Parameter name: Value at System.Windows.Forms.NumericUpDown.set_Value(Decimal value) at PCIRMeter.IRControl1.setmaxandminnum(Double max, Double min, Boolean isopen) at PCIRMeter.IRControl1.IRParaSetupOK_Click(Object sender, EventArgs e) at System.Windows.Forms.Control.OnClick(EventArgs e)`"
+  },
+  {
+   "id": "F3-S04-frame_max",
+   "note": "встановлення дистанції понад 930.9м призводить до помилки `System.ArgumentOutOfRangeException: Value of '-1' is not valid for 'Value'. 'Value' should be between 'Minimum' and 'Maximum'. Parameter name: Value at System.Windows.Forms.NumericUpDown.set_Value(Decimal value) at PCIRMeter.IRControl1.setmaxandminnum(Double max, Double min, Boolean isopen) at PCIRMeter.IRControl1.IRParaSetupOK_Click(Object sender, EventArgs e) at System.Windows.Forms.Control.OnClick(EventArgs e)`"
+  },
+  {
+   "id": "F3-S04-frame_min",
+   "note": "встановлення дистанції понад 930.9м призводить до помилки `System.ArgumentOutOfRangeException: Value of '-1' is not valid for 'Value'. 'Value' should be between 'Minimum' and 'Maximum'. Parameter name: Value at System.Windows.Forms.NumericUpDown.set_Value(Decimal value) at PCIRMeter.IRControl1.setmaxandminnum(Double max, Double min, Boolean isopen) at PCIRMeter.IRControl1.IRParaSetupOK_Click(Object sender, EventArgs e) at System.Windows.Forms.Control.OnClick(EventArgs e)`"
+  }
+ ]
+}

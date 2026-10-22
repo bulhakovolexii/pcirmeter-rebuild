@@ -50,6 +50,8 @@
   τ (таблиці пари/відстані) → радіометричне рівняння ε/T_відб/T_пов. Усі параметри — у файлі.
 - Дослідницькі скрипти: `tools/dump_ir.py` (дамп структури), `tools/irtemp.py` (еталонний розрахунок),
   `tools/compare_golden.py` (звірка з еталонами оригіналу `tests/golden/pcirmeter_reference.csv`).
+  Еталони для Vitest: `python3 -I tools/export_golden.py` → `tests/golden/reference.json` (частина А);
+  положення об'єктів частини Б знайдено `tools/fit_objects.py` (перебір, хвилини) і записано вручну в `tests/golden/objects.json`.
 - Парсер (TS): `src/core/parser.ts` (`parseThermogram`). Фікстури: `python3 -I tools/export_fixtures.py`
   → `tests/fixtures/parser/*.json` (перегенерувати після змін у форматі).
 - Температура (TS): `src/core/temperature.ts` (`temperatureModel(ir, overrides)` → `toCelsius(ad)`, `NaN` = поза
