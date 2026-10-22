@@ -82,7 +82,8 @@ def ad_to_temp(ad, p, tau):
          - (1 - tau) * (p['t_atm'] + K) ** 4 / (e * tau))
     if w < 0:
         return None
-    return w ** 0.25 - K + p['offset']
+    t = w ** 0.25 - K + p['offset']
+    return t if -60.0 <= t <= 4000.0 else None
 
 
 def main(paths):

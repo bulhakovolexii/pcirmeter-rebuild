@@ -52,6 +52,9 @@
   `tools/compare_golden.py` (звірка з еталонами оригіналу `tests/golden/pcirmeter_reference.csv`).
 - Парсер (TS): `src/core/parser.ts` (`parseThermogram`). Фікстури: `python3 -I tools/export_fixtures.py`
   → `tests/fixtures/parser/*.json` (перегенерувати після змін у форматі).
+- Температура (TS): `src/core/temperature.ts` (`temperatureModel(ir, overrides)` → `toCelsius(ad)`, `NaN` = поза
+  калібруванням; `frameTemperatures`, `autoScale`, `measurementRange`), таблиці атмосфери — `src/core/atmosphere.ts`.
+  Фікстури з `irtemp.py`: `python3 -I tools/export_temperature_fixtures.py` → `tests/fixtures/temperature/*.json`.
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;
   **поза git** — фото кафедри не публікуються). Скриншоти оригіналу `tests/golden/screens/` — теж поза git.
   Репозиторій публічний (лише заради GitHub Pages): нічого з цих тек, `reference/` чи ресурсів оригіналу не комітити.
