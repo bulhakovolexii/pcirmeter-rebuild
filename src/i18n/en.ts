@@ -47,6 +47,7 @@ export const en: Record<MessageKey, string> = {
   'view.zoomOut': 'Zoom out',
   'view.fit': 'Fit',
   'view.actual': '1:1',
+  'view.sidebarWidth': 'Sidebar width (drag; double-click to reset)',
   'view.extremes': 'Frame Max/Min markers',
   'view.image': 'Infrared image',
   'view.hint': 'Wheel — zoom, drag — pan',

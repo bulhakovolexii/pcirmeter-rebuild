@@ -39,7 +39,7 @@
   import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
   import { lineProfile, measureObjects, profileCsv, resultsCsv } from './results'
-  import { units } from './settings'
+  import { clampSidebarWidth, SIDEBAR, sidebarWidth, units } from './settings'
   import {
     dragShape,
     drawingHandle,
@@ -457,10 +457,108 @@
           ],
     ),
   )
+
+  // Ширина бічної панелі (спільна для вкладок, див. settings.ts)
+  let viewerEl: HTMLDivElement | undefined = $state()
+  let resizing = $state(false)
+  let resizeFrom = { x: 0, width: 0 }
+
+  function setSidebarWidth(width: number) {
+    sidebarWidth.set(clampSidebarWidth(width, viewerEl?.clientWidth))
+  }
+
+  function startResize(e: PointerEvent) {
+    if (e.button !== 0) return
+    e.preventDefault()
+    const handle = e.currentTarget as Element
+    handle.setPointerCapture(e.pointerId)
+    resizing = true
+    resizeFrom = { x: e.clientX, width: $sidebarWidth }
+  }
+
+  function resize(e: PointerEvent) {
+    if (resizing) setSidebarWidth(resizeFrom.width + e.clientX - resizeFrom.x)
+  }
+
+  function endResize() {
+    resizing = false
+  }
+
+  function resizeByKey(e: KeyboardEvent) {
+    const step = e.shiftKey ? 64 : 16
+    if (e.key === 'ArrowLeft') setSidebarWidth($sidebarWidth - step)
+    else if (e.key === 'ArrowRight') setSidebarWidth($sidebarWidth + step)
+    else if (e.key === 'Home') setSidebarWidth(SIDEBAR.min)
+    else if (e.key === 'End') setSidebarWidth(SIDEBAR.max)
+    else return
+    e.preventDefault()
+  }
 </script>
 
-<div class="viewer">
+<div class="viewer" bind:this={viewerEl} style:--sidebar-width="{$sidebarWidth}px">
   <aside class="controls">
+    <label class="check">
+      <input type="checkbox" bind:checked={showExtremes} />
+      {$tr('view.extremes')}
+    </label>
+
+    <section class="readout" aria-live="polite">
+      <h2>{$tr('cursor.title')}</h2>
+      {#if cursor}
+        <p class="temp" class:flag={cursor.status !== 'ok'}>{fmt(cursor.t)}</p>
+        {#if cursor.status === 'out-of-range'}
+          <p class="warning">{$tr('cursor.outOfRange')}</p>
+        {:else if cursor.status === 'no-calibration'}
+          <p class="warning">{$tr('cursor.noCalibration')}</p>
+        {/if}
+        <p class="muted">{$tr('cursor.pixel')}: {cursor.x}, {cursor.y}</p>
+      {:else}
+        <p class="temp muted">—</p>
+      {/if}
+    </section>
+
+    <section>
+      <h2>{$tr('info.title')}</h2>
+      <dl>
+        <dt>{$tr('info.frame')}</dt>
+        <dd>{ir.width} × {ir.height}</dd>
+        <dt>{$tr('info.date')}</dt>
+        <dd>{formatSavedAt(info.savedAt)}</dd>
+        {#if info.model || info.producer}
+          <dt>{$tr('info.camera')}</dt>
+          <dd>{[info.producer, info.model].filter(Boolean).join(' ')}</dd>
+        {/if}
+        <dt>{$tr('info.range')}</dt>
+        <dd>
+          {formatNumber(fromCelsius(range.min, $units.temperature), $locale, 0)} …
+          {formatNumber(fromCelsius(range.max, $units.temperature), $locale, 0)}
+          {TEMPERATURE_SYMBOL[$units.temperature]}
+        </dd>
+        <dt>{$tr('info.frameMax')}</dt>
+        <dd>{fmt(model.toCelsius(extremes.max.ad))}</dd>
+        <dt>{$tr('info.frameMin')}</dt>
+        <dd>{fmt(model.toCelsius(extremes.min.ad))}</dd>
+      </dl>
+      {#if note}
+        <h3>{$tr('info.note')}</h3>
+        <p class="note-text">{note}</p>
+      {/if}
+    </section>
+
+    {#if audio}
+      <section>
+        <h2>{$tr('audio.title')}</h2>
+        <audio controls src={audioUrl}></audio>
+        <button
+          type="button"
+          disabled={!audioUrl}
+          onclick={() =>
+            audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
+          >{$tr('audio.save')}</button
+        >
+      </section>
+    {/if}
+
     <label class="field">
       <span>{$tr('palette.title')}</span>
       <select bind:value={paletteId}>
@@ -564,69 +662,28 @@
         />
       {/key}
     {/if}
-
-    <label class="check">
-      <input type="checkbox" bind:checked={showExtremes} />
-      {$tr('view.extremes')}
-    </label>
-
-    <section class="readout" aria-live="polite">
-      <h2>{$tr('cursor.title')}</h2>
-      {#if cursor}
-        <p class="temp" class:flag={cursor.status !== 'ok'}>{fmt(cursor.t)}</p>
-        {#if cursor.status === 'out-of-range'}
-          <p class="warning">{$tr('cursor.outOfRange')}</p>
-        {:else if cursor.status === 'no-calibration'}
-          <p class="warning">{$tr('cursor.noCalibration')}</p>
-        {/if}
-        <p class="muted">{$tr('cursor.pixel')}: {cursor.x}, {cursor.y}</p>
-      {:else}
-        <p class="temp muted">—</p>
-      {/if}
-    </section>
-
-    <section>
-      <h2>{$tr('info.title')}</h2>
-      <dl>
-        <dt>{$tr('info.frame')}</dt>
-        <dd>{ir.width} × {ir.height}</dd>
-        <dt>{$tr('info.date')}</dt>
-        <dd>{formatSavedAt(info.savedAt)}</dd>
-        {#if info.model || info.producer}
-          <dt>{$tr('info.camera')}</dt>
-          <dd>{[info.producer, info.model].filter(Boolean).join(' ')}</dd>
-        {/if}
-        <dt>{$tr('info.range')}</dt>
-        <dd>
-          {formatNumber(fromCelsius(range.min, $units.temperature), $locale, 0)} …
-          {formatNumber(fromCelsius(range.max, $units.temperature), $locale, 0)}
-          {TEMPERATURE_SYMBOL[$units.temperature]}
-        </dd>
-        <dt>{$tr('info.frameMax')}</dt>
-        <dd>{fmt(model.toCelsius(extremes.max.ad))}</dd>
-        <dt>{$tr('info.frameMin')}</dt>
-        <dd>{fmt(model.toCelsius(extremes.min.ad))}</dd>
-      </dl>
-      {#if note}
-        <h3>{$tr('info.note')}</h3>
-        <p class="note-text">{note}</p>
-      {/if}
-    </section>
-
-    {#if audio}
-      <section>
-        <h2>{$tr('audio.title')}</h2>
-        <audio controls src={audioUrl}></audio>
-        <button
-          type="button"
-          disabled={!audioUrl}
-          onclick={() =>
-            audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
-          >{$tr('audio.save')}</button
-        >
-      </section>
-    {/if}
   </aside>
+
+  <!-- Межа панелі: перетягування змінює ширину, подвійний клік — стандартна. Фокусований separator
+       зі значенням за WAI-ARIA інтерактивний (стрілки змінюють ширину), Svelte цього не знає -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+  <div
+    class="splitter"
+    class:active={resizing}
+    role="separator"
+    aria-orientation="vertical"
+    aria-label={$tr('view.sidebarWidth')}
+    aria-valuemin={SIDEBAR.min}
+    aria-valuemax={SIDEBAR.max}
+    aria-valuenow={$sidebarWidth}
+    tabindex="0"
+    onpointerdown={startResize}
+    onpointermove={resize}
+    onpointerup={endResize}
+    onpointercancel={endResize}
+    ondblclick={() => setSidebarWidth(SIDEBAR.default)}
+    onkeydown={resizeByKey}
+  ></div>
 
   <section class="image-area">
     <div class="toolbar">
@@ -794,10 +851,30 @@
 <style>
   .viewer {
     display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 16px;
+    /* min(): після звуження вікна панель не займає більше половини, навіть якщо збережено ширше */
+    grid-template-columns: min(var(--sidebar-width, 240px), 50%) 16px 1fr;
     height: 100%;
     min-height: 0;
+  }
+  .splitter {
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+  .splitter::after {
+    content: '';
+    position: absolute;
+    inset: 0 7px;
+    border-radius: 1px;
+    transition: background 0.15s;
+  }
+  .splitter:hover::after,
+  .splitter.active::after,
+  .splitter:focus-visible::after {
+    background: var(--accent);
+  }
+  .splitter:focus-visible {
+    outline: none;
   }
   .controls {
     display: flex;
@@ -1058,10 +1135,14 @@
     .viewer {
       grid-template-columns: 1fr;
       grid-template-rows: auto auto;
+      gap: 16px;
       height: auto;
     }
     .image-area {
       order: -1;
+    }
+    .splitter {
+      display: none;
     }
     .views {
       flex-direction: column;

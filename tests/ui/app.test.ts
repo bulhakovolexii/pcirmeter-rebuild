@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
 import { openFiles, type FileSource } from '../../src/ui/files'
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
-import { units } from '../../src/ui/settings'
+import { clampSidebarWidth, SIDEBAR, sidebarWidth, units } from '../../src/ui/settings'
 
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
 
@@ -105,6 +105,23 @@ describe('App', () => {
     expect(body).toContain('Додайте точку')
   })
 
+  it('бічна панель: маркери, курсор і файл — нагорі; межа з шириною зі store', async () => {
+    const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
+    sidebarWidth.set(320)
+    try {
+      const { body } = render(App, { props: { initialFiles: opened } })
+      const at = (text: string) => body.indexOf(text)
+      expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('<aside'))
+      expect(at('Маркери Max/Min кадру')).toBeLessThan(at('Палітра'))
+      expect(at('160 × 120')).toBeLessThan(at('Палітра'))
+      expect(body).toContain('--sidebar-width: 320px')
+      expect(body).toContain('role="separator"')
+      expect(body).toContain('aria-valuenow="320"')
+    } finally {
+      sidebarWidth.set(SIDEBAR.default)
+    }
+  })
+
   it('показує гістограму й ізотерми (вимкнені за замовчуванням)', async () => {
     const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
     const { body } = render(App, { props: { initialFiles: opened } })
@@ -132,5 +149,17 @@ describe('App', () => {
     } finally {
       units.set({ temperature: 'C', length: 'm' })
     }
+  })
+})
+
+describe('clampSidebarWidth', () => {
+  it('тримає ширину в межах і не більше половини переглядача', () => {
+    expect(clampSidebarWidth(100)).toBe(SIDEBAR.min)
+    expect(clampSidebarWidth(1000)).toBe(SIDEBAR.max)
+    expect(clampSidebarWidth(333.6)).toBe(334)
+    expect(clampSidebarWidth(500, 800)).toBe(400)
+    // Вузьке вікно: мінімум важливіший за «половину»
+    expect(clampSidebarWidth(300, 300)).toBe(SIDEBAR.min)
+    expect(clampSidebarWidth(NaN)).toBe(SIDEBAR.default)
   })
 })

@@ -46,6 +46,7 @@ export const uk = {
   'view.fit': 'Вписати',
   'view.actual': '1:1',
   'view.extremes': 'Маркери Max/Min кадру',
+  'view.sidebarWidth': 'Ширина бічної панелі (перетягніть; подвійний клік — стандартна)',
   'view.image': 'ІЧ-зображення',
   'view.hint': 'Колесо — масштаб, перетягування — зсув',
   'cursor.title': 'Під курсором',
