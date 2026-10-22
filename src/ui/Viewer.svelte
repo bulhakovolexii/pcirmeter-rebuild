@@ -34,6 +34,7 @@
   import { defaultIsotherms, isothermBand, toIsotherm, type IsothermState } from './isotherms'
   import type { Units } from './params'
   import ParamsPanel from './ParamsPanel.svelte'
+  import { NO_ALIGNMENT, type Alignment } from './photo'
   import PhotoPanel from './PhotoPanel.svelte'
   import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
@@ -66,6 +67,9 @@
   // Вкладення (docs/spec/features.md §2.6)
   const photo = $derived(file.thermogram.visibleJpeg)
   let showPhoto = $state(true)
+  /** Суміщення й синхронізація живуть тут, щоб не губитися, коли панель фото сховано. */
+  let alignment = $state<Alignment>(NO_ALIGNMENT)
+  let syncPhoto = $state(true)
   const note = $derived(file.thermogram.userText ? decodeUserText(file.thermogram.userText) : '')
   const audio = $derived(file.thermogram.audio)
   const audioMime = $derived(audio ? audioType(audio) : '')
@@ -751,7 +755,24 @@
         <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
       </div>
       {#if photo && showPhoto}
-        <PhotoPanel {photo} frame={frame.rgba} frameWidth={ir.width} frameHeight={ir.height} id={file.id} />
+        <PhotoPanel
+          {photo}
+          frame={frame.rgba}
+          frameWidth={ir.width}
+          frameHeight={ir.height}
+          id={file.id}
+          irView={{ zoom, panX, panY }}
+          onirview={(v) => {
+            ;({ zoom, panX, panY } = v)
+            autoFit = false
+          }}
+          onirfit={() => (autoFit = true)}
+          {alignment}
+          onalign={(a) => (alignment = a)}
+          sync={syncPhoto}
+          onsync={(v) => (syncPhoto = v)}
+          onclose={() => (showPhoto = false)}
+        />
       {/if}
     </div>
 

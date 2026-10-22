@@ -6,7 +6,16 @@ import { BlockType, parseThermogram } from '../../src/core/parser'
 import App from '../../src/ui/App.svelte'
 import { audioType, decodeUserText } from '../../src/ui/attachments'
 import { openFiles } from '../../src/ui/files'
-import { defaultPlacement, jpegSize } from '../../src/ui/photo'
+import {
+  defaultPlacement,
+  irViewFor,
+  jpegSize,
+  layerRect,
+  moveAlignment,
+  NO_ALIGNMENT,
+  scaleAlignment,
+  syncedPhotoView,
+} from '../../src/ui/photo'
 import PhotoPanel from '../../src/ui/PhotoPanel.svelte'
 import { fitView, MAX_ZOOM, MIN_ZOOM, zoomAt } from '../../src/ui/view'
 import { tinyWav, withBlocks } from '../support/blocks'
@@ -144,10 +153,93 @@ describe('PhotoPanel', () => {
         frameWidth: 160,
         frameHeight: 120,
         id: 1,
+        irView: { zoom: 4, panX: 0, panY: 0 },
+        onirview: () => {},
+        onirfit: () => {},
+        alignment: NO_ALIGNMENT,
+        onalign: () => {},
+        sync: true,
+        onsync: () => {},
+        onclose: () => {},
       },
     })
     expect(body).toContain('Фото')
     expect(body).toContain('Накладення')
     expect(body).toContain('Вписати')
+    expect(body).toContain('Синхронно з ІЧ')
+    expect(body).toContain('Масштаб ІЧ-шару')
+    expect(body).toContain('100 %')
+    expect(body).toContain('Сховати видиме фото')
+  })
+})
+
+describe('суміщення і синхронізація з ІЧ', () => {
+  const base = defaultPlacement(80, 80, 1280, 960)
+  const ir = { zoom: 5, panX: 30, panY: -12 }
+  /** Екранна точка фото (px, py) при виді v. */
+  const screen = (v: { zoom: number; panX: number; panY: number }, px: number, py: number) => [
+    v.panX + px * v.zoom,
+    v.panY + py * v.zoom,
+  ]
+
+  it('шар за суміщенням: масштаб навколо центру + зсув', () => {
+    expect(layerRect(base, NO_ALIGNMENT)).toEqual(base)
+    const r = layerRect(base, { scale: 0.5, dx: 10, dy: -4 })
+    expect(r.width).toBeCloseTo(320)
+    expect(r.x).toBeCloseTo(480 + 10)
+    expect(r.y).toBeCloseTo(320 - 4)
+  })
+
+  it('синхронний вид: кути ІЧ-шару — там само, що й кадр в ІЧ-вікні; обернення', () => {
+    const layer = layerRect(base, { scale: 1.1, dx: 7, dy: 3 })
+    const v = syncedPhotoView(ir, layer, 80)
+    const [x0, y0] = screen(v, layer.x, layer.y)
+    const [x1, y1] = screen(v, layer.x + layer.width, layer.y + layer.height)
+    expect([x0, y0, x1, y1].map((n) => +n!.toFixed(6))).toEqual([30, -12, 30 + 80 * 5, -12 + 80 * 5])
+    const back = irViewFor(v, layer, 80)
+    expect(back.zoom).toBeCloseTo(ir.zoom)
+    expect(back.panX).toBeCloseTo(ir.panX)
+    expect(back.panY).toBeCloseTo(ir.panY)
+  })
+
+  it('синхронно Shift + колесо: ІЧ не рухається, точка фото під курсором — теж', () => {
+    const before = syncedPhotoView(ir, layerRect(base, NO_ALIGNMENT), 80)
+    const [cx, cy] = [200, 150]
+    const p = [(cx - before.panX) / before.zoom, (cy - before.panY) / before.zoom]
+    const a = scaleAlignment(base, NO_ALIGNMENT, 1.1, cx, cy, before, true)
+    const layer = layerRect(base, a)
+    const after = syncedPhotoView(ir, layer, 80)
+    expect(after.zoom).toBeCloseTo(before.zoom * 1.1)
+    const [sx, sy] = screen(after, p[0]!, p[1]!)
+    expect(sx).toBeCloseTo(cx)
+    expect(sy).toBeCloseTo(cy)
+    expect(a.scale).toBeCloseTo(1 / 1.1)
+  })
+
+  it('без синхронізації Shift + колесо масштабує шар над нерухомим фото', () => {
+    const photo = { zoom: 0.5, panX: 0, panY: 0 }
+    const a = scaleAlignment(base, NO_ALIGNMENT, 2, 320, 240, photo, false)
+    const r = layerRect(base, a)
+    // Точка фото (640, 480) — центр шару — лишається на місці
+    expect(r.x + r.width / 2).toBeCloseTo(640)
+    expect(r.width).toBeCloseTo(1280)
+  })
+
+  it('межі масштабу шару', () => {
+    const photo = { zoom: 1, panX: 0, panY: 0 }
+    const big = { scale: 4.9, dx: 0, dy: 0 }
+    expect(scaleAlignment(base, big, 1.1, 0, 0, photo, false)).toBe(big)
+  })
+
+  it('Shift + перетягування: синхронно фото йде за курсором, інакше — шар', () => {
+    expect(moveAlignment(NO_ALIGNMENT, 20, -10, 2, false)).toEqual({ scale: 1, dx: 10, dy: -5 })
+    const synced = moveAlignment(NO_ALIGNMENT, 20, -10, 2, true)
+    expect(synced).toEqual({ scale: 1, dx: -10, dy: 5 })
+    // Фото зміщується на (20, −10) у вікні, ІЧ — ні
+    const before = syncedPhotoView(ir, layerRect(base, NO_ALIGNMENT), 80)
+    const moved = moveAlignment(NO_ALIGNMENT, 20, -10, before.zoom, true)
+    const after = syncedPhotoView(ir, layerRect(base, moved), 80)
+    expect(after.panX - before.panX).toBeCloseTo(20)
+    expect(after.panY - before.panY).toBeCloseTo(-10)
   })
 })

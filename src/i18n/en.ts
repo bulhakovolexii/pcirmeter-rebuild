@@ -117,9 +117,13 @@ export const en: Record<MessageKey, string> = {
   'photo.mode.overlay': 'Overlay',
   'photo.blend': 'Photo ↔ IR',
   'photo.resetAlign': 'Reset alignment',
-  'photo.hint.overlay':
-    'Drag the IR layer to align it with the photo; outside the layer or with the middle button — pan',
   'info.note': 'Note from camera',
   'audio.title': 'Voice note',
   'audio.save': 'Save audio',
+  'photo.sync': 'Sync with IR',
+  'photo.hide': 'Hide visible photo',
+  'photo.layerScale': 'IR layer scale',
+  'photo.layerSmaller': 'Shrink IR layer relative to photo',
+  'photo.layerLarger': 'Enlarge IR layer relative to photo',
+  'photo.hint.align': 'Shift + wheel — photo scale relative to IR, Shift + drag — shift (alignment)',
 }

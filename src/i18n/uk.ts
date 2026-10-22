@@ -115,10 +115,15 @@ export const uk = {
   'photo.mode.overlay': 'Накладення',
   'photo.blend': 'Фото ↔ ІЧ',
   'photo.resetAlign': 'Скинути суміщення',
-  'photo.hint.overlay': 'Перетягніть ІЧ-шар, щоб сумістити з фото; поза шаром або середньою кнопкою — зсув',
   'info.note': 'Примітка з камери',
   'audio.title': 'Аудіонотатка',
   'audio.save': 'Зберегти аудіо',
+  'photo.sync': 'Синхронно з ІЧ',
+  'photo.hide': 'Сховати видиме фото',
+  'photo.layerScale': 'Масштаб ІЧ-шару',
+  'photo.layerSmaller': 'Зменшити ІЧ-шар відносно фото',
+  'photo.layerLarger': 'Збільшити ІЧ-шар відносно фото',
+  'photo.hint.align': 'Shift + колесо — масштаб фото відносно ІЧ, Shift + перетягування — зсув (суміщення)',
 } as const
 
 export type MessageKey = keyof typeof uk
