@@ -5,7 +5,14 @@ import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
 import { openFiles, type FileSource } from '../../src/ui/files'
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
-import { clampSidebarWidth, SIDEBAR, sidebarWidth, units } from '../../src/ui/settings'
+import {
+  clampPhotoSplit,
+  clampSidebarWidth,
+  PHOTO_SPLIT,
+  SIDEBAR,
+  sidebarWidth,
+  units,
+} from '../../src/ui/settings'
 
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
 
@@ -105,18 +112,23 @@ describe('App', () => {
     expect(body).toContain('Додайте точку')
   })
 
-  it('бічна панель: маркери, курсор і файл — нагорі; межа з шириною зі store', async () => {
+  it('бічна панель: курсор, файл і маркери — нагорі; межі панелі й фото', async () => {
     const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
     sidebarWidth.set(320)
     try {
       const { body } = render(App, { props: { initialFiles: opened } })
       const at = (text: string) => body.indexOf(text)
-      expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('<aside'))
+      expect(at('Під курсором')).toBeGreaterThan(at('<aside'))
+      expect(at('160 × 120')).toBeGreaterThan(at('Під курсором'))
+      expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('160 × 120'))
       expect(at('Маркери Max/Min кадру')).toBeLessThan(at('Палітра'))
-      expect(at('160 × 120')).toBeLessThan(at('Палітра'))
+      // Без курсора — заглушки, щоб панель не стрибала
+      expect(body).toMatch(/Піксель: —/)
       expect(body).toContain('--sidebar-width: 320px')
-      expect(body).toContain('role="separator"')
+      // Дві межі: бічна панель і ІЧ | фото (у зразку є видиме фото)
+      expect(body.match(/role="separator"/g)).toHaveLength(2)
       expect(body).toContain('aria-valuenow="320"')
+      expect(body).toContain('--ir-share: 0.5')
     } finally {
       sidebarWidth.set(SIDEBAR.default)
     }
@@ -161,5 +173,14 @@ describe('clampSidebarWidth', () => {
     // Вузьке вікно: мінімум важливіший за «половину»
     expect(clampSidebarWidth(300, 300)).toBe(SIDEBAR.min)
     expect(clampSidebarWidth(NaN)).toBe(SIDEBAR.default)
+  })
+})
+
+describe('clampPhotoSplit', () => {
+  it('частка ІЧ — у межах, некоректне — порівну', () => {
+    expect(clampPhotoSplit(0.1)).toBe(PHOTO_SPLIT.min)
+    expect(clampPhotoSplit(0.9)).toBe(PHOTO_SPLIT.max)
+    expect(clampPhotoSplit(0.6)).toBe(0.6)
+    expect(clampPhotoSplit(NaN)).toBe(PHOTO_SPLIT.default)
   })
 })

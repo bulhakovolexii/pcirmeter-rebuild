@@ -1,60 +1,60 @@
-/** Глобальні налаштування показу (одиниці, ширина бічної панелі); пам'ятаються в браузері, якщо `localStorage` доступне. */
+/** Глобальні налаштування показу (одиниці, розміри панелей); пам'ятаються в браузері, якщо `localStorage` доступне. */
 
-import { writable } from 'svelte/store'
+import { writable, type Writable } from 'svelte/store'
 import type { Units } from './params'
 
-const KEY = 'pcirmeter.units'
-const DEFAULT_UNITS: Units = { temperature: 'C', length: 'm' }
-
-function load(): Units {
+/** Store, що пам'ятається в `localStorage` під ключем `key`; `parse` перевіряє й обмежує збережене. */
+function persisted<T>(key: string, fallback: T, parse: (raw: string) => T): Writable<T> {
+  let initial = fallback
   try {
-    const raw = globalThis.localStorage?.getItem(KEY)
-    if (!raw) return DEFAULT_UNITS
-    const saved = JSON.parse(raw) as Partial<Units>
-    return {
-      temperature: ['C', 'F', 'K'].includes(saved.temperature ?? '') ? saved.temperature! : 'C',
-      length: saved.length === 'ft' ? 'ft' : 'm',
-    }
+    const raw = globalThis.localStorage?.getItem(key)
+    if (raw) initial = parse(raw)
   } catch {
-    return DEFAULT_UNITS
+    // Пошкоджене чи недоступне сховище — значення за замовчуванням
   }
+  const store = writable<T>(initial)
+  store.subscribe((value) => {
+    try {
+      globalThis.localStorage?.setItem(key, JSON.stringify(value))
+    } catch {
+      // Сховище недоступне (приватне вікно, заборона) — налаштування діє до перезавантаження
+    }
+  })
+  return store
 }
 
-export const units = writable<Units>(load())
+const DEFAULT_UNITS: Units = { temperature: 'C', length: 'm' }
 
-units.subscribe((value) => {
-  try {
-    globalThis.localStorage?.setItem(KEY, JSON.stringify(value))
-  } catch {
-    // Сховище недоступне (приватне вікно, заборона) — налаштування діє до перезавантаження
+export const units = persisted<Units>('pcirmeter.units', DEFAULT_UNITS, (raw) => {
+  const saved = JSON.parse(raw) as Partial<Units>
+  return {
+    temperature: ['C', 'F', 'K'].includes(saved.temperature ?? '') ? saved.temperature! : 'C',
+    length: saved.length === 'ft' ? 'ft' : 'm',
   }
 })
 
 /** Ширина бічної панелі, px: за замовчуванням, межі (максимум — ще й не більше половини переглядача). */
 export const SIDEBAR = { default: 240, min: 200, max: 560 } as const
-const SIDEBAR_KEY = 'pcirmeter.sidebarWidth'
 
 export function clampSidebarWidth(width: number, viewerWidth = Infinity): number {
   const max = Math.max(SIDEBAR.min, Math.min(SIDEBAR.max, Math.floor(viewerWidth / 2)))
   return Number.isFinite(width) ? Math.round(Math.min(max, Math.max(SIDEBAR.min, width))) : SIDEBAR.default
 }
 
-function loadSidebarWidth(): number {
-  try {
-    const raw = globalThis.localStorage?.getItem(SIDEBAR_KEY)
-    return raw ? clampSidebarWidth(Number(raw)) : SIDEBAR.default
-  } catch {
-    return SIDEBAR.default
-  }
+/** Спільна для всіх вкладок: змінюється перетягуванням межі панелі у `Viewer`. */
+export const sidebarWidth = persisted('pcirmeter.sidebarWidth', SIDEBAR.default, (raw) =>
+  clampSidebarWidth(Number(raw)),
+)
+
+/** Частка ширини, яку займає ІЧ-зображення поруч із видимим фото. */
+export const PHOTO_SPLIT = { default: 0.5, min: 0.25, max: 0.75 } as const
+
+export function clampPhotoSplit(share: number): number {
+  return Number.isFinite(share)
+    ? Math.min(PHOTO_SPLIT.max, Math.max(PHOTO_SPLIT.min, share))
+    : PHOTO_SPLIT.default
 }
 
-/** Спільна для всіх вкладок: змінюється перетягуванням межі панелі у `Viewer`. */
-export const sidebarWidth = writable<number>(loadSidebarWidth())
-
-sidebarWidth.subscribe((value) => {
-  try {
-    globalThis.localStorage?.setItem(SIDEBAR_KEY, String(value))
-  } catch {
-    // див. вище
-  }
-})
+export const photoSplit = persisted('pcirmeter.photoSplit', PHOTO_SPLIT.default, (raw) =>
+  clampPhotoSplit(Number(raw)),
+)

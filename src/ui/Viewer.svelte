@@ -39,7 +39,16 @@
   import ProfileChart from './ProfileChart.svelte'
   import ResultsTable from './ResultsTable.svelte'
   import { lineProfile, measureObjects, profileCsv, resultsCsv } from './results'
-  import { clampSidebarWidth, SIDEBAR, sidebarWidth, units } from './settings'
+  import {
+    clampPhotoSplit,
+    clampSidebarWidth,
+    PHOTO_SPLIT,
+    photoSplit,
+    SIDEBAR,
+    sidebarWidth,
+    units,
+  } from './settings'
+  import Splitter from './Splitter.svelte'
   import {
     dragShape,
     drawingHandle,
@@ -458,63 +467,31 @@
     ),
   )
 
-  // Ширина бічної панелі (спільна для вкладок, див. settings.ts)
+  // Розміри панелей (спільні для вкладок, див. settings.ts): ширина бічної панелі й частка ІЧ поруч із фото
   let viewerEl: HTMLDivElement | undefined = $state()
-  let resizing = $state(false)
-  let resizeFrom = { x: 0, width: 0 }
+  let viewsWidth = $state(0)
+  let dragFrom = 0
 
-  function setSidebarWidth(width: number) {
-    sidebarWidth.set(clampSidebarWidth(width, viewerEl?.clientWidth))
-  }
-
-  function startResize(e: PointerEvent) {
-    if (e.button !== 0) return
-    e.preventDefault()
-    const handle = e.currentTarget as Element
-    handle.setPointerCapture(e.pointerId)
-    resizing = true
-    resizeFrom = { x: e.clientX, width: $sidebarWidth }
-  }
-
-  function resize(e: PointerEvent) {
-    if (resizing) setSidebarWidth(resizeFrom.width + e.clientX - resizeFrom.x)
-  }
-
-  function endResize() {
-    resizing = false
-  }
-
-  function resizeByKey(e: KeyboardEvent) {
-    const step = e.shiftKey ? 64 : 16
-    if (e.key === 'ArrowLeft') setSidebarWidth($sidebarWidth - step)
-    else if (e.key === 'ArrowRight') setSidebarWidth($sidebarWidth + step)
-    else if (e.key === 'Home') setSidebarWidth(SIDEBAR.min)
-    else if (e.key === 'End') setSidebarWidth(SIDEBAR.max)
-    else return
-    e.preventDefault()
-  }
+  const setSidebarWidth = (width: number) => sidebarWidth.set(clampSidebarWidth(width, viewerEl?.clientWidth))
+  const setPhotoSplit = (share: number) => photoSplit.set(clampPhotoSplit(share))
 </script>
 
 <div class="viewer" bind:this={viewerEl} style:--sidebar-width="{$sidebarWidth}px">
   <aside class="controls">
-    <label class="check">
-      <input type="checkbox" bind:checked={showExtremes} />
-      {$tr('view.extremes')}
-    </label>
-
     <section class="readout" aria-live="polite">
       <h2>{$tr('cursor.title')}</h2>
-      {#if cursor}
-        <p class="temp" class:flag={cursor.status !== 'ok'}>{fmt(cursor.t)}</p>
-        {#if cursor.status === 'out-of-range'}
-          <p class="warning">{$tr('cursor.outOfRange')}</p>
-        {:else if cursor.status === 'no-calibration'}
-          <p class="warning">{$tr('cursor.noCalibration')}</p>
+      <!-- Однакова висота з курсором і без — вміст панелі нижче не стрибає -->
+      <p class="temp" class:flag={cursor && cursor.status !== 'ok'} class:muted={!cursor}>
+        {cursor ? fmt(cursor.t) : '—'}
+      </p>
+      <p class="warning slot">
+        {#if cursor?.status === 'out-of-range'}
+          {$tr('cursor.outOfRange')}
+        {:else if cursor?.status === 'no-calibration'}
+          {$tr('cursor.noCalibration')}
         {/if}
-        <p class="muted">{$tr('cursor.pixel')}: {cursor.x}, {cursor.y}</p>
-      {:else}
-        <p class="temp muted">—</p>
-      {/if}
+      </p>
+      <p class="muted">{$tr('cursor.pixel')}: {cursor ? `${cursor.x}, ${cursor.y}` : '—'}</p>
     </section>
 
     <section>
@@ -544,6 +521,11 @@
         <p class="note-text">{note}</p>
       {/if}
     </section>
+
+    <label class="check">
+      <input type="checkbox" bind:checked={showExtremes} />
+      {$tr('view.extremes')}
+    </label>
 
     {#if audio}
       <section>
@@ -664,26 +646,16 @@
     {/if}
   </aside>
 
-  <!-- Межа панелі: перетягування змінює ширину, подвійний клік — стандартна. Фокусований separator
-       зі значенням за WAI-ARIA інтерактивний (стрілки змінюють ширину), Svelte цього не знає -->
-  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-  <div
-    class="splitter"
-    class:active={resizing}
-    role="separator"
-    aria-orientation="vertical"
-    aria-label={$tr('view.sidebarWidth')}
-    aria-valuemin={SIDEBAR.min}
-    aria-valuemax={SIDEBAR.max}
-    aria-valuenow={$sidebarWidth}
-    tabindex="0"
-    onpointerdown={startResize}
-    onpointermove={resize}
-    onpointerup={endResize}
-    onpointercancel={endResize}
-    ondblclick={() => setSidebarWidth(SIDEBAR.default)}
-    onkeydown={resizeByKey}
-  ></div>
+  <Splitter
+    label={$tr('view.sidebarWidth')}
+    valuenow={$sidebarWidth}
+    valuemin={SIDEBAR.min}
+    valuemax={SIDEBAR.max}
+    onstart={() => (dragFrom = $sidebarWidth)}
+    ondrag={(dx) => setSidebarWidth(dragFrom + dx)}
+    onstep={(n) => setSidebarWidth($sidebarWidth + 16 * n)}
+    onreset={() => setSidebarWidth(SIDEBAR.default)}
+  />
 
   <section class="image-area">
     <div class="toolbar">
@@ -720,7 +692,7 @@
       <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
     </div>
     <p class="muted hint">{$tr(`tools.hint.${tool}`)}. {$tr('view.hint')}. {$tr('tools.keys')}.</p>
-    <div class="views">
+    <div class="views" bind:clientWidth={viewsWidth} style:--ir-share={photo && showPhoto ? $photoSplit : 1}>
       <div class="stage">
         <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
         <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -812,6 +784,16 @@
         <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
       </div>
       {#if photo && showPhoto}
+        <Splitter
+          label={$tr('view.photoSplit')}
+          valuenow={$photoSplit * 100}
+          valuemin={PHOTO_SPLIT.min * 100}
+          valuemax={PHOTO_SPLIT.max * 100}
+          onstart={() => (dragFrom = $photoSplit)}
+          ondrag={(dx) => setPhotoSplit(dragFrom + dx / Math.max(1, viewsWidth))}
+          onstep={(n) => setPhotoSplit($photoSplit + 0.025 * n)}
+          onreset={() => setPhotoSplit(PHOTO_SPLIT.default)}
+        />
         <PhotoPanel
           {photo}
           frame={frame.rgba}
@@ -852,29 +834,10 @@
   .viewer {
     display: grid;
     /* min(): після звуження вікна панель не займає більше половини, навіть якщо збережено ширше */
-    grid-template-columns: min(var(--sidebar-width, 240px), 50%) 16px 1fr;
+    grid-template-columns: min(var(--sidebar-width, 240px), 50%) auto 1fr;
+    column-gap: 2px;
     height: 100%;
     min-height: 0;
-  }
-  .splitter {
-    position: relative;
-    cursor: col-resize;
-    touch-action: none;
-  }
-  .splitter::after {
-    content: '';
-    position: absolute;
-    inset: 0 7px;
-    border-radius: 1px;
-    transition: background 0.15s;
-  }
-  .splitter:hover::after,
-  .splitter.active::after,
-  .splitter:focus-visible::after {
-    background: var(--accent);
-  }
-  .splitter:focus-visible {
-    outline: none;
   }
   .controls {
     display: flex;
@@ -949,6 +912,9 @@
   .readout p {
     margin: 2px 0;
   }
+  .readout .slot {
+    min-height: 1lh;
+  }
   .warning {
     margin: 4px 0 0;
     color: var(--warn);
@@ -1022,11 +988,15 @@
   .views {
     flex: 1;
     display: flex;
-    gap: 12px;
     min-height: 0;
   }
-  .views > :global(*) {
-    flex: 1 1 0;
+  /* ІЧ і фото ділять ширину в пропорції --ir-share (межу між ними тягнуть) */
+  .views > .stage {
+    flex: var(--ir-share) 1 0;
+    min-width: 0;
+  }
+  .views > :global(:last-child:not(.stage)) {
+    flex: calc(1 - var(--ir-share)) 1 0;
     min-width: 0;
   }
   .stage {
@@ -1141,14 +1111,12 @@
     .image-area {
       order: -1;
     }
-    .splitter {
-      display: none;
-    }
     .views {
       flex-direction: column;
       flex: none;
     }
-    .views > :global(*) {
+    .views > .stage,
+    .views > :global(:last-child:not(.stage)) {
       height: 60vh;
       flex: none;
     }
