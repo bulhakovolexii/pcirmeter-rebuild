@@ -5,6 +5,33 @@
 
 ---
 
+## 2026-10-22 · I-04 Каркас проєкту ✅
+
+**Зроблено**
+- Vite 8 + Svelte 5 + TypeScript 6 (strict, `noUncheckedIndexedAccess`), Vitest 5, ESLint 10 (flat config,
+  typescript-eslint, eslint-plugin-svelte) + Prettier 3. Скрипти `dev`, `build`, `test`, `lint`, `format`, `check`.
+- Структура: `src/core/` (перший модуль — `units.ts`, °C/°F/K), `src/ui/App.svelte`, `src/i18n/{uk,en,index}.ts`,
+  `tests/core/`, `tests/ui/`.
+- Ядро без DOM: окремий `tsconfig.core.json` (lib без DOM) + ESLint `no-restricted-globals` для `src/core/**`.
+  Перевірено пробним `document` — ловлять обидва.
+- UI-смоук-тест через `svelte/server` (браузера в sandbox немає). `npm run dev` віддає сторінку (перевірено curl).
+- CI: `.github/workflows/ci.yml` (Node з `.nvmrc` = 22): lint → test → build.
+- `vite.config.ts`: `base: './'` — під GitHub Pages / підкаталог.
+
+**Рішення**
+- `npm run build` включає `check` (svelte-check + tsc для трьох tsconfig) — типи перевіряються й у CI.
+- i18n — власний мінімальний store `tr` (без бібліотек); ключі задає `uk.ts`, `en.ts` типізовано ними.
+
+**Лишилось**
+- Віддаленого репозиторію немає → CI ще не запускався на GitHub. Створити репозиторій, коли викладач вирішить
+  (знадобиться найпізніше для деплою в I-16).
+- Візуально в браузері застосунок не перевірявся (лише SSR-тест і `vite build`).
+
+**Від викладача:** за бажання — відкрити `npm run dev` у себе й підтвердити, що сторінка видна; рішення щодо
+GitHub-репозиторію (публічний / приватний, назва).
+
+---
+
 ## 2026-10-22 · Прийом еталонів (підготовка до I-08)
 
 **Зроблено**

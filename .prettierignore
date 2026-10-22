@@ -1,0 +1,9 @@
+dist/
+node_modules/
+reference/
+samples/
+tools/
+docs/
+tests/golden/
+package-lock.json
+*.md

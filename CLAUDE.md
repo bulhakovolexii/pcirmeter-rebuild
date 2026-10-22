@@ -90,7 +90,21 @@
 ## Корисні команди
 
 ```bash
+npm run dev            # dev-сервер Vite (http://localhost:5173)
+npm test               # Vitest (tests/**/*.test.ts, середовище node)
+npm run lint           # ESLint + Prettier --check
+npm run format         # Prettier --write
+npm run build          # check (svelte-check + tsc для core/app/node) + vite build → dist/
 7z x -oreference/original Setup.exe          # повторне розпакування
 npx -y rea-agents@latest --help              # REA CLI (Node >= 22.19)
-npm run dev | npm test | npm run build       # після фази 3
 ```
+
+Node — через `bash -l -c "..."` (див. вище). CI: `.github/workflows/ci.yml` (lint + test + build на кожен push).
+
+### Структура коду
+
+- `src/core/` — ядро без DOM. Захищено двічі: `tsconfig.core.json` (lib без `DOM`) і правило ESLint
+  `no-restricted-globals`. Сюди ж підуть Web Worker-обгортки лише як тонкий шар у `src/ui/`.
+- `src/ui/` — Svelte 5; `src/i18n/` — словники `uk.ts` (джерело ключів) і `en.ts` (типізовано тими ж ключами), store `tr`.
+- `tests/` — Vitest; UI-смоук-тести рендерять компоненти через `svelte/server` (браузера в sandbox немає).
+- Стиль: Prettier (без `;`, одинарні лапки, ширина 110).
