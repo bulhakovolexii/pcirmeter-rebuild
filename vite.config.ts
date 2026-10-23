@@ -1,21 +1,23 @@
 /// <reference types="vitest/config" />
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
+import { demo, DEMO_SAMPLES } from './vite.demo.ts'
 import { pwa } from './vite.pwa.ts'
 
 export default defineConfig({
   // Відносні шляхи — щоб збірка працювала з підкаталогу GitHub Pages і з file://
   base: './',
-  plugins: [svelte(), pwa()],
+  // Порядок важливий: `pwa` має бачити демо-сторінку в збірці
+  plugins: [svelte(), demo(), pwa()],
   build: {
     // PDF-звіт (pdf-lib + fontkit, ≈ 1,1 МБ) — окремий chunk, що вантажиться лише при створенні звіту
     chunkSizeWarningLimit: 1200,
     rolldownOptions: {
       output: {
-        // Зразки демо (`src/ui/demo.ts`) — окремо від застосунку: `vite.pwa.ts` не передкешує `demo/`
+        // Зразки демо (`src/ui/demo.ts`) — окремо від застосунку, поза передкешем SW
         assetFileNames: (asset) =>
           asset.originalFileNames.some((f) => f.includes('samples/'))
-            ? 'demo/[name]-[hash][extname]'
+            ? `${DEMO_SAMPLES}[name]-[hash][extname]`
             : 'assets/[name]-[hash][extname]',
       },
     },

@@ -49,8 +49,9 @@ self.addEventListener('fetch', (event) => {
 
 async function fromCache(request: Request): Promise<Response> {
   const cache = await caches.open(CACHE)
-  // Навігація (у т. ч. `index.html?...` чи `./` з параметрами) — завжди оболонка застосунку
-  const key = request.mode === 'navigate' ? INDEX : request
-  const hit = await cache.match(key, { ignoreSearch: true })
-  return hit ?? fetch(request)
+  const hit = await cache.match(request, { ignoreSearch: true })
+  if (hit) return hit
+  // Навігація на іншу адресу (`index.html`, `demo` без скісної риски…) — оболонка застосунку
+  if (request.mode === 'navigate') return (await cache.match(INDEX)) ?? fetch(request)
+  return fetch(request)
 }

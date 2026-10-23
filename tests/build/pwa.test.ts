@@ -2,23 +2,34 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { transformWithOxc } from 'vite'
 import { describe, expect, it } from 'vitest'
+import { demoPage } from '../../vite.demo'
 import { precacheList, precacheVersion, serviceWorkerSource } from '../../vite.pwa'
 
 const root = join(import.meta.dirname, '..', '..')
 
 describe('precacheList', () => {
-  it('усе, крім sw.js, карт коду, зразків демо й index.html (замість нього — ./)', () => {
+  it('усе, крім sw.js, карт коду й зразків демо; сторінки — адресою теки', () => {
     expect(
       precacheList([
         'sw.js',
         'index.html',
         'assets/b.js',
         'assets/b.js.map',
-        'demo/130604_0001T-abc.jpg',
+        'demo/samples/130604_0001T-abc.jpg',
+        'demo/index.html',
         'manifest.webmanifest',
         'assets/a.css',
       ]),
-    ).toEqual(['./', 'assets/a.css', 'assets/b.js', 'manifest.webmanifest'])
+    ).toEqual(['./', 'assets/a.css', 'assets/b.js', 'demo/', 'manifest.webmanifest'])
+  })
+})
+
+describe('demoPage', () => {
+  it('копія index.html з <base href="../"> — відносні шляхи ведуть у корінь збірки', () => {
+    const page = demoPage('<html><head><script src="./assets/a.js"></script></head></html>')
+    expect(page).toBe(
+      '<html><head>\n    <base href="../" /><script src="./assets/a.js"></script></head></html>',
+    )
   })
 })
 
@@ -93,7 +104,7 @@ async function loadServiceWorker(precache: string[], version: string) {
 
 describe('sw.js', () => {
   it('передкешовує файли й видає їх без мережі; навігація — оболонка застосунку', async () => {
-    const sw = await loadServiceWorker(['./', 'assets/a.js'], 'v2')
+    const sw = await loadServiceWorker(['./', 'assets/a.js', 'demo/'], 'v2')
     sw.stores.set('pcirmeter-v1', new Map())
     sw.stores.set('other-app', new Map())
     await sw.dispatch('install')
@@ -102,6 +113,9 @@ describe('sw.js', () => {
 
     expect(await sw.get(sw.scope + 'assets/a.js')).toBe('cached ' + sw.scope + 'assets/a.js')
     expect(await sw.get(sw.scope + 'index.html?x=1', 'navigate')).toBe('cached ' + sw.scope)
+    // Демо-сторінка — своя; без скісної риски — оболонка (відносні шляхи від кореня теж працюють)
+    expect(await sw.get(sw.scope + 'demo/', 'navigate')).toBe('cached ' + sw.scope + 'demo/')
+    expect(await sw.get(sw.scope + 'demo', 'navigate')).toBe('cached ' + sw.scope)
     expect(await sw.get(sw.scope + 'assets/new.js')).toBe('network ' + sw.scope + 'assets/new.js')
     // Чуже походження й не-GET — повз SW
     expect(await sw.get('https://cdn.example.com/x.js')).toBeUndefined()

@@ -1,7 +1,8 @@
 /**
- * Демонстраційний режим: `?demo` в адресі відкриває зразки `samples/legacy-2013/` (посилання для заняття).
- * Vite копіює зразки в збірку окремими файлами (`demo/`, див. `vite.config.ts`); у передкеш SW вони не входять —
- * без мережі демо не відкриється, а решта застосунку не важчає на ≈ 1,5 МБ.
+ * Демонстраційний режим: сторінка `…/demo/` відкриває зразки `samples/legacy-2013/` (посилання для заняття);
+ * корінь застосунку — звичайний режим. Сторінку для статичного хостингу створює `vite.demo.ts`. Vite копіює зразки
+ * в збірку окремими файлами (`demo/samples/`); у передкеш SW вони не входять — без мережі демо не відкриється,
+ * а встановлення застосунку не важчає на ≈ 1,6 МБ.
  */
 
 import type { FileSource } from './files'
@@ -12,19 +13,9 @@ const samples = import.meta.glob<string>('../../samples/legacy-2013/*.jpg', {
   eager: true,
 })
 
-export const DEMO_PARAM = 'demo'
-
-/** Чи просить адреса демо (`?demo`, `?demo=1`…; `?demo=false` / `?demo=0` — ні). */
-export function isDemoUrl(url: URL): boolean {
-  const v = url.searchParams.get(DEMO_PARAM)
-  return v !== null && v !== 'false' && v !== '0'
-}
-
-/** Адреса без параметра демо — щоб перезавантаження відновлювало сеанс, а не відкривало зразки вдруге. */
-export function withoutDemo(url: URL): URL {
-  const out = new URL(url)
-  out.searchParams.delete(DEMO_PARAM)
-  return out
+/** Чи це демо-сторінка: шлях закінчується на `/demo` чи `/demo/` (або `/demo/index.html`). */
+export function isDemoPath(pathname: string): boolean {
+  return /\/demo(\/(index\.html)?)?$/.test(pathname)
 }
 
 /** Зразки як джерела для `openFiles` (за назвою файлу — у хронологічному порядку зйомки). */

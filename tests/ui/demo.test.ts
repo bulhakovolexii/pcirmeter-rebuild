@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { demoSources, isDemoUrl, withoutDemo } from '../../src/ui/demo'
+import { demoSources, isDemoPath } from '../../src/ui/demo'
 
 describe('демо', () => {
-  it('?demo вмикає, ?demo=false / 0 — ні', () => {
-    const on = (q: string) => isDemoUrl(new URL('https://x.org/app/' + q))
-    expect(on('?demo')).toBe(true)
-    expect(on('?demo=true')).toBe(true)
-    expect(on('?demo=1')).toBe(true)
-    expect(on('?demo=false')).toBe(false)
-    expect(on('?demo=0')).toBe(false)
-    expect(on('')).toBe(false)
-  })
-
-  it('прибирає параметр, решту адреси лишає', () => {
-    expect(withoutDemo(new URL('https://x.org/app/?a=1&demo=true#h')).href).toBe('https://x.org/app/?a=1#h')
+  it('лише шлях …/demo; корінь і ?demo — звичайний режим', () => {
+    expect(isDemoPath('/pcirmeter-rebuild/demo/')).toBe(true)
+    expect(isDemoPath('/pcirmeter-rebuild/demo')).toBe(true)
+    expect(isDemoPath('/pcirmeter-rebuild/demo/index.html')).toBe(true)
+    expect(isDemoPath('/demo/')).toBe(true)
+    expect(isDemoPath('/pcirmeter-rebuild/')).toBe(false)
+    expect(isDemoPath('/pcirmeter-rebuild/index.html')).toBe(false)
+    expect(isDemoPath('/pcirmeter-rebuild/demo/samples/x.jpg')).toBe(false)
+    expect(isDemoPath('/pcirmeter-rebuild/nodemo/')).toBe(false)
   })
 
   it('усі зразки legacy-2013 за назвою', () => {

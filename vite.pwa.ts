@@ -6,21 +6,19 @@ import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { transformWithOxc, type Plugin } from 'vite'
+import { DEMO_SAMPLES } from './vite.demo.ts'
 
 export const SW_FILE = 'sw.js'
 
-/** Зразки демо (`?demo`) — вантажаться лише на вимогу, не при встановленні. */
-const DEMO_DIR = 'demo/'
-
 /**
- * Файли, які SW кешує при встановленні: усе, крім себе, карт коду, зразків демо й `index.html`
- * (його заміняє `./`).
+ * Файли, які SW кешує при встановленні: усе, крім себе, карт коду й зразків демо (вантажаться лише на вимогу).
+ * Сторінки `…/index.html` — під адресою теки (`./`, `demo/`): саме так їх запитує навігація.
  */
 export function precacheList(files: Iterable<string>): string[] {
-  const list = [...files]
-    .filter((f) => f !== SW_FILE && f !== 'index.html' && !f.endsWith('.map') && !f.startsWith(DEMO_DIR))
+  return [...files]
+    .filter((f) => f !== SW_FILE && !f.endsWith('.map') && !f.startsWith(DEMO_SAMPLES))
+    .map((f) => (f === 'index.html' ? './' : f.replace(/\/index\.html$/, '/')))
     .sort()
-  return ['./', ...list]
 }
 
 /** Версія кешу — короткий хеш шляхів і вмісту всіх файлів (порядок не важливий). */

@@ -75,8 +75,8 @@
   ізотерми — `src/core/isotherms.ts`, гістограма — `paletteHistogram` у `render.ts` (семантика — `features.md` §2.5).
 - PWA: service worker `src/sw/sw.ts` (окремий `tsconfig.sw.json`, lib `WebWorker`) збирає плагін `vite.pwa.ts`
   у `dist/sw.js` зі списком передкешування й версією-хешем; реєстрація й банер оновлення — `src/ui/pwa.ts` (лише
-  production; нова версія чекає на кнопку «Оновити»). Демо: `?demo` в адресі відкриває `samples/legacy-2013/`
-  (`src/ui/demo.ts`; у збірці — `dist/demo/`, поза передкешем SW). Маніфест — `public/manifest.webmanifest`, іконки
+  production; нова версія чекає на кнопку «Оновити»). Демо: сторінка `…/demo/` відкриває `samples/legacy-2013/`
+  (`src/ui/demo.ts`; `dist/demo/index.html` створює `vite.demo.ts`; зразки — `dist/demo/samples/`, поза передкешем SW). Маніфест — `public/manifest.webmanifest`, іконки
   `public/icons/` генерує `tools/make_icons.ts` (запуск — у шапці файлу). Деплой — job `deploy` у `ci.yml`
   на push у `main` → https://bulhakov.dev/pcirmeter-rebuild/.
 - PDF-звіт: генератор `src/report/report.ts` (pdf-lib + fontkit, без DOM; окремий chunk через `import()` у
