@@ -892,6 +892,9 @@
     gap: 14px;
     overflow-y: auto;
     min-height: 0;
+    /* Відступ від смуги прокрутки; місце під смугу зарезервоване — вміст не зсувається, коли вона з'являється */
+    padding-right: 8px;
+    scrollbar-gutter: stable;
   }
   h2 {
     margin: 0 0 4px;
