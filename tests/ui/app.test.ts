@@ -144,7 +144,7 @@ describe('App', () => {
     expect(body).toContain('Додайте точку')
   })
 
-  it('бічна панель: курсор, файл і маркери — нагорі; межі панелі й фото', async () => {
+  it('бічна панель: курсор і файл нагорі; палітра й маркери — у «Параметрах кадру»; межі панелі й фото', async () => {
     const { opened } = await openFiles([source('130604_0002T.jpg', new Uint8Array(readFileSync(sample)))])
     sidebarWidth.set(320)
     try {
@@ -152,8 +152,13 @@ describe('App', () => {
       const at = (text: string) => body.indexOf(text)
       expect(at('Під курсором')).toBeGreaterThan(at('<aside'))
       expect(at('160 × 120')).toBeGreaterThan(at('Під курсором'))
-      expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('160 × 120'))
-      expect(at('Маркери Max/Min кадру')).toBeLessThan(at('Палітра'))
+      // Шкала → ізотерми → «Параметри кадру» (палітра, маркери Max/Min, поля параметрів)
+      expect(at('Шкала')).toBeGreaterThan(at('160 × 120'))
+      expect(at('Ізотерми')).toBeGreaterThan(at('Шкала'))
+      expect(at('Параметри кадру')).toBeGreaterThan(at('Ізотерми'))
+      expect(at('Палітра')).toBeGreaterThan(at('Параметри кадру'))
+      expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('Палітра'))
+      expect(at('Коефіцієнт випромінювання')).toBeGreaterThan(at('Маркери Max/Min кадру'))
       // Без курсора — заглушки, щоб панель не стрибала
       expect(body).toMatch(/Піксель: —/)
       expect(body).toContain('--sidebar-width: 320px')

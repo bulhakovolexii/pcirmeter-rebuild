@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
+  import { untrack, type Snippet } from 'svelte'
   import { PARAM_LIMITS, type EditableParam, type ObjectParams } from '../core/temperature'
   import { locale, tr } from '../i18n'
   import { formatNumber, LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
@@ -28,9 +28,11 @@
     resetLabel: string
     /** Пропускання атмосфери для поточних параметрів. */
     tau: number
+    /** Додатковий вміст групи перед полями параметрів (налаштування показу кадру). */
+    children?: Snippet
   }
 
-  let { title, base, overrides, onchange, baseLabel, resetLabel, tau }: Props = $props()
+  let { title, base, overrides, onchange, baseLabel, resetLabel, tau, children }: Props = $props()
 
   const params = $derived({ ...base, ...overrides })
   const changed = $derived(PARAM_FIELDS.some((k) => isChanged(k, params[k], base[k], $units)))
@@ -77,6 +79,10 @@
 
 <fieldset class="params">
   <legend>{title}</legend>
+  {#if children}
+    {@render children()}
+    <hr />
+  {/if}
   {#each PARAM_FIELDS as key (key)}
     {@const unit = unitOf(key, $units)}
     {@const invalid = parseParam(key, input[key], $units) === null}
@@ -122,6 +128,12 @@
     font-size: 0.9rem;
     font-weight: 600;
     padding: 0 4px;
+  }
+  hr {
+    width: 100%;
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid var(--border);
   }
   .field {
     display: flex;

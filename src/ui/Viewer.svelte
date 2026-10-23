@@ -575,11 +575,6 @@
       {/if}
     </section>
 
-    <label class="check">
-      <input type="checkbox" bind:checked={showExtremes} />
-      {$tr('view.extremes')}
-    </label>
-
     {#if audio}
       <section>
         <h2>{$tr('audio.title')}</h2>
@@ -593,15 +588,6 @@
         >
       </section>
     {/if}
-
-    <label class="field">
-      <span>{$tr('palette.title')}</span>
-      <select bind:value={paletteId}>
-        {#each PALETTE_IDS as id (id)}
-          <option value={id}>{$tr(`palette.${id}`)}</option>
-        {/each}
-      </select>
-    </label>
 
     <fieldset>
       <legend>{$tr('scale.title')}</legend>
@@ -682,7 +668,20 @@
       baseLabel={$tr('params.fromFile')}
       resetLabel={$tr('params.reset')}
       tau={model.tau}
-    />
+    >
+      <label class="field">
+        <span>{$tr('palette.title')}</span>
+        <select bind:value={paletteId}>
+          {#each PALETTE_IDS as id (id)}
+            <option value={id}>{$tr(`palette.${id}`)}</option>
+          {/each}
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" bind:checked={showExtremes} />
+        {$tr('view.extremes')}
+      </label>
+    </ParamsPanel>
 
     {#if selected && selectedResult}
       {#key selected.id}
