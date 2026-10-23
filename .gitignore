@@ -10,4 +10,8 @@ coverage/
 
 # Локальні дані, не для публічного репозиторію (фото кафедри 2021, скриншоти оригіналу)
 samples/latest-2021/
+# UNI-T UTi89 PRO — у git лише інструкція й бланк нотаток
+samples/uti89pro/*
+!samples/uti89pro/README.md
+!samples/uti89pro/notes.csv
 tests/golden/screens/

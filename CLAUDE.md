@@ -89,7 +89,7 @@
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;
-  **поза git** — фото кафедри не публікуються). Скриншоти оригіналу `tests/golden/screens/` — теж поза git.
+  **поза git** — фото кафедри не публікуються). `samples/uti89pro/` — UNI-T UTi89 PRO (інший формат, I-19/I-20; у git лише `README.md` з переліком знімків і `notes.csv` з еталонами з екрана камери). Скриншоти оригіналу `tests/golden/screens/` — теж поза git.
   Репозиторій публічний (лише заради GitHub Pages): нічого з цих тек, `reference/` чи ресурсів оригіналу не комітити.
   Тести, яким потрібні локальні дані, мають пропускатися (`it.skipIf`), якщо файлів немає — у CI їх немає.
 - Декомпільований C#: `reference/decompiled/{IrMeter,PCIRMeter}/`; знімок Ghidra-аналізу DLL:
