@@ -12,7 +12,7 @@ ENV_FILE=/etc/sandbox-persistent.sh
 add_env() { grep -qxF "$1" "$ENV_FILE" || echo "$1" >> "$ENV_FILE"; }
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq 7zip file binutils unzip \
-  openjdk-21-jdk-headless bison flex zlib1g-dev >/dev/null
+  openjdk-21-jdk-headless bison flex zlib1g-dev poppler-utils >/dev/null
 
 # Ghidra + native decompiler for linux/arm64 (not shipped in the release)
 if [ ! -d "$GHIDRA_DIR" ]; then

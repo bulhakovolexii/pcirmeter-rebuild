@@ -39,6 +39,7 @@
   import { NO_ALIGNMENT, type Alignment } from './photo'
   import PhotoPanel from './PhotoPanel.svelte'
   import ProfileChart from './ProfileChart.svelte'
+  import { registerReportSource } from './report'
   import ResultsTable from './ResultsTable.svelte'
   import {
     areaDistribution,
@@ -493,6 +494,22 @@
             { key: `${r.object.id}-min`, kind: 'min', ...pixelAt(r.stats.minAt) },
           ],
     ),
+  )
+
+  // Знімок того, що бачить користувач, — для PDF-звіту (читається в момент створення звіту)
+  $effect(() =>
+    registerReportSource(file.id, () => ({
+      name: file.name,
+      thermogram: file.thermogram,
+      overrides: $state.snapshot(overrides),
+      paletteId,
+      scale,
+      scaleLabels,
+      manualScale: manual,
+      isotherms: $state.snapshot(isotherms),
+      objects: $state.snapshot(objects),
+      showExtremes,
+    })),
   )
 
   // Розміри панелей (спільні для вкладок, див. settings.ts): ширина бічної панелі й частка ІЧ поруч із фото

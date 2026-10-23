@@ -76,6 +76,11 @@
   production; нова версія чекає на кнопку «Оновити»). Маніфест — `public/manifest.webmanifest`, іконки
   `public/icons/` генерує `tools/make_icons.ts` (запуск — у шапці файлу). Деплой — job `deploy` у `ci.yml`
   на push у `main` → https://bulhakov.dev/pcirmeter-rebuild/.
+- PDF-звіт: генератор `src/report/report.ts` (pdf-lib + fontkit, без DOM; окремий chunk через `import()` у
+  `src/ui/report.ts`), діалог — `ReportDialog.svelte`, стан переглядачів — `registerReportSource`; зміст — `docs/spec/report.md`.
+  Шрифти — TTF-підмножини Fira Sans `src/report/fonts/` (генерує `tools/make_pdf_fonts.py`, запуск — у шапці).
+  Наскрізна перевірка — `tools/report_e2e.mjs` (запуск — у шапці; для кириличних імен завантажень — `LANG=C.UTF-8`),
+  перегляд сторінок — `pdftoppm -r 80 -png file.pdf page`.
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Справжнього браузера в sandbox немає, але є headless Chromium
   (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу).
   Остаточно UI перевіряє викладач. Мінімальна ширина інтерфейсу — 1024 px; вужче — заглушка в `App.svelte`.

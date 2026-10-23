@@ -6,6 +6,7 @@
   import { applyUpdate, dismissOfflineReady, onLaunchFiles, pwa } from './pwa'
   import { units } from './settings'
   import FileTabs from './FileTabs.svelte'
+  import ReportDialog from './ReportDialog.svelte'
   import Viewer from './Viewer.svelte'
 
   interface Props {
@@ -21,6 +22,7 @@
   let errors: OpenError[] = $state([])
   let dragging = $state(false)
   let input: HTMLInputElement | undefined = $state()
+  let reportOpen = $state(false)
 
   async function open(sources: Iterable<FileSource>) {
     const { opened, errors: failed } = await openFiles(sources)
@@ -101,6 +103,12 @@
         hidden
         onchange={onInputChange}
       />
+      <button
+        type="button"
+        disabled={files.length === 0}
+        title={$tr('report.buttonTitle')}
+        onclick={() => (reportOpen = true)}>{$tr('report.button')}</button
+      >
       <select bind:value={$units.temperature} aria-label={$tr('units.temperature')}>
         {#each ['C', 'F', 'K'] as const as u (u)}
           <option value={u}>{TEMPERATURE_SYMBOL[u]}</option>
@@ -154,6 +162,10 @@
     <main class="empty">
       <p class="muted">{$tr('files.empty')}</p>
     </main>
+  {/if}
+
+  {#if files.length > 0}
+    <ReportDialog open={reportOpen} {files} onclose={() => (reportOpen = false)} />
   {/if}
 
   {#if dragging}
