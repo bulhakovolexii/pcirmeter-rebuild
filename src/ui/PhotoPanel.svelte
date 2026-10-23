@@ -351,11 +351,19 @@
   .group button:not(:disabled):hover {
     border-color: var(--gold);
   }
+  /* «?» — дочірній компонент, стилі `.group button` на нього не діють */
   .group :global(.icon) {
     width: 22px;
     height: 22px;
     min-width: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.24);
     color: #fff;
+  }
+  .group :global(.icon.active),
+  .group :global(.icon:hover) {
+    border-color: var(--gold);
+    color: var(--gold);
   }
   .segmented {
     display: flex;

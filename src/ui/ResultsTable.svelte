@@ -25,6 +25,12 @@
 <section class="results">
   <div class="head">
     <h2>{$t('results.title')}</h2>
+    <!-- Примітка — у рядку заголовка, щоб її поява не змінювала висоту блоку -->
+    {#if results.some((r) => r.status !== 'ok')}
+      <span class="note" title={$t('results.flagNote')}>{$t('results.flagNote')}</span>
+    {:else}
+      <span class="note"></span>
+    {/if}
     <button type="button" disabled={results.length === 0} onclick={onexport}>{$t('results.export')}</button>
   </div>
   <!-- Висота стала — заголовок і 7 рядків (далі — прокрутка): додавання об'єктів не зсуває решту інтерфейсу -->
@@ -76,8 +82,6 @@
       <p class="muted empty">{$t('results.empty')}</p>
     {/if}
   </div>
-  <!-- Рядок примітки зарезервовано, щоб її поява не змінювала висоту -->
-  <p class="note">{results.some((r) => r.status !== 'ok') ? $t('results.flagNote') : ''}</p>
 </section>
 
 <style>
@@ -89,11 +93,11 @@
   .head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
+    margin-bottom: 6px;
   }
   h2 {
-    margin: 0 0 4px;
+    margin: 0;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--muted);
@@ -105,7 +109,12 @@
     font-size: 0.85rem;
   }
   .note {
-    min-height: 1lh;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .muted,
   .note {

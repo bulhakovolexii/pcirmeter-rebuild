@@ -18,12 +18,13 @@
   let { name, bins, rgb, onexport }: Props = $props()
 
   const uid = $props.id()
-  const HEIGHT = 180
+  /** Висота графіка: за замовчуванням, далі — за висотою нижньої смуги (її задає таблиця результатів). */
+  let height = $state(180)
   const PAD = { left: 52, right: 14, top: 18, bottom: 24 }
 
   let width = $state(480)
   const plotW = $derived(Math.max(10, width - PAD.left - PAD.right))
-  const plotH = HEIGHT - PAD.top - PAD.bottom
+  const plotH = $derived(Math.max(0, height - PAD.top - PAD.bottom))
 
   const total = $derived(bins.reduce((sum, b) => sum + b.count, 0))
   const peak = $derived(Math.max(1, ...bins.map((b) => b.count)))
@@ -67,10 +68,10 @@
     <button type="button" disabled={bins.length === 0} onclick={onexport}>{$tr('distribution.export')}</button
     >
   </div>
-  <div class="chart" bind:clientWidth={width}>
+  <div class="chart" bind:clientWidth={width} bind:clientHeight={height}>
     <svg
       {width}
-      height={HEIGHT}
+      {height}
       role="img"
       aria-label="{$tr('distribution.title')} {name}"
       onpointerleave={() => (hovered = null)}
@@ -111,7 +112,7 @@
         <text
           class="tick"
           x={PAD.left + slot * k}
-          y={HEIGHT - 6}
+          y={height - 6}
           text-anchor={k === 0 ? 'start' : k === bins.length ? 'end' : 'middle'}>{temp(c)}</text
         >
       {/each}
@@ -129,9 +130,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-bottom: 6px;
   }
   h2 {
-    margin: 0 0 4px;
+    margin: 0;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--muted);
@@ -146,13 +148,19 @@
   .muted {
     color: var(--muted);
   }
+  /* Графік заповнює висоту смуги; SVG поза потоком, щоб не впливати на неї */
   .chart {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 182px;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
     overflow: hidden;
   }
   svg {
+    position: absolute;
+    inset: 0;
     display: block;
   }
   .grid {
