@@ -152,3 +152,28 @@ input[type='range'] {
   border-color: var(--gold);
   color: var(--gold);
 }
+
+/* Тонкі смуги прокрутки (4 px). Chromium/Safari — через ::-webkit-scrollbar; стандартні scrollbar-width /
+   scrollbar-color у Chromium вимикають ці псевдоелементи, тому вони — лише для браузерів без них (Firefox,
+   де найвужча смуга — thin, ≈ 8 px). */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}

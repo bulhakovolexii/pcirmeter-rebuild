@@ -18,7 +18,8 @@ if (!out || !widthList || files.length === 0) {
   process.exit(1)
 }
 
-const browser = await chromium.launch()
+// Playwright за замовчуванням ховає смуги прокрутки — на знімках вони потрібні
+const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] })
 for (const width of widthList.split(',').map(Number)) {
   const page = await browser.newPage({ viewport: { width, height: Math.max(700, Math.round(width * 0.6)) } })
   page.on('pageerror', (e) => console.log(`[${width}] pageerror:`, e.message))
