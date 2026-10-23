@@ -75,7 +75,7 @@
     type MeasureObject,
     type ShapeKind,
   } from './tools'
-  import { fitView, ZOOM_STEP, zoomAt } from './view'
+  import { fitView, wheelFactor, ZOOM_STEP, zoomAt } from './view'
 
   interface Props {
     file: OpenedFile
@@ -220,7 +220,7 @@
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
       const rect = el.getBoundingClientRect()
-      zoomTo(zoom * (e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP), e.clientX - rect.left, e.clientY - rect.top)
+      zoomTo(zoom * wheelFactor(e), e.clientX - rect.left, e.clientY - rect.top)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)

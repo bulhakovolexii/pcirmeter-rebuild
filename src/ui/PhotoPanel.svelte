@@ -13,7 +13,7 @@
     syncedPhotoView,
     type Alignment,
   } from './photo'
-  import { fitView, ZOOM_STEP, zoomAt, type View } from './view'
+  import { fitView, wheelFactor, ZOOM_STEP, zoomAt, type View } from './view'
 
   interface Props {
     /** JPEG видимого фото. */
@@ -131,10 +131,8 @@
       const rect = el.getBoundingClientRect()
       const cx = e.clientX - rect.left
       const cy = e.clientY - rect.top
-      // Shift + колесо в деяких системах дає горизонтальну прокрутку
-      const up = (e.deltaY || e.deltaX) < 0
-      if (e.shiftKey && mode === 'overlay') scaleLayer(up ? ALIGN_STEP : 1 / ALIGN_STEP, cx, cy)
-      else zoomTo(view.zoom * (up ? ZOOM_STEP : 1 / ZOOM_STEP), cx, cy)
+      if (e.shiftKey && mode === 'overlay') scaleLayer(wheelFactor(e, ALIGN_STEP), cx, cy)
+      else zoomTo(view.zoom * wheelFactor(e), cx, cy)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
