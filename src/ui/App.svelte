@@ -41,7 +41,9 @@
   // Відкриті файли переживають перезавантаження вкладки браузера (до закриття вкладки файлу чи браузера)
   let session: TabSession | null = $state.raw(null)
   onMount(() => {
-    void openTabSession().then((s) => {
+    // Демо-сторінка — зі своїм сеансом вкладки: її зразки не з'являються в звичайному режимі й навпаки
+    const demo = isDemoPath(location.pathname)
+    void openTabSession(demo ? 'demo' : 'main').then((s) => {
       let restored: OpenedFile[] = []
       if (s) {
         restored = restoreFiles(s.files)
@@ -52,8 +54,7 @@
         session = s
       }
       // Демо-сторінка відкриває зразки; після перезавантаження — те, що збережено в сеансі вкладки
-      if (restored.length === 0 && files.length === 0 && isDemoPath(location.pathname))
-        void open(demoSources())
+      if (demo && restored.length === 0 && files.length === 0) void open(demoSources())
     })
   })
   $effect(() => session?.sync(files, activeId))

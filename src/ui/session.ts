@@ -7,6 +7,10 @@
  * браузера — видаляються під час запуску. Дубльована вкладка (копія `sessionStorage`) бачить замок зайнятим і
  * переносить файли в новий сеанс, щоб закриття файлу в одній вкладці не зачіпало іншу.
  *
+ * Демо-сторінка (`demo.ts`) має окремий сеанс у тій самій вкладці: її зразки не з'являються в звичайному режимі,
+ * а файли звичайного режиму не губляться після переходу в демо й назад. Тому прибирання не чіпає сеанси, на які
+ * посилається `sessionStorage` цієї вкладки (будь-якого режиму).
+ *
  * Розмітка файлу (параметри кадру, об'єкти) — в окремому сховищі: вона змінюється часто (перетягування), а байти
  * файлу переписувати щоразу не варто. Запис відкладається на `MARKUP_DELAY` мс після останньої зміни.
  */
@@ -18,8 +22,14 @@ const STORE = 'files'
 const MARKUP = 'markup'
 const STORES = [STORE, MARKUP]
 const MARKUP_DELAY = 300
-const SESSION_KEY = 'pcirmeter.session'
-const ACTIVE_KEY = 'pcirmeter.activeFile'
+const KEY_PREFIX = 'pcirmeter.'
+const SESSION_KEY = 'session'
+const ACTIVE_KEY = 'activeFile'
+
+export type SessionMode = 'main' | 'demo'
+
+/** Ключ `sessionStorage` режиму: `pcirmeter.session` (звичайний), `pcirmeter.demo.session`. */
+const keyOf = (mode: SessionMode, name: string) => KEY_PREFIX + (mode === 'main' ? '' : mode + '.') + name
 const LOCK_PREFIX = 'pcirmeter-session:'
 
 interface Row {
@@ -94,12 +104,12 @@ export interface TabSession {
 }
 
 /** Сеанс вкладки; `null`, якщо сховища недоступні (Node, приватний режим, заборона) — тоді нічого не зберігається. */
-export async function openTabSession(): Promise<TabSession | null> {
+export async function openTabSession(mode: SessionMode = 'main'): Promise<TabSession | null> {
   const ss = storage()
   if (!ss || typeof indexedDB === 'undefined' || !('locks' in navigator)) return null
   try {
     const db = await openDb()
-    const previous = ss.getItem(SESSION_KEY)
+    const previous = ss.getItem(keyOf(mode, SESSION_KEY))
     let session = previous ?? crypto.randomUUID()
     let rows = previous ? await rowsOf<Row>(db, STORE, previous) : []
     let markups = previous ? await rowsOf<MarkupRow>(db, MARKUP, previous) : []
@@ -114,11 +124,11 @@ export async function openTabSession(): Promise<TabSession | null> {
       for (const r of markups) tx.objectStore(MARKUP).put(r)
       await done(tx)
     }
-    ss.setItem(SESSION_KEY, session)
-    await dropOrphans(db, session)
+    ss.setItem(keyOf(mode, SESSION_KEY), session)
+    await dropOrphans(db, tabSessions(ss))
 
     const saved = new Set(rows.map((r) => r.id))
-    const active = Number(ss.getItem(ACTIVE_KEY))
+    const active = Number(ss.getItem(keyOf(mode, ACTIVE_KEY)))
     const markupOf = new Map(markups.map((r) => [r.id, r.markup]))
     let queue = Promise.resolve()
     /** Записи по черзі: кожна зміна — окрема транзакція; переповнення сховища — запис просто не збережеться. */
@@ -139,7 +149,7 @@ export async function openTabSession(): Promise<TabSession | null> {
       }),
       activeId: saved.has(active) ? active : null,
       sync(files, activeId) {
-        ss.setItem(ACTIVE_KEY, String(activeId ?? ''))
+        ss.setItem(keyOf(mode, ACTIVE_KEY), String(activeId ?? ''))
         const { add, remove } = planSync(saved, files)
         if (add.length === 0 && remove.length === 0) return
         for (const id of add) saved.add(id)
@@ -179,8 +189,18 @@ export async function openTabSession(): Promise<TabSession | null> {
   }
 }
 
-/** Видаляє файли й розмітку сеансів, чий замок ніхто не тримає (вкладки браузера закрито). */
-async function dropOrphans(db: IDBDatabase, own: string) {
+/** Сеанси всіх режимів, на які посилається ця вкладка. */
+function tabSessions(ss: Storage): Set<string> {
+  const ids = new Set<string>()
+  for (let i = 0; i < ss.length; i++) {
+    const key = ss.key(i)
+    if (key?.startsWith(KEY_PREFIX) && key.endsWith('.' + SESSION_KEY)) ids.add(ss.getItem(key)!)
+  }
+  return ids
+}
+
+/** Видаляє файли й розмітку сеансів, чий замок ніхто не тримає і які не належать цій вкладці (вкладки закрито). */
+async function dropOrphans(db: IDBDatabase, own: Set<string>) {
   const held = new Set((await navigator.locks.query()).held?.map((l) => l.name) ?? [])
   const tx = db.transaction(STORES, 'readwrite')
   for (const store of STORES) {
@@ -189,7 +209,7 @@ async function dropOrphans(db: IDBDatabase, own: string) {
       const cursor = req.result
       if (!cursor) return
       const session = cursor.key as string
-      if (session !== own && !held.has(LOCK_PREFIX + session)) {
+      if (!own.has(session) && !held.has(LOCK_PREFIX + session)) {
         tx.objectStore(store).delete(IDBKeyRange.bound([session, -Infinity], [session, Infinity]))
       }
       cursor.continue()
