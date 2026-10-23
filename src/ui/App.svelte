@@ -3,6 +3,7 @@
   import { locale, tr } from '../i18n'
   import { openFiles, restoreFiles, type FileSource, type OpenError, type OpenedFile } from './files'
   import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
+  import { demoSources, isDemoUrl, withoutDemo } from './demo'
   import { applyUpdate, dismissOfflineReady, onLaunchFiles, pwa } from './pwa'
   import { openTabSession, type TabSession } from './session'
   import { units } from './settings'
@@ -41,15 +42,26 @@
   let session: TabSession | null = $state.raw(null)
   onMount(() => {
     void openTabSession().then((s) => {
-      if (!s) return
-      const restored = restoreFiles(s.files)
-      if (restored.length > 0) {
-        files = [...restored, ...files]
-        if (activeId === null) activeId = s.activeId ?? restored[0]!.id
+      let restored: OpenedFile[] = []
+      if (s) {
+        restored = restoreFiles(s.files)
+        if (restored.length > 0) {
+          files = [...restored, ...files]
+          if (activeId === null) activeId = s.activeId ?? restored[0]!.id
+        }
+        session = s
       }
-      session = s
+      openDemo(restored.length === 0)
     })
   })
+
+  // `?demo` — зразки для заняття; параметр прибирається з адреси, далі файли живуть у сеансі вкладки
+  function openDemo(load: boolean) {
+    const url = new URL(location.href)
+    if (!isDemoUrl(url)) return
+    history.replaceState(history.state, '', withoutDemo(url))
+    if (load && files.length === 0) void open(demoSources())
+  }
   $effect(() => session?.sync(files, activeId))
 
   function close(id: number) {

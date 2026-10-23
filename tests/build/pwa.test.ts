@@ -7,13 +7,14 @@ import { precacheList, precacheVersion, serviceWorkerSource } from '../../vite.p
 const root = join(import.meta.dirname, '..', '..')
 
 describe('precacheList', () => {
-  it('усе, крім sw.js, карт коду й index.html (замість нього — ./)', () => {
+  it('усе, крім sw.js, карт коду, зразків демо й index.html (замість нього — ./)', () => {
     expect(
       precacheList([
         'sw.js',
         'index.html',
         'assets/b.js',
         'assets/b.js.map',
+        'demo/130604_0001T-abc.jpg',
         'manifest.webmanifest',
         'assets/a.css',
       ]),

@@ -9,9 +9,17 @@ import { transformWithOxc, type Plugin } from 'vite'
 
 export const SW_FILE = 'sw.js'
 
-/** Файли, які SW кешує при встановленні: усе, крім себе, карт коду й `index.html` (його заміняє `./`). */
+/** Зразки демо (`?demo`) — вантажаться лише на вимогу, не при встановленні. */
+const DEMO_DIR = 'demo/'
+
+/**
+ * Файли, які SW кешує при встановленні: усе, крім себе, карт коду, зразків демо й `index.html`
+ * (його заміняє `./`).
+ */
 export function precacheList(files: Iterable<string>): string[] {
-  const list = [...files].filter((f) => f !== SW_FILE && f !== 'index.html' && !f.endsWith('.map')).sort()
+  const list = [...files]
+    .filter((f) => f !== SW_FILE && f !== 'index.html' && !f.endsWith('.map') && !f.startsWith(DEMO_DIR))
+    .sort()
   return ['./', ...list]
 }
 
