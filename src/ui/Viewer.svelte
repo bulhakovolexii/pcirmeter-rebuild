@@ -50,6 +50,9 @@
     resultsCsv,
   } from './results'
   import {
+    BOTTOM,
+    bottomHeight,
+    clampBottomHeight,
     clampPhotoSplit,
     clampSidebarWidth,
     PHOTO_SPLIT,
@@ -519,6 +522,11 @@
 
   const setSidebarWidth = (width: number) => sidebarWidth.set(clampSidebarWidth(width, viewerEl?.clientWidth))
   const setPhotoSplit = (share: number) => photoSplit.set(clampPhotoSplit(share))
+  let areaHeight = $state(0)
+  const setBottomHeight = (height: number) =>
+    bottomHeight.set(clampBottomHeight(height, areaHeight || Infinity))
+  // Після зменшення вікна збережена висота смуги не витісняє зображення
+  const shownBottomHeight = $derived(clampBottomHeight($bottomHeight, areaHeight || Infinity))
 </script>
 
 <div class="viewer" bind:this={viewerEl} style:--sidebar-width="{$sidebarWidth}px">
@@ -702,7 +710,7 @@
     onreset={() => setSidebarWidth(SIDEBAR.default)}
   />
 
-  <section class="image-area">
+  <section class="image-area" bind:clientHeight={areaHeight}>
     <div class="toolbar">
       <div class="tools" role="radiogroup" aria-label={$tr('tools.title')}>
         {#each ['select', 'point', 'rect', 'line'] as const as t (t)}
@@ -872,7 +880,19 @@
       {/if}
     </div>
 
-    <div class="bottom">
+    <Splitter
+      label={$tr('view.bottomHeight')}
+      orientation="horizontal"
+      valuenow={shownBottomHeight}
+      valuemin={BOTTOM.min}
+      valuemax={BOTTOM.max}
+      onstart={() => (dragFrom = shownBottomHeight)}
+      ondrag={(dy) => setBottomHeight(dragFrom - dy)}
+      onstep={(n) => setBottomHeight(shownBottomHeight - 16 * n)}
+      onreset={() => setBottomHeight(BOTTOM.default)}
+    />
+
+    <div class="bottom" style:height="{shownBottomHeight}px">
       <ResultsTable
         {results}
         {selectedId}
@@ -1137,11 +1157,16 @@
     stroke-width: 2;
     filter: drop-shadow(0 0 1px #000);
   }
-  /* Висоту задає таблиця результатів (стала) — нижня смуга не стискається й не росте */
+  /* Висоту задає межа над смугою (`bottomHeight`) — смуга не стискається й не росте разом із вікном */
   .bottom {
     display: flex;
     gap: 12px;
     flex-shrink: 0;
+    min-height: 0;
+  }
+  /* Межа над смугою заходить у проміжки області — відстань між зображенням і смугою лишається ~12 px */
+  .image-area > :global(.splitter) {
+    margin: -8px 0;
   }
   .bottom > :global(*) {
     flex: 1 1 0;

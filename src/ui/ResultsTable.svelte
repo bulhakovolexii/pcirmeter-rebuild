@@ -17,9 +17,6 @@
 
   let { results, selectedId, onselect, onnote, onexport }: Props = $props()
 
-  /** Видимих рядків таблиці. */
-  const ROWS = 7
-
   const tUnit = $derived(TEMPERATURE_SYMBOL[$units.temperature])
   const fmt = (c: number) => formatTemperature(c, $locale, $units.temperature)
 </script>
@@ -35,8 +32,8 @@
     {/if}
     <button type="button" disabled={results.length === 0} onclick={onexport}>{$t('results.export')}</button>
   </div>
-  <!-- Висота стала — заголовок і 7 рядків (далі — прокрутка): додавання об'єктів не зсуває решту інтерфейсу -->
-  <div class="table-wrap" style:--rows={ROWS}>
+  <!-- Висоту задає нижня смуга (межу тягнуть); далі — прокрутка: додавання об'єктів не зсуває решту інтерфейсу -->
+  <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -143,8 +140,8 @@
     --row: 24px;
     position: relative;
     box-sizing: content-box;
-    height: calc((var(--rows) + 1) * var(--row));
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-height: var(--row);
     overflow: auto;
     border: 1px solid var(--border);
     border-radius: 8px;

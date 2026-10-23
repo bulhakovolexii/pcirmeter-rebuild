@@ -55,6 +55,21 @@ export function clampPhotoSplit(share: number): number {
     : PHOTO_SPLIT.default
 }
 
+/**
+ * Висота нижньої смуги (таблиця результатів, профіль / розподіл), px. Максимум — ще й так, щоб зображенню
+ * лишалось щонайменше `BOTTOM.keepImage` px висоти області.
+ */
+export const BOTTOM = { default: 228, min: 132, max: 720, keepImage: 240 } as const
+
+export function clampBottomHeight(height: number, areaHeight = Infinity): number {
+  const max = Math.max(BOTTOM.min, Math.min(BOTTOM.max, Math.floor(areaHeight - BOTTOM.keepImage)))
+  return Number.isFinite(height) ? Math.round(Math.min(max, Math.max(BOTTOM.min, height))) : BOTTOM.default
+}
+
+export const bottomHeight = persisted('pcirmeter.bottomHeight', BOTTOM.default, (raw) =>
+  clampBottomHeight(Number(raw)),
+)
+
 export const photoSplit = persisted('pcirmeter.photoSplit', PHOTO_SPLIT.default, (raw) =>
   clampPhotoSplit(Number(raw)),
 )

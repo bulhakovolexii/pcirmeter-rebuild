@@ -1,27 +1,42 @@
 <script lang="ts">
   /**
-   * Вертикальна межа між двома областями: перетягування мишею/пальцем, стрілки ←/→ з фокусом
-   * (Shift — більший крок), подвійний клік — стандартне значення. Саме значення (ширину, частку)
-   * зберігає й обмежує власник: межа лише повідомляє зсув.
+   * Межа між двома областями: вертикальна (між колонками) або горизонтальна (між рядами). Перетягування
+   * мишею/пальцем, стрілки ←/→ (↑/↓ для горизонтальної) з фокусом (Shift — більший крок), подвійний клік —
+   * стандартне значення. Саме значення (ширину, висоту, частку) зберігає й обмежує власник: межа лише повідомляє зсув.
    */
   interface Props {
     label: string
+    /** Орієнтація самої межі (як `aria-orientation`); за замовчуванням вертикальна. */
+    orientation?: 'vertical' | 'horizontal'
+
     valuenow: number
     valuemin: number
     valuemax: number
     /** Початок перетягування — запам'ятати поточне значення. */
     onstart: () => void
-    /** Зсув указівника в px від початку перетягування. */
-    ondrag: (dx: number) => void
-    /** Крок з клавіатури: −1/+1, з Shift — −4/+4. */
+    /** Зсув указівника в px від початку перетягування: по x для вертикальної межі, по y — для горизонтальної. */
+    ondrag: (delta: number) => void
+    /** Крок з клавіатури (←/↑ — від'ємний): −1/+1, з Shift — −4/+4. */
     onstep: (steps: number) => void
     onreset: () => void
   }
 
-  let { label, valuenow, valuemin, valuemax, onstart, ondrag, onstep, onreset }: Props = $props()
+  let {
+    label,
+    orientation = 'vertical',
+    valuenow,
+    valuemin,
+    valuemax,
+    onstart,
+    ondrag,
+    onstep,
+    onreset,
+  }: Props = $props()
 
+  const horizontal = $derived(orientation === 'horizontal')
   let active = $state(false)
-  let fromX = 0
+  let from = 0
+  const coord = (e: PointerEvent) => (horizontal ? e.clientY : e.clientX)
 
   function down(e: PointerEvent) {
     if (e.button !== 0) return
@@ -29,12 +44,13 @@
     const handle = e.currentTarget as Element
     handle.setPointerCapture(e.pointerId)
     active = true
-    fromX = e.clientX
+    from = coord(e)
     onstart()
   }
 
   function key(e: KeyboardEvent) {
-    const dir = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0
+    const [less, more] = horizontal ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight']
+    const dir = e.key === less ? -1 : e.key === more ? 1 : 0
     if (!dir) return
     e.preventDefault()
     onstep(dir * (e.shiftKey ? 4 : 1))
@@ -46,8 +62,9 @@
 <div
   class="splitter"
   class:active
+  class:horizontal
   role="separator"
-  aria-orientation="vertical"
+  aria-orientation={orientation}
   aria-label={label}
   aria-valuemin={valuemin}
   aria-valuemax={valuemax}
@@ -55,7 +72,7 @@
   title={label}
   tabindex="0"
   onpointerdown={down}
-  onpointermove={(e) => active && ondrag(e.clientX - fromX)}
+  onpointermove={(e) => active && ondrag(coord(e) - from)}
   onpointerup={() => (active = false)}
   onpointercancel={() => (active = false)}
   ondblclick={onreset}
@@ -76,6 +93,14 @@
     inset: 0 5px;
     border-radius: 1px;
     transition: background 0.15s;
+  }
+  .splitter.horizontal {
+    width: auto;
+    height: 12px;
+    cursor: row-resize;
+  }
+  .splitter.horizontal::after {
+    inset: 5px 0;
   }
   .splitter:hover::after,
   .splitter.active::after,

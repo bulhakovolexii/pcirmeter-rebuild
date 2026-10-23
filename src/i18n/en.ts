@@ -53,6 +53,7 @@ export const en: Record<MessageKey, string> = {
   'view.fit': 'Fit',
   'view.actual': '1:1',
   'view.photoSplit': 'Split between IR image and photo (drag; double-click to reset)',
+  'view.bottomHeight': 'Results panel height (drag; double-click to reset)',
   'view.sidebarWidth': 'Sidebar width (drag; double-click to reset)',
   'view.extremes': 'Frame Max/Min markers',
   'view.image': 'Infrared image',

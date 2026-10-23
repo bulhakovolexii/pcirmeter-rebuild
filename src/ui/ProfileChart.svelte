@@ -175,7 +175,7 @@
   .chart {
     position: relative;
     flex: 1 1 0;
-    min-height: 182px;
+    min-height: 0;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);

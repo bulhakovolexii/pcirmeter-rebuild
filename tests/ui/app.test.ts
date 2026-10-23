@@ -6,6 +6,8 @@ import App from '../../src/ui/App.svelte'
 import { openFiles, type FileSource } from '../../src/ui/files'
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
 import {
+  BOTTOM,
+  clampBottomHeight,
   clampPhotoSplit,
   clampSidebarWidth,
   PHOTO_SPLIT,
@@ -131,9 +133,11 @@ describe('App', () => {
       // Без курсора — заглушки, щоб панель не стрибала
       expect(body).toMatch(/Піксель: —/)
       expect(body).toContain('--sidebar-width: 320px')
-      // Дві межі: бічна панель і ІЧ | фото (у зразку є видиме фото)
-      expect(body.match(/role="separator"/g)).toHaveLength(2)
+      // Три межі: бічна панель, ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга
+      expect(body.match(/role="separator"/g)).toHaveLength(3)
       expect(body).toContain('aria-valuenow="320"')
+      expect(body).toContain('aria-orientation="horizontal"')
+      expect(body).toContain(`height: ${BOTTOM.default}px`)
       expect(body).toContain('--ir-share: 0.5')
     } finally {
       sidebarWidth.set(SIDEBAR.default)
@@ -179,6 +183,17 @@ describe('clampSidebarWidth', () => {
     // Вузьке вікно: мінімум важливіший за «половину»
     expect(clampSidebarWidth(300, 300)).toBe(SIDEBAR.min)
     expect(clampSidebarWidth(NaN)).toBe(SIDEBAR.default)
+  })
+})
+
+describe('clampBottomHeight', () => {
+  it('висота смуги — у межах; зображенню лишається місце; некоректне — стандартна', () => {
+    expect(clampBottomHeight(50)).toBe(BOTTOM.min)
+    expect(clampBottomHeight(5000)).toBe(BOTTOM.max)
+    expect(clampBottomHeight(300.4)).toBe(300)
+    expect(clampBottomHeight(500, 600)).toBe(600 - BOTTOM.keepImage)
+    expect(clampBottomHeight(500, 200)).toBe(BOTTOM.min)
+    expect(clampBottomHeight(NaN)).toBe(BOTTOM.default)
   })
 })
 
