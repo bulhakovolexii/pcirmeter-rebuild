@@ -1,10 +1,11 @@
-// Наскрізна перевірка PDF-звіту в headless Chromium (Playwright — див. tools/ui_screens.mjs):
+// Наскрізна перевірка звіту (PDF і ODT) в headless Chromium (Playwright — див. tools/ui_screens.mjs):
 // відкрити файли, намалювати об'єкти, заповнити діалог, створити звіт **без мережі** (після встановлення SW).
 //
 //   npm run build && npx vite preview --host 127.0.0.1 --port 4173 &
 //   NO_PROXY=127.0.0.1 APP_URL=http://127.0.0.1:4173/ node tools/report_e2e.mjs <outdir> <файли термограм…>
 //
-// Результат: <outdir>/dialog.png (знімок діалогу) і <outdir>/<ім'я звіту>.pdf; рендер сторінок — pdftoppm.
+// Результат: <outdir>/dialog.png (знімок діалогу), menu.png (меню формату), <outdir>/<ім'я звіту>.pdf і .odt;
+// рендер сторінок — pdftoppm, ODT → PDF — `soffice --headless --convert-to pdf`.
 import { createRequire } from 'node:module'
 
 const PW = process.env.PLAYWRIGHT_DIR ?? '/home/agent/tools/playwright'
@@ -57,7 +58,7 @@ await drag([0.2, 0.6], [0.45, 0.8])
 await tool(/Лінія|Line/)
 await drag([0.1, 0.2], [0.8, 0.7])
 
-await page.getByRole('button', { name: /Звіт PDF|PDF report/ }).click()
+await page.getByRole('button', { name: /^(Звіт|Report)$/ }).click()
 const dialog = page.locator('dialog[open]')
 await dialog.getByLabel(/Об'єкт обстеження|Inspected object/).fill('Корпус У2, ауд. 301')
 await dialog.getByLabel(/Виконавець|Performed by/).fill('Іваненко Іван')
@@ -65,13 +66,20 @@ await dialog.getByLabel(/Група|Group/).fill('ЕМ-121')
 await dialog.getByLabel(/Викладач|Supervisor/).fill('Булгаков О.')
 await dialog.locator('textarea').nth(1).fill('Місток холоду біля укосу.')
 await dialog.getByLabel(/Висновок|Conclusion/).fill('Потрібне утеплення укосів.')
+
+// Мініатюри будуються асинхронно після відкриття діалогу
+await dialog.locator('.thumb img').first().waitFor()
 await page.screenshot({ path: `${out}/dialog.png` })
 
-const [download] = await Promise.all([
-  page.waitForEvent('download', { timeout: 30_000 }),
-  dialog.getByRole('button', { name: /Створити PDF|Create PDF/ }).click(),
-])
-const path = `${out}/${download.suggestedFilename()}`
-await download.saveAs(path)
-console.log('звіт:', path)
+for (const format of ['PDF', 'ODT']) {
+  await dialog.getByRole('button', { name: /Створити звіт|Create report/ }).click()
+  if (format === 'PDF') await page.screenshot({ path: `${out}/menu.png` })
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 30_000 }),
+    dialog.getByRole('menuitem', { name: new RegExp(format) }).click(),
+  ])
+  const path = `${out}/${download.suggestedFilename()}`
+  await download.saveAs(path)
+  console.log('звіт:', path)
+}
 await browser.close()

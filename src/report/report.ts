@@ -15,81 +15,51 @@ import {
   type PDFFont,
   type PDFPage,
 } from 'pdf-lib'
-import { isothermBounds, isValidIsotherm, paintIsotherms } from '../core/isotherms'
+import { isothermBounds, isValidIsotherm } from '../core/isotherms'
 import type { TemperatureBin } from '../core/objects'
 import { palette, type PaletteId } from '../core/palettes'
-import type { Thermogram } from '../core/parser'
-import { frameExtremes, renderFrame, type DisplayScale } from '../core/render'
-import {
-  frameTemperatures,
-  measurementRange,
-  objectParams,
-  temperatureModel,
-  type ObjectParams,
-} from '../core/temperature'
+import { frameExtremes } from '../core/render'
+import type { TemperatureModel } from '../core/temperature'
 import { fromCelsius } from '../core/units'
-import type { Locale } from '../i18n'
-import type { MessageKey } from '../i18n/uk'
-import { decodeUserText } from '../ui/attachments'
 import { niceTicks, tickDigits } from '../ui/chart'
+import { formatNumber } from '../ui/format'
+import { toIsotherm } from '../ui/isotherms'
+import type { ProfilePoint, ResultRow } from '../ui/results'
 import {
-  formatNumber,
-  formatSavedAt,
-  formatTemperature,
-  LENGTH_SYMBOL,
-  TEMPERATURE_SYMBOL,
-} from '../ui/format'
-import { toIsotherm, type IsothermState } from '../ui/isotherms'
-import { displayValue, paramDigits, PARAM_FIELDS, type Units } from '../ui/params'
-import { areaDistribution, lineProfile, measureObjects, rowNote, type ResultRow } from '../ui/results'
-import type { MeasureObject } from '../ui/tools'
+  CONTENT_W,
+  documentTitle,
+  fileSection,
+  footerText,
+  hasClosing,
+  MARGIN,
+  PAGE_H,
+  PAGE_W,
+  PARAM_COLUMNS,
+  RESULT_COLUMNS,
+  sectionContext,
+  TITLE_COLUMNS,
+  titleRows,
+  type Cell,
+  type FileSection,
+  type ReportFile,
+  type ReportMeta,
+  type ReportOptions,
+  type SectionContext,
+} from './content'
 
-/** Титульні дані звіту (поля діалогу). */
-export interface ReportMeta {
-  subject: string
-  author: string
-  group: string
-  teacher: string
-  /** Дата звіту `YYYY-MM-DD` (значення `<input type="date">`). */
-  date: string
-  description: string
-  conclusion: string
-}
-
-/** Знімок стану переглядача одного файлу — те, що бачить користувач. */
-export interface ReportFile {
-  name: string
-  thermogram: Thermogram
-  /** Змінені користувачем параметри кадру. */
-  overrides: Partial<ObjectParams>
-  paletteId: PaletteId
-  scale: DisplayScale
-  /** Межі шкали, °C (підписи кольорової шкали). */
-  scaleLabels: { min: number; max: number }
-  manualScale: boolean
-  isotherms: readonly IsothermState[]
-  objects: readonly MeasureObject[]
-  showExtremes: boolean
-  /** Коментар до термограми з діалогу звіту. */
-  comment: string
-}
+export {
+  reportFileName,
+  type ReportFile,
+  type ReportFormat,
+  type ReportMeta,
+  type ReportOptions,
+} from './content'
 
 export interface ReportFonts {
   regular: Uint8Array
   bold: Uint8Array
 }
 
-export interface ReportOptions {
-  locale: Locale
-  units: Units
-  t: (key: MessageKey) => string
-}
-
-// A4, пункти (1 pt = 1/72″); поля 15 мм
-const PAGE_W = 595.28
-const PAGE_H = 841.89
-const MARGIN = 42
-const CONTENT_W = PAGE_W - 2 * MARGIN
 /** Нижня межа вмісту — над колонтитулом. */
 const BOTTOM = MARGIN + 18
 
@@ -138,13 +108,6 @@ export function wrapText(text: string, font: PDFFont, size: number, width: numbe
     lines.push(line)
   }
   return lines
-}
-
-interface Cell {
-  text: string
-  bold?: boolean
-  color?: Color
-  align?: 'left' | 'right'
 }
 
 /** Розкладка сторінок: курсор `y` іде згори вниз (у координатах «від верху сторінки»). */
@@ -240,7 +203,10 @@ class Layout {
         const font = c.bold ? this.bold : this.regular
         lines[i]!.forEach((line, k) => {
           const tx = c.align === 'right' ? x + w - pad - font.widthOfTextAtSize(line, size) : x + pad
-          this.text(line, tx, this.y + pad + k * lineH, size, { bold: c.bold, color: c.color })
+          this.text(line, tx, this.y + pad + k * lineH, size, {
+            bold: c.bold,
+            color: c.flag ? ACCENT : undefined,
+          })
         })
         x += w
       })
@@ -332,55 +298,36 @@ function outlinedText(
   page.drawText(text, { x, y, size, font, color })
 }
 
-/** Ім'я файлу звіту: `<об'єкт або «звіт»>_<дата>.pdf`, без символів, заборонених у файлових системах. */
-export function reportFileName(meta: ReportMeta, t: (key: MessageKey) => string): string {
-  const base = (meta.subject.trim() || t('report.fileName')).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 60)
-  return `${base}_${meta.date || 'report'}.pdf`
-}
-
 /** Створює PDF-звіт за знімками переглядачів `files` (порядок — як у списку). */
 export async function buildReport(
   meta: ReportMeta,
   files: readonly ReportFile[],
   fonts: ReportFonts,
-  { locale, units, t }: ReportOptions,
+  options: ReportOptions,
 ): Promise<Uint8Array> {
+  const { locale, t } = options
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
   const regular = await doc.embedFont(fonts.regular, { subset: true })
   const bold = await doc.embedFont(fonts.bold, { subset: true })
-  const title = t('report.title')
-  doc.setTitle(meta.subject.trim() ? `${title}: ${meta.subject.trim()}` : title)
+  doc.setTitle(documentTitle(meta, t))
   if (meta.author.trim()) doc.setAuthor(meta.author.trim())
   doc.setCreator(t('app.title'))
   doc.setProducer('pdf-lib')
   doc.setLanguage(locale === 'uk' ? 'uk-UA' : 'en')
 
   const L = new Layout(doc, regular, bold)
-  const fmtT = (c: number) => formatTemperature(c, locale, units.temperature)
-  const tUnit = TEMPERATURE_SYMBOL[units.temperature]
+  const ctx = sectionContext(options)
 
   // Титул
-  L.text(title, MARGIN, L.y, 16, { bold: true, color: ACCENT })
+  L.text(t('report.title'), MARGIN, L.y, 16, { bold: true, color: ACCENT })
   L.y += 16 * LINE + 4
   L.rule(ACCENT, 1.5)
   L.y += 8
-  const reportDate = /^\d{4}-\d{2}-\d{2}$/.test(meta.date)
-    ? new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
-        new Date(`${meta.date}T00:00:00Z`),
-      )
-    : meta.date
-  const titleRows: [string, string][] = [
-    [t('report.subject'), meta.subject],
-    [t('report.author'), meta.author],
-    [t('report.group'), meta.group],
-    [t('report.teacher'), meta.teacher],
-    [t('report.date'), reportDate],
-  ]
   L.table(
-    [140, CONTENT_W - 140],
+    TITLE_COLUMNS,
     null,
-    titleRows.filter(([, v]) => v.trim()).map(([k, v]) => [{ text: k, bold: true }, { text: v }]),
+    titleRows(meta, options).map(([k, v]) => [{ text: k, bold: true }, { text: v }]),
     BODY,
   )
   if (meta.description.trim()) {
@@ -393,10 +340,10 @@ export async function buildReport(
     // Кожна термограма — з нової сторінки, крім першої, якщо після титулу лишилось місце
     if (index > 0 || L.y > PAGE_H * 0.4) L.newPage()
     else L.y += 14
-    await drawFileSection(L, file, index, { locale, units, t, fmtT, tUnit })
+    await drawFileSection(L, fileSection(file, index, ctx), ctx)
   }
 
-  if (meta.conclusion.trim() || meta.author.trim() || meta.teacher.trim()) {
+  if (hasClosing(meta)) {
     L.y += 14
     if (meta.conclusion.trim()) {
       L.heading(t('report.conclusion'))
@@ -431,8 +378,7 @@ export async function buildReport(
       thickness: 0.5,
       color: RULE,
     })
-    const left = [t('app.title'), meta.subject.trim()].filter(Boolean).join(' · ')
-    page.drawText(left, { x: MARGIN, y, size: SMALL, font: regular, color: MUTED })
+    page.drawText(footerText(meta, t), { x: MARGIN, y, size: SMALL, font: regular, color: MUTED })
     const right = t('report.page')
       .replace('{n}', String(i + 1))
       .replace('{m}', String(pages.length))
@@ -448,35 +394,14 @@ export async function buildReport(
   return doc.save()
 }
 
-interface SectionContext extends ReportOptions {
-  fmtT: (celsius: number) => string
-  tUnit: string
-}
+async function drawFileSection(L: Layout, section: FileSection, ctx: SectionContext) {
+  const { t } = ctx
+  const { file } = section
+  const ir = file.thermogram.ir
 
-async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: SectionContext) {
-  const { locale, units, t, fmtT } = ctx
-  const { thermogram } = file
-  const ir = thermogram.ir
-  const info = thermogram.info
-  const model = temperatureModel(ir, file.overrides)
-  const params = objectParams(ir.params, file.overrides)
-  const temps = frameTemperatures(ir, model)
-
-  L.heading(`${t('report.thermogram')} ${index + 1}. ${file.name}`, 12)
+  L.heading(section.heading, 12)
   L.rule()
   L.y += 8
-
-  // Кадр як у переглядачі: палітра, шкала, ізотерми
-  const rgba = renderFrame(ir.ad, palette(file.paletteId), file.scale)
-  const isotherms = file.isotherms
-    .map((s, k) => ({ state: s, number: k + 1, iso: toIsotherm(s) }))
-    .filter((i) => i.state.enabled && isValidIsotherm(i.iso))
-  const counts = paintIsotherms(
-    temps,
-    rgba,
-    isotherms.map((i) => i.iso),
-  )
-  const results = measureObjects(ir, file.objects, file.overrides)
 
   // Розміщення: ІЧ (+ шкала праворуч) і фото поруч; без фото — ІЧ ширше
   const photo = file.thermogram.visibleJpeg
@@ -517,8 +442,15 @@ async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: 
   const irX = MARGIN
   const page = L.page
 
-  drawRgb(page, embedRgb(L.doc, rgbaToRgb(rgba), ir.width, ir.height), irX, L.pdfY(top + irH), irW, irH)
-  drawOverlay(L, file, results, model, irX, top, irW / ir.width, ctx)
+  drawRgb(
+    page,
+    embedRgb(L.doc, rgbaToRgb(section.frame), ir.width, ir.height),
+    irX,
+    L.pdfY(top + irH),
+    irW,
+    irH,
+  )
+  drawOverlay(L, file, section.results, section.model, irX, top, irW / ir.width, ctx)
   drawColorBar(L, file, irX + irW + barGap, top, barW, irH, ctx)
 
   if (photoImage) {
@@ -526,184 +458,76 @@ async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: 
     page.drawImage(photoImage, { x: px, y: L.pdfY(top + photoH), width: photoW, height: photoH })
   }
   L.y = top + rowH + 3
-  const scaleNote = file.manualScale ? t('report.scale.manual') : t('report.scale.auto')
-  L.text(
-    `${t('report.irImage')}: ${t('palette.title').toLocaleLowerCase(locale)} «${t(`palette.${file.paletteId}`)}», ${scaleNote}`,
-    irX,
-    L.y,
-    SMALL,
-    { color: MUTED },
-  )
+  L.text(section.imageCaption, irX, L.y, SMALL, { color: MUTED })
   if (photoImage) L.text(t('report.photo'), MARGIN + irBoxW + gap, L.y, SMALL, { color: MUTED })
   L.y += SMALL * LINE + 10
 
-  // Параметри зйомки й розрахунку — дві пари «назва — значення» в рядку, як в оригіналі
-  let sum = 0
-  let n = 0
-  for (const v of temps) {
-    if (!Number.isNaN(v)) {
-      sum += v
-      n++
-    }
-  }
-  const extremes = frameExtremes(ir)
-  const range = measurementRange(ir.params.tempRange)
-  const lengthUnit = LENGTH_SYMBOL[units.length][locale]
-  const param = (key: (typeof PARAM_FIELDS)[number]) => {
-    const value = formatNumber(displayValue(key, params[key], units), locale, paramDigits(key))
-    const unit =
-      key === 'emissivity'
-        ? ''
-        : key === 'humidity'
-          ? ' %'
-          : key === 'distance'
-            ? ` ${lengthUnit}`
-            : ` ${ctx.tUnit}`
-    return `${value}${unit}${key in file.overrides ? ` (${t('params.fromFile')}: ${formatNumber(displayValue(key, objectParams(ir.params)[key], units), locale, paramDigits(key))})` : ''}`
-  }
-  const camera = [info.producer, info.model].filter(Boolean).join(' ')
-  const pairs: [string, string][] = [
-    [t('info.date'), formatSavedAt(info.savedAt)],
-    [t('params.emissivity'), param('emissivity')],
-    [t('info.camera'), [camera, info.serial ? `№ ${info.serial}` : ''].filter(Boolean).join(', ') || '—'],
-    [t('params.reflectedTemp'), param('reflectedTemp')],
-    [t('info.frame'), `${ir.width} × ${ir.height}`],
-    [t('params.airTemp'), param('airTemp')],
-    [
-      t('info.range'),
-      `${formatNumber(fromCelsius(range.min, units.temperature), locale, 0)} … ${formatNumber(fromCelsius(range.max, units.temperature), locale, 0)} ${ctx.tUnit}`,
-    ],
-    [t('params.humidity'), param('humidity')],
-    [t('info.frameMax'), fmtT(model.toCelsius(extremes.max.ad))],
-    [t('params.distance'), param('distance')],
-    [t('info.frameMin'), fmtT(model.toCelsius(extremes.min.ad))],
-    [t('params.tau'), formatNumber(model.tau, locale, 3)],
-    [t('report.frameAvg'), n > 0 ? fmtT(sum / n) : '—'],
-    ['', ''],
-  ]
   L.heading(t('report.parameters'), 10)
-  const rows: Cell[][] = []
-  for (let i = 0; i < pairs.length; i += 2) {
-    const [a, b] = [pairs[i]!, pairs[i + 1]!]
-    rows.push([{ text: a[0], bold: true }, { text: a[1] }, { text: b[0], bold: true }, { text: b[1] }])
-  }
-  const half = CONTENT_W / 2
-  L.table([88, half - 88, 132, half - 132], null, rows)
-  if (Object.keys(file.overrides).length > 0) {
+  L.table(PARAM_COLUMNS, null, section.params)
+  if (section.changedParams) {
     L.y += 2
-    L.paragraph(t('report.changedParams'), SMALL, { color: MUTED })
+    L.paragraph(section.changedParams, SMALL, { color: MUTED })
   }
 
   // Ізотерми
-  if (isotherms.length > 0) {
+  if (section.isotherms.length > 0) {
     L.y += 8
     L.heading(t('isotherm.section'), 10)
-    isotherms.forEach((i, k) => {
-      const { lo, hi } = isothermBounds(i.iso)
-      const bounds =
-        i.iso.mode === 'above' ? fmtT(lo) : i.iso.mode === 'below' ? fmtT(hi) : `${fmtT(lo)} … ${fmtT(hi)}`
-      const share = formatNumber(((counts[k] ?? 0) / ir.ad.length) * 100, locale, 1)
+    for (const iso of section.isotherms) {
       L.ensure(BODY * LINE)
       L.page.drawRectangle({
         x: MARGIN,
         y: L.pdfY(L.y + BODY),
         width: 9,
         height: 9,
-        color: hexColor(i.state.color),
+        color: hexColor(iso.color),
         borderColor: INK,
         borderWidth: 0.4,
       })
-      L.text(
-        `${t('isotherm.title')} ${i.number}: ${t(`isotherm.${i.iso.mode}`).toLocaleLowerCase(locale)} ${bounds} — ${t('isotherm.share').toLocaleLowerCase(locale)} ${share} %`,
-        MARGIN + 14,
-        L.y,
-      )
+      L.text(iso.text, MARGIN + 14, L.y)
       L.y += BODY * LINE + 2
-    })
+    }
   }
 
   // Результати вимірювань
   L.y += 8
   L.heading(t('report.results'), 10)
-  if (results.length === 0) {
+  if (!section.resultsTable) {
     L.paragraph(t('report.noObjects'), BODY, { color: MUTED })
   } else {
-    const unitOf = (key: (typeof PARAM_FIELDS)[number]) =>
-      key === 'emissivity'
-        ? ''
-        : key === 'humidity'
-          ? ', %'
-          : key === 'distance'
-            ? `, ${lengthUnit}`
-            : `, ${ctx.tUnit}`
-    const header: Cell[] = [
-      { text: t('results.object'), bold: true },
-      { text: `${t('results.value')}, ${ctx.tUnit}`, bold: true },
-      { text: `${t('results.max')}, ${ctx.tUnit}`, bold: true },
-      { text: `${t('results.min')}, ${ctx.tUnit}`, bold: true },
-      ...PARAM_FIELDS.map((k) => ({ text: `${t(`results.${k}`)}${unitOf(k)}`, bold: true })),
-      { text: t('results.pixels'), bold: true },
-      { text: t('results.note'), bold: true },
-    ]
-    const num = (c: number) =>
-      Number.isNaN(c) ? '—' : formatNumber(fromCelsius(c, units.temperature), locale, 1)
-    const body = results.map((r): Cell[] => {
-      const point = r.object.shape.kind === 'point'
-      const flag = r.status !== 'ok' ? ACCENT : undefined
-      return [
-        { text: r.object.name, bold: true },
-        { text: num(r.value), align: 'right', color: flag, bold: flag !== undefined },
-        { text: point ? '' : num(r.stats.max), align: 'right', color: flag },
-        { text: point ? '' : num(r.stats.min), align: 'right', color: flag },
-        ...PARAM_FIELDS.map((k): Cell => ({
-          text: formatNumber(displayValue(k, r.params[k], units), locale, paramDigits(k)),
-          align: 'right',
-          bold: k in r.object.overrides,
-        })),
-        { text: String(r.stats.count), align: 'right' },
-        { text: rowNote(r, t), color: flag },
-      ]
-    })
-    L.table([38, 46, 42, 42, 30, 44, 44, 34, 34, 42, CONTENT_W - 396], header, body)
-    const notes = [
-      results.some((r) => r.ownParams) ? t('report.ownParams') : '',
-      results.some((r) => r.status !== 'ok') ? t('report.flagged') : '',
-    ].filter(Boolean)
-    if (notes.length > 0) {
+    L.table(RESULT_COLUMNS, section.resultsTable.header, section.resultsTable.rows)
+    if (section.resultNotes) {
       L.y += 2
-      L.paragraph(notes.join(' '), SMALL, { color: MUTED })
+      L.paragraph(section.resultNotes, SMALL, { color: MUTED })
     }
   }
 
   // Профілі ліній
-  for (const r of results) {
-    if (r.object.shape.kind !== 'line') continue
+  for (const p of section.profiles) {
     L.y += 8
     L.ensure(150)
-    L.heading(`${t('report.profile')} ${r.object.name}`, 10)
-    drawProfile(L, lineProfile(ir, r.object, file.overrides), ctx)
+    L.heading(p.title, 10)
+    drawProfile(L, p.points, ctx)
   }
 
   // Розподіл температур прямокутників (5 діапазонів, як у застосунку)
-  for (const r of results) {
-    if (r.object.shape.kind !== 'rect') continue
+  for (const d of section.distributions) {
     L.y += 8
     L.ensure(140)
-    L.heading(`${t('distribution.title')} ${r.object.name}`, 10)
-    drawDistribution(L, areaDistribution(ir, r.object, file.overrides), file.paletteId, ctx)
+    L.heading(d.title, 10)
+    drawDistribution(L, d.bins, file.paletteId, ctx)
   }
 
   // Коментар і примітка з камери
-  if (file.comment.trim()) {
+  if (section.comment) {
     L.y += 8
     L.heading(t('report.comment'), 10)
-    L.paragraph(file.comment)
+    L.paragraph(section.comment)
   }
-  const note = thermogram.userText ? decodeUserText(thermogram.userText).trim() : ''
-  if (note) {
+  if (section.cameraNote) {
     L.y += 8
     L.heading(t('info.note'), 10)
-    L.paragraph(note)
+    L.paragraph(section.cameraNote)
   }
 }
 
@@ -712,7 +536,7 @@ function drawOverlay(
   L: Layout,
   file: ReportFile,
   results: readonly ResultRow[],
-  model: ReturnType<typeof temperatureModel>,
+  model: TemperatureModel,
   x0: number,
   top: number,
   k: number,
@@ -822,7 +646,7 @@ function drawColorBar(
 }
 
 /** Графік профілю лінії: температура вздовж лінії (від початку до кінця). */
-function drawProfile(L: Layout, points: ReturnType<typeof lineProfile>, ctx: SectionContext) {
+function drawProfile(L: Layout, points: readonly ProfilePoint[], ctx: SectionContext) {
   const { units, locale } = ctx
   const values = points.map((p) => fromCelsius(p.t, units.temperature))
   const finite = values.filter((v) => Number.isFinite(v))

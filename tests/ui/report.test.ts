@@ -89,14 +89,16 @@ describe('ReportDialog (смоук)', () => {
     expect(body).toContain('130604_0002T.jpg')
     expect(body).toMatch(/type="checkbox"[^>]*checked/)
     expect(body).toContain('Коментар до термограми: 130604_0002T.jpg')
-    expect(body).toContain('Створити PDF')
+    // Замість кнопки «Створити PDF» — меню формату (PDF / ODT); місце під мініатюру — біля коментаря
+    expect(body).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*>Створити звіт/)
+    expect(body).toContain('class="thumb')
   })
 
-  it('кнопка «Звіт PDF» у шапці неактивна без файлів', () => {
+  it('кнопка «Звіт» у шапці неактивна без файлів', () => {
     const empty = render(App).body
-    expect(empty).toMatch(/<button[^>]*disabled[^>]*>Звіт PDF<\/button>/)
+    expect(empty).toMatch(/<button[^>]*disabled[^>]*>Звіт<\/button>/)
     expect(empty).not.toContain('<dialog')
     const withFile = render(App, { props: { initialFiles: [file] } }).body
-    expect(withFile).toMatch(/<button(?![^>]*disabled)[^>]*>Звіт PDF<\/button>/)
+    expect(withFile).toMatch(/<button(?![^>]*disabled)[^>]*>Звіт<\/button>/)
   })
 })

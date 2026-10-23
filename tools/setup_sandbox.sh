@@ -13,6 +13,9 @@ add_env() { grep -qxF "$1" "$ENV_FILE" || echo "$1" >> "$ENV_FILE"; }
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq 7zip file binutils unzip \
   openjdk-21-jdk-headless bison flex zlib1g-dev poppler-utils >/dev/null
+# LibreOffice без GUI — перевірка ODT-звіту: soffice --headless --convert-to pdf report.odt
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libreoffice-writer-nogui \
+  fonts-liberation >/dev/null
 
 # Ghidra + native decompiler for linux/arm64 (not shipped in the release)
 if [ ! -d "$GHIDRA_DIR" ]; then

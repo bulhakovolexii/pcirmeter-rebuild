@@ -80,11 +80,14 @@
   сеанс вкладки демо окремий — `openTabSession('demo')`). Маніфест — `public/manifest.webmanifest`, іконки
   `public/icons/` генерує `tools/make_icons.ts` (запуск — у шапці файлу). Деплой — job `deploy` у `ci.yml`
   на push у `main` → https://bulhakov.dev/pcirmeter-rebuild/.
-- PDF-звіт: генератор `src/report/report.ts` (pdf-lib + fontkit, без DOM; окремий chunk через `import()` у
-  `src/ui/report.ts`), діалог — `ReportDialog.svelte`, стан переглядачів — `registerReportSource`; зміст — `docs/spec/report.md`.
+- Звіт PDF / ODT: спільний зміст — `src/report/content.ts`; PDF — `src/report/report.ts` (pdf-lib + fontkit), ODT —
+  `src/report/odt.ts` (без залежностей: `binary.ts` — PNG/ZIP; рисунки — SVG з `figures.ts`, растеризує `src/ui/rasterize.ts`);
+  обидва без DOM, окремі chunk-и через `import()` у `src/ui/report.ts`. Діалог — `ReportDialog.svelte` (мініатюри, меню формату),
+  стан переглядачів — `registerReportSource`; зміст — `docs/spec/report.md`.
   Шрифти — TTF-підмножини Fira Sans `src/report/fonts/` (генерує `tools/make_pdf_fonts.py`, запуск — у шапці).
   Наскрізна перевірка — `tools/report_e2e.mjs` (запуск — у шапці; для кириличних імен завантажень — `LANG=C.UTF-8`),
-  перегляд сторінок — `pdftoppm -r 80 -png file.pdf page`.
+  перегляд сторінок — `pdftoppm -r 80 -png file.pdf page`; ODT → PDF — `soffice --headless --convert-to pdf file.odt`
+  (LibreOffice ставить `setup_sandbox.sh`).
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Справжнього браузера в sandbox немає, але є headless Chromium
   (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу).
   Остаточно UI перевіряє викладач. Мінімальна ширина інтерфейсу — 1024 px; вужче — заглушка в `App.svelte`.
