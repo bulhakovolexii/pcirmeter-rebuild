@@ -575,11 +575,6 @@
       {/if}
     </section>
 
-    <label class="check">
-      <input type="checkbox" bind:checked={showExtremes} />
-      {$tr('view.extremes')}
-    </label>
-
     {#if audio}
       <section>
         <h2>{$tr('audio.title')}</h2>
@@ -603,61 +598,75 @@
       </select>
     </label>
 
-    <fieldset>
-      <legend>{$tr('scale.title')}</legend>
-      <div class="segmented">
-        <label>
-          <input
-            type="radio"
-            name="scale-{file.id}"
-            checked={scaleMode === 'auto'}
-            onchange={() => setScaleMode('auto')}
-          />
-          {$tr('scale.auto')}
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="scale-{file.id}"
-            checked={scaleMode === 'manual'}
-            onchange={() => setScaleMode('manual')}
-          />
-          {$tr('scale.manual')}
-        </label>
-      </div>
-      {#if scaleMode === 'manual'}
-        <div class="limits">
-          <label class="field">
-            <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+    <ParamsPanel
+      title={$tr('params.title')}
+      base={fileParams}
+      {overrides}
+      onchange={(o) => (overrides = o)}
+      baseLabel={$tr('params.fromFile')}
+      resetLabel={$tr('params.reset')}
+      tau={model.tau}
+    >
+      <fieldset class="scale">
+        <legend>{$tr('scale.title')}</legend>
+        <div class="segmented">
+          <label>
             <input
-              type="number"
-              step="0.1"
-              bind:value={scaleInput.max}
-              oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
+              type="radio"
+              name="scale-{file.id}"
+              checked={scaleMode === 'auto'}
+              onchange={() => setScaleMode('auto')}
             />
+            {$tr('scale.auto')}
           </label>
-          <label class="field">
-            <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+          <label>
             <input
-              type="number"
-              step="0.1"
-              bind:value={scaleInput.min}
-              oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
+              type="radio"
+              name="scale-{file.id}"
+              checked={scaleMode === 'manual'}
+              onchange={() => setScaleMode('manual')}
             />
+            {$tr('scale.manual')}
           </label>
         </div>
-        {#if !manualValid}
-          <p class="warning" role="alert">{$tr('scale.invalid')}</p>
+        {#if scaleMode === 'manual'}
+          <div class="limits">
+            <label class="field">
+              <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+              <input
+                type="number"
+                step="0.1"
+                bind:value={scaleInput.max}
+                oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
+              />
+            </label>
+            <label class="field">
+              <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+              <input
+                type="number"
+                step="0.1"
+                bind:value={scaleInput.min}
+                oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
+              />
+            </label>
+          </div>
+          {#if !manualValid}
+            <p class="warning" role="alert">{$tr('scale.invalid')}</p>
+          {/if}
         {/if}
-      {/if}
-      <Histogram
-        bins={histogram}
-        rgb={palette(paletteId)}
-        {bands}
-        minLabel={fmt(scaleLabels.min)}
-        maxLabel={fmt(scaleLabels.max)}
-      />
-    </fieldset>
+        <Histogram
+          bins={histogram}
+          rgb={palette(paletteId)}
+          {bands}
+          minLabel={fmt(scaleLabels.min)}
+          maxLabel={fmt(scaleLabels.max)}
+        />
+      </fieldset>
+      <label class="check">
+        <input type="checkbox" bind:checked={showExtremes} />
+        {$tr('view.extremes')}
+      </label>
+    </ParamsPanel>
 
     <fieldset class="isotherms">
       <legend>{$tr('isotherm.section')}</legend>
@@ -673,16 +682,6 @@
         <p class="note">{$tr('isotherm.priority')}</p>
       {/if}
     </fieldset>
-
-    <ParamsPanel
-      title={$tr('params.title')}
-      base={fileParams}
-      {overrides}
-      onchange={(o) => (overrides = o)}
-      baseLabel={$tr('params.fromFile')}
-      resetLabel={$tr('params.reset')}
-      tau={model.tau}
-    />
 
     {#if selected && selectedResult}
       {#key selected.id}
@@ -960,6 +959,16 @@
     background: var(--surface);
     padding: 8px 10px 10px;
     margin: 0;
+  }
+  /* Шкала всередині «Параметрів кадру» — підрозділ без власної рамки */
+  fieldset.scale {
+    border: none;
+    background: none;
+    padding: 0;
+  }
+  fieldset.scale legend {
+    padding: 0;
+    margin-bottom: 4px;
   }
   .isotherms {
     display: flex;
