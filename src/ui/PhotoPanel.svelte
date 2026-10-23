@@ -117,7 +117,7 @@
     if (base) onalign(scaleAlignment(base, alignment, factor, cx, cy, view, sync))
   }
 
-  // Колесо — масштаб виду; Shift + колесо — масштаб суміщення
+  // Колесо — масштаб виду; Shift + колесо (лише в накладенні) — масштаб суміщення
   $effect(() => {
     const el = viewport
     if (!el) return
@@ -128,7 +128,7 @@
       const cy = e.clientY - rect.top
       // Shift + колесо в деяких системах дає горизонтальну прокрутку
       const up = (e.deltaY || e.deltaX) < 0
-      if (e.shiftKey) scaleLayer(up ? ALIGN_STEP : 1 / ALIGN_STEP, cx, cy)
+      if (e.shiftKey && mode === 'overlay') scaleLayer(up ? ALIGN_STEP : 1 / ALIGN_STEP, cx, cy)
       else zoomTo(view.zoom * (up ? ZOOM_STEP : 1 / ZOOM_STEP), cx, cy)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
@@ -160,7 +160,13 @@
     if (e.button !== 0 && e.button !== 1) return
     if (e.button === 1) e.preventDefault()
     viewport!.setPointerCapture(e.pointerId)
-    drag = { align: e.button === 0 && e.shiftKey, x: e.clientX, y: e.clientY, view, alignment }
+    drag = {
+      align: e.button === 0 && e.shiftKey && mode === 'overlay',
+      x: e.clientX,
+      y: e.clientY,
+      view,
+      alignment,
+    }
     dragging = true
   }
 
@@ -278,35 +284,42 @@
         >
         <button type="button" onclick={fit}>{$tr('view.fit')}</button>
       {/if}
-      <HelpTip label={$tr('view.help')} items={[$tr('view.hint'), $tr('photo.hint.align')]} align="right" />
+      <HelpTip
+        label={$tr('view.help')}
+        items={mode === 'overlay' ? [$tr('view.hint'), $tr('photo.hint.align')] : [$tr('view.hint')]}
+        align="right"
+      />
       <button type="button" onclick={onclose} title={$tr('photo.hide')} aria-label={$tr('photo.hide')}
         >×</button
       >
     </div>
   </div>
   <div class="float-bar bottom">
+    <!-- Прозорість і суміщення ІЧ-шару мають сенс лише в режимі накладення -->
     {#if mode === 'overlay'}
       <label class="float-group blend">
         <span>{$tr('photo.blend')}</span>
         <input type="range" min="0" max="100" step="5" bind:value={blend} />
         <span class="value">{blend} %</span>
       </label>
+      <div class="float-group">
+        <span>{$tr('photo.layerScale')}</span>
+        <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
+          >−</button
+        >
+        <span class="value">{Math.round(alignment.scale * 100)} %</span>
+        <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}
+          >+</button
+        >
+        <button
+          type="button"
+          disabled={!aligned}
+          onclick={() => onalign(NO_ALIGNMENT)}
+          title={$tr('photo.resetAlign')}
+          aria-label={$tr('photo.resetAlign')}>↺</button
+        >
+      </div>
     {/if}
-    <div class="float-group">
-      <span>{$tr('photo.layerScale')}</span>
-      <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
-        >−</button
-      >
-      <span class="value">{Math.round(alignment.scale * 100)} %</span>
-      <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}>+</button>
-      <button
-        type="button"
-        disabled={!aligned}
-        onclick={() => onalign(NO_ALIGNMENT)}
-        title={$tr('photo.resetAlign')}
-        aria-label={$tr('photo.resetAlign')}>↺</button
-      >
-    </div>
   </div>
 </section>
 

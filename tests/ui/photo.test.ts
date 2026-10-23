@@ -172,13 +172,14 @@ describe('PhotoPanel', () => {
     expect(body).not.toContain('Вписати')
     expect(renderPanel(false)).toContain('Вписати')
     expect(body).toContain('Синхронно з ІЧ')
-    expect(body).toContain('Масштаб ІЧ-шару')
-    expect(body).toContain('100 %')
+    // Суміщення ІЧ-шару — лише в режимі накладення (стартовий режим — «Фото»)
+    expect(body).not.toContain('Масштаб ІЧ-шару')
     expect(body).toContain('Сховати видиме фото')
     // Керування — оверлеєм після вікна фото; довідка — під «?»
     expect(body.indexOf('class="viewport')).toBeLessThan(body.indexOf('class="float-bar top'))
     expect(body).toContain('aria-label="Довідка щодо керування"')
     expect(body).not.toContain('Shift + колесо')
+    expect(body).not.toContain('Фото ↔ ІЧ')
   })
 })
 
