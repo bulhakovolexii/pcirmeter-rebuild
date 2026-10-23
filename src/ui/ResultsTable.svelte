@@ -47,6 +47,7 @@
           <th>{$t('results.airTemp')}, {tUnit}</th>
           <th>{$t('results.humidity')}, %</th>
           <th>{$t('results.distance')}, {LENGTH_SYMBOL[$units.length][$locale]}</th>
+          <th class="note-col">{$t('results.note')}</th>
         </tr>
       </thead>
       <tbody>
@@ -74,6 +75,7 @@
             {#each PARAM_FIELDS as k (k)}
               <td>{formatNumber(displayValue(k, r.params[k], $units), $locale, paramDigits(k))}</td>
             {/each}
+            <td class="note-col" title={r.object.note || undefined}>{r.object.note ?? ''}</td>
           </tr>
         {/each}
       </tbody>
@@ -187,6 +189,12 @@
     background: none;
     padding: 0;
     font-weight: 600;
+  }
+  .note-col {
+    text-align: left;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   td.flag {
     color: var(--warn);

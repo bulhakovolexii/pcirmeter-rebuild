@@ -64,6 +64,7 @@ const objects: MeasureObject[] = [
     name: 'R1',
     shape: { kind: 'rect', x0: 2, y0: 0, x1: 87, y1: 63 },
     overrides: { emissivity: 0.9 },
+    note: 'Містки холоду біля укосу',
   },
   { id: 3, name: 'L1', shape: { kind: 'line', x0: 10, y0: 100, x1: 150, y1: 20 }, overrides: {} },
 ]

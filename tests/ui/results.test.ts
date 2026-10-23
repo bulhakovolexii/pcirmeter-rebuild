@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { parseThermogram } from '../../src/core/parser'
 import { frameTemperatures, temperatureModel } from '../../src/core/temperature'
 import { uk } from '../../src/i18n/uk'
-import { measureObjects, resultsCsv, shapeCoords } from '../../src/ui/results'
+import { measureObjects, resultsCsv, rowNote, shapeCoords } from '../../src/ui/results'
 import ResultsTable from '../../src/ui/ResultsTable.svelte'
 import type { MeasureObject } from '../../src/ui/tools'
 
@@ -109,5 +109,26 @@ describe('ResultsTable', () => {
     expect(body).toContain('0,50')
     expect(body).toContain('власні параметри')
     expect(body).toMatch(/<tr class="[^"]*selected/)
+  })
+
+  it('колонка «Примітка» з текстом користувача', () => {
+    const results = measureObjects(ir, [{ ...objects[0]!, note: 'кут укосу' }])
+    const { body } = render(ResultsTable, {
+      props: { results, selectedId: null, onselect: () => {}, onexport: () => {} },
+    })
+    expect(body).toContain('Примітка')
+    expect(body).toMatch(/title="кут укосу"[^>]*>кут укосу</)
+  })
+})
+
+describe('rowNote', () => {
+  it('текст користувача й причина позначки', () => {
+    const [row] = measureObjects(ir, [{ ...objects[0]!, note: '  кут укосу ' }])
+    expect(rowNote(row!, t)).toBe('кут укосу')
+    expect(rowNote({ ...row!, status: 'out-of-range' }, t)).toBe('кут укосу; поза діапазоном камери')
+    expect(rowNote({ ...row!, object: { ...row!.object, note: '' }, status: 'no-calibration' }, t)).toBe(
+      'поза калібруванням',
+    )
+    expect(rowNote({ ...row!, object: { ...row!.object, note: undefined } }, t)).toBe('')
   })
 })

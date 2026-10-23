@@ -97,6 +97,8 @@ export const uk = {
     'Виділені значення — поза діапазоном камери або поза калібруванням (причина — у підказці).',
   'results.export': 'Зберегти CSV',
   'results.ownParams': 'власні параметри',
+  'objectNote.title': "Примітка до об'єкта",
+  'objectNote.hint': 'напр., кут віконного укосу',
   'objectParams.title': "Параметри об'єкта",
   'objectParams.inherit': 'як у кадру',
   'objectParams.reset': 'Як у кадру',

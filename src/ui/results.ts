@@ -122,6 +122,17 @@ export function shapeCoords(shape: Shape): string {
     : `${shape.x0}, ${shape.y0} – ${shape.x1}, ${shape.y1}`
 }
 
+/** Примітка рядка: текст користувача і причина позначки (поза діапазоном / калібруванням), через «; ». */
+export function rowNote(row: ResultRow, t: (key: MessageKey) => string): string {
+  const status =
+    row.status === 'out-of-range'
+      ? t('cursor.outOfRange')
+      : row.status === 'no-calibration'
+        ? t('cursor.noCalibration')
+        : ''
+  return [row.object.note?.trim() ?? '', status].filter(Boolean).join('; ')
+}
+
 /** Число для CSV: без розділювача тисяч, десяткова кома для uk (так його розпізнає Excel з укр. налаштуваннями). */
 function csvNumber(value: number, locale: Locale, digits: number): string {
   if (Number.isNaN(value)) return ''
@@ -187,11 +198,7 @@ export function resultsCsv(
       ...PARAM_FIELDS.map((k) => csvNumber(displayValue(k, r.params[k], units), locale, paramDigits(k))),
       shapeCoords(r.object.shape),
       String(r.stats.count),
-      r.status === 'out-of-range'
-        ? t('cursor.outOfRange')
-        : r.status === 'no-calibration'
-          ? t('cursor.noCalibration')
-          : '',
+      rowNote(r, t),
     ])
   }
   return csvTable(lines)

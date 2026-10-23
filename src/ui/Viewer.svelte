@@ -678,6 +678,16 @@
 
     {#if selected && selectedResult}
       {#key selected.id}
+        <label class="field object-note">
+          <span>{$tr('objectNote.title')} {selected.name}</span>
+          <input
+            type="text"
+            maxlength="200"
+            value={selected.note ?? ''}
+            placeholder={$tr('objectNote.hint')}
+            oninput={(e) => updateObject(selected.id, { note: e.currentTarget.value })}
+          />
+        </label>
         <ParamsPanel
           title="{$tr('objectParams.title')} {selected.name}"
           base={params}
@@ -926,6 +936,13 @@
     flex-direction: column;
     gap: 4px;
     font-size: 0.9rem;
+  }
+  .object-note input {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    padding: 3px 8px;
+    font-size: 0.85rem;
   }
   fieldset {
     border: 1px solid var(--border);

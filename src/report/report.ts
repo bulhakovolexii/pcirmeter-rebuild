@@ -16,6 +16,7 @@ import {
   type PDFPage,
 } from 'pdf-lib'
 import { isothermBounds, isValidIsotherm, paintIsotherms } from '../core/isotherms'
+import type { TemperatureBin } from '../core/objects'
 import { palette, type PaletteId } from '../core/palettes'
 import type { Thermogram } from '../core/parser'
 import { frameExtremes, renderFrame, type DisplayScale } from '../core/render'
@@ -40,7 +41,7 @@ import {
 } from '../ui/format'
 import { toIsotherm, type IsothermState } from '../ui/isotherms'
 import { displayValue, paramDigits, PARAM_FIELDS, type Units } from '../ui/params'
-import { lineProfile, measureObjects, type ResultRow } from '../ui/results'
+import { areaDistribution, lineProfile, measureObjects, rowNote, type ResultRow } from '../ui/results'
 import type { MeasureObject } from '../ui/tools'
 
 /** Титульні дані звіту (поля діалогу). */
@@ -660,15 +661,7 @@ async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: 
           bold: k in r.object.overrides,
         })),
         { text: String(r.stats.count), align: 'right' },
-        {
-          text:
-            r.status === 'out-of-range'
-              ? t('cursor.outOfRange')
-              : r.status === 'no-calibration'
-                ? t('cursor.noCalibration')
-                : '',
-          color: flag,
-        },
+        { text: rowNote(r, t), color: flag },
       ]
     })
     L.table([38, 46, 42, 42, 30, 44, 44, 34, 34, 42, CONTENT_W - 396], header, body)
@@ -689,6 +682,15 @@ async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: 
     L.ensure(150)
     L.heading(`${t('report.profile')} ${r.object.name}`, 10)
     drawProfile(L, lineProfile(ir, r.object, file.overrides), ctx)
+  }
+
+  // Розподіл температур прямокутників (5 діапазонів, як у застосунку)
+  for (const r of results) {
+    if (r.object.shape.kind !== 'rect') continue
+    L.y += 8
+    L.ensure(140)
+    L.heading(`${t('distribution.title')} ${r.object.name}`, 10)
+    drawDistribution(L, areaDistribution(ir, r.object, file.overrides), file.paletteId, ctx)
   }
 
   // Коментар і примітка з камери
@@ -906,5 +908,93 @@ function drawProfile(L: Layout, points: ReturnType<typeof lineProfile>, ctx: Sec
       color: MUTED,
     },
   )
+  L.y += SMALL * LINE + 4
+}
+
+/** Стовпчикова діаграма розподілу: стовпець k залито кольором середини k-ї частини палітри (як у застосунку). */
+function drawDistribution(
+  L: Layout,
+  bins: readonly TemperatureBin[],
+  paletteId: PaletteId,
+  ctx: SectionContext,
+) {
+  const { units, locale } = ctx
+  if (bins.length === 0) {
+    L.paragraph(ctx.t('distribution.noData'), BODY, { color: MUTED })
+    return
+  }
+  const height = 100
+  const left = MARGIN + 40
+  const width = CONTENT_W - 50
+  const top = L.y + 10
+  const page = L.page
+  const rgbPalette = palette(paletteId)
+  const total = bins.reduce((sum, b) => sum + b.count, 0)
+  const peak = Math.max(1, ...bins.map((b) => b.count))
+  const ticks = niceTicks(0, peak, 4).filter(Number.isInteger)
+  const yMax = Math.max(peak, ticks.at(-1) ?? 1)
+  const Y = (n: number) => L.pdfY(top + height - (n / yMax) * height)
+  const slot = width / bins.length
+  const barW = slot * 0.7
+
+  for (const n of ticks) {
+    page.drawLine({
+      start: { x: left, y: Y(n) },
+      end: { x: left + width, y: Y(n) },
+      thickness: 0.4,
+      color: RULE,
+    })
+    const text = formatNumber(n, locale, 0)
+    page.drawText(text, {
+      x: left - 4 - L.regular.widthOfTextAtSize(text, SMALL),
+      y: Y(n) - SMALL * 0.35,
+      size: SMALL,
+      font: L.regular,
+      color: MUTED,
+    })
+  }
+  const temp = (c: number) => formatNumber(fromCelsius(c, units.temperature), locale, 1)
+  bins.forEach((b, k) => {
+    const i = 3 * Math.round(((k + 0.5) / bins.length) * 255)
+    const x = left + slot * k + (slot - barW) / 2
+    if (b.count > 0) {
+      page.drawRectangle({
+        x,
+        y: Y(0),
+        width: barW,
+        height: Y(b.count) - Y(0),
+        color: rgb(rgbPalette[i]! / 255, rgbPalette[i + 1]! / 255, rgbPalette[i + 2]! / 255),
+        borderColor: INK,
+        borderWidth: 0.3,
+      })
+    }
+    const share = formatNumber(total ? (b.count / total) * 100 : 0, locale, 1)
+    const label = `${b.count} (${share} %)`
+    page.drawText(label, {
+      x: x + barW / 2 - L.regular.widthOfTextAtSize(label, SMALL) / 2,
+      y: Y(b.count) + 3,
+      size: SMALL,
+      font: L.regular,
+      color: INK,
+    })
+    const range = `${temp(b.from)} … ${temp(b.to)}`
+    page.drawText(range, {
+      x: x + barW / 2 - L.regular.widthOfTextAtSize(range, SMALL) / 2,
+      y: Y(0) - SMALL - 3,
+      size: SMALL,
+      font: L.regular,
+      color: MUTED,
+    })
+  })
+  page.drawLine({
+    start: { x: left, y: Y(0) },
+    end: { x: left + width, y: Y(0) },
+    thickness: 0.6,
+    color: MUTED,
+  })
+  L.text(ctx.t('results.pixels'), MARGIN, top - 10, SMALL, { color: MUTED })
+  L.y = top + height + SMALL + 6
+  const axis = `T, ${ctx.tUnit}`
+  L.text(axis, left + width - L.regular.widthOfTextAtSize(axis, SMALL), L.y, SMALL, { color: MUTED })
   L.y += SMALL * LINE + 4
 }

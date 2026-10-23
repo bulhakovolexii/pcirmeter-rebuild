@@ -15,6 +15,8 @@ export interface MeasureObject {
   name: string
   shape: Shape
   overrides: Partial<ObjectParams>
+  /** Примітка користувача (у таблиці результатів, CSV і звіті). */
+  note?: string
 }
 
 /** Що тягнемо: увесь об'єкт, кут прямокутника або кінець лінії. */

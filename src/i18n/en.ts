@@ -99,6 +99,8 @@ export const en: Record<MessageKey, string> = {
     'Highlighted values are outside the camera range or calibration (hover for the reason).',
   'results.export': 'Save CSV',
   'results.ownParams': 'own parameters',
+  'objectNote.title': 'Note for object',
+  'objectNote.hint': 'e.g. window reveal corner',
   'objectParams.title': 'Object parameters',
   'objectParams.inherit': 'as frame',
   'objectParams.reset': 'Same as frame',
