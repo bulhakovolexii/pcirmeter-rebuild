@@ -75,7 +75,10 @@
 
 <div class="app">
   <header>
-    <h1>{$tr('app.title')}</h1>
+    <div class="brand">
+      <span class="logo" aria-hidden="true">ІЧ</span>
+      <h1>{$tr('app.title')}</h1>
+    </div>
     <div class="actions">
       <button type="button" class="primary" onclick={() => input?.click()}>{$tr('files.open')}</button>
       <input
@@ -181,22 +184,71 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 10px 16px;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: var(--header);
+    color: #fff;
+    border: 1px solid #3a3a3a;
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #a0001b;
+    font-weight: 700;
+    letter-spacing: 0.5px;
   }
   h1 {
-    font-size: 1.3rem;
-    margin: 12px 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
   }
   .actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+  }
+  header select,
+  header button:not(.primary) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #fff;
+  }
+  header select:hover,
+  header button:not(.primary):hover {
+    border-color: var(--gold);
+  }
+  header option {
+    color: var(--fg);
+    background: var(--surface);
   }
   .primary {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
+    font-weight: 600;
+  }
+  .primary:not(:disabled):hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+  header .primary {
+    background: #a0001b;
+    border-color: #a0001b;
+  }
+  header .primary:hover {
+    border-color: var(--gold);
   }
   .notice {
     display: flex;
@@ -205,8 +257,9 @@
     gap: 12px;
     margin-top: 10px;
     padding: 6px 12px;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
     background: var(--surface);
   }
   .errors {
@@ -216,7 +269,8 @@
     gap: 12px;
     margin-top: 10px;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
     background: var(--error-bg);
   }
   .errors ul {
@@ -232,13 +286,14 @@
   .tab {
     display: flex;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 7px;
     background: var(--surface);
     flex-shrink: 0;
   }
   .tab.active {
     border-color: var(--accent);
     box-shadow: inset 0 -2px 0 var(--accent);
+    font-weight: 600;
   }
   .tab button {
     border: none;

@@ -170,6 +170,10 @@ describe('PhotoPanel', () => {
     expect(body).toContain('Масштаб ІЧ-шару')
     expect(body).toContain('100 %')
     expect(body).toContain('Сховати видиме фото')
+    // Керування — оверлеєм після вікна фото; довідка — під «?»
+    expect(body.indexOf('class="viewport')).toBeLessThan(body.indexOf('class="bar top'))
+    expect(body).toContain('aria-label="Довідка щодо керування"')
+    expect(body).not.toContain('Shift + колесо')
   })
 })
 

@@ -51,6 +51,7 @@ export const en: Record<MessageKey, string> = {
   'view.sidebarWidth': 'Sidebar width (drag; double-click to reset)',
   'view.extremes': 'Frame Max/Min markers',
   'view.image': 'Infrared image',
+  'view.help': 'Controls help',
   'view.hint': 'Wheel — zoom, drag — pan',
   'cursor.title': 'Under cursor',
   'cursor.pixel': 'Pixel',

@@ -91,6 +91,9 @@ describe('ResultsTable', () => {
     })
     expect(body).toContain('Результати')
     expect(body).toContain('Додайте точку')
+    // Таблиця зі сталою висотою рендериться й порожньою — поява першого об'єкта не зсуває інтерфейс
+    expect(body).toContain('<table')
+    expect(body).toContain('--rows: 7')
   })
 
   it('рядки об’єктів з температурами й параметрами', () => {

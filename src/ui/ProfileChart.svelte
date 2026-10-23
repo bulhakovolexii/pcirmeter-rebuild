@@ -161,7 +161,7 @@
   }
   .chart {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--surface);
     overflow: hidden;
   }

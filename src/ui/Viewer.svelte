@@ -30,6 +30,7 @@
     TEMPERATURE_SYMBOL,
     temperatureStatus,
   } from './format'
+  import HelpTip from './HelpTip.svelte'
   import Histogram from './Histogram.svelte'
   import IsothermPanel from './IsothermPanel.svelte'
   import { defaultIsotherms, isothermBand, toIsotherm, type IsothermState } from './isotherms'
@@ -223,6 +224,14 @@
   /** Допуск попадання в об'єкт, екранних пікселів. */
   const HIT_PX = 6
   let tool = $state<'select' | ShapeKind>('select')
+  /** Довідка під «?»: дії кожного інструмента, вид і клавіші. */
+  const help = $derived([
+    ...(['select', 'point', 'rect', 'line'] as const).map(
+      (t) => `${$tr(`tools.${t}`)}: ${$tr(`tools.hint.${t}`)}`,
+    ),
+    $tr('view.hint'),
+    $tr('tools.keys'),
+  ])
   let objects = $state<MeasureObject[]>([])
   let selectedId = $state<number | null>(null)
   let nextId = 1
@@ -708,8 +717,8 @@
       <button type="button" onclick={() => zoomTo(zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button>
       <button type="button" onclick={() => (autoFit = true)}>{$tr('view.fit')}</button>
       <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
+      <HelpTip label={$tr('view.help')} items={help} align="right" />
     </div>
-    <p class="muted hint">{$tr(`tools.hint.${tool}`)}. {$tr('view.hint')}. {$tr('tools.keys')}.</p>
     <div class="views" bind:clientWidth={viewsWidth} style:--ir-share={photo && showPhoto ? $photoSplit : 1}>
       <div class="stage">
         <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
@@ -888,7 +897,8 @@
   }
   fieldset {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
+    background: var(--surface);
     padding: 8px 10px 10px;
     margin: 0;
   }
@@ -899,6 +909,7 @@
   }
   legend {
     font-size: 0.9rem;
+    font-weight: 600;
     padding: 0 4px;
   }
   .segmented {
@@ -992,24 +1003,21 @@
     margin-left: -1px;
   }
   .tools button:first-child {
-    border-radius: 4px 0 0 4px;
+    border-radius: 7px 0 0 7px;
     margin-left: 0;
   }
   .tools button:last-child {
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 7px 7px 0;
   }
   .tools button.active {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
+    font-weight: 600;
     position: relative;
   }
   .sep {
     flex: 1;
-  }
-  .hint {
-    margin: 0;
-    font-size: 0.8rem;
   }
   .views {
     flex: 1;
@@ -1052,13 +1060,10 @@
     min-width: 0;
     overflow: hidden;
     background: var(--stage);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: crosshair;
     touch-action: none;
     user-select: none;
-  }
-  .viewport:focus-visible {
-    outline: 2px solid var(--accent);
   }
   canvas {
     position: absolute;
@@ -1090,11 +1095,11 @@
     stroke-width: 2;
     filter: drop-shadow(0 0 1px #000);
   }
+  /* Висоту задає таблиця результатів (стала) — нижня смуга не стискається й не росте */
   .bottom {
     display: flex;
     gap: 12px;
-    max-height: 34%;
-    min-height: 0;
+    flex-shrink: 0;
   }
   .bottom > :global(*) {
     flex: 1 1 0;
@@ -1148,10 +1153,6 @@
     }
     .bottom {
       flex-direction: column;
-      max-height: none;
-    }
-    .hint {
-      display: none;
     }
   }
 </style>

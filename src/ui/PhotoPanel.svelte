@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tr } from '../i18n'
+  import HelpTip from './HelpTip.svelte'
   import {
     defaultPlacement,
     irViewFor,
@@ -202,52 +203,8 @@
   )
 </script>
 
+<!-- Керування — оверлеєм над фото: вікно фото має ту саму висоту, що й ІЧ-вікно поруч -->
 <section class="photo" aria-label={$tr('photo.title')}>
-  <div class="toolbar">
-    <div class="segmented" role="radiogroup" aria-label={$tr('photo.mode')}>
-      {#each ['photo', 'overlay'] as const as m (m)}
-        <label>
-          <input type="radio" name="photo-mode-{id}" checked={mode === m} onchange={() => (mode = m)} />
-          {$tr(`photo.mode.${m}`)}
-        </label>
-      {/each}
-    </div>
-    <label class="check">
-      <input type="checkbox" checked={sync} onchange={(e) => setSync(e.currentTarget.checked)} />
-      {$tr('photo.sync')}
-    </label>
-    <span class="sep"></span>
-    <button type="button" onclick={() => zoomTo(view.zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}>−</button>
-    <button type="button" onclick={() => zoomTo(view.zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button>
-    <button type="button" onclick={fit}>{$tr('view.fit')}</button>
-    <button
-      type="button"
-      class="close"
-      onclick={onclose}
-      title={$tr('photo.hide')}
-      aria-label={$tr('photo.hide')}>×</button
-    >
-  </div>
-  {#if mode === 'overlay'}
-    <div class="toolbar">
-      <label class="blend">
-        <span>{$tr('photo.blend')}</span>
-        <input type="range" min="0" max="100" step="5" bind:value={blend} />
-        <span class="value">{blend} %</span>
-      </label>
-    </div>
-  {/if}
-  <div class="toolbar">
-    <span>{$tr('photo.layerScale')}</span>
-    <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
-      >−</button
-    >
-    <span class="value">{Math.round(alignment.scale * 100)} %</span>
-    <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}>+</button>
-    <button type="button" disabled={!aligned} onclick={() => onalign(NO_ALIGNMENT)}
-      >{$tr('photo.resetAlign')}</button
-    >
-  </div>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <div
     class="viewport"
@@ -295,49 +252,131 @@
       ></canvas>
     {/if}
   </div>
-  <p class="hint">{$tr('view.hint')}. {$tr('photo.hint.align')}</p>
+  <div class="bar top">
+    <div class="group">
+      <div class="segmented" role="radiogroup" aria-label={$tr('photo.mode')}>
+        {#each ['photo', 'overlay'] as const as m (m)}
+          <label>
+            <input type="radio" name="photo-mode-{id}" checked={mode === m} onchange={() => (mode = m)} />
+            {$tr(`photo.mode.${m}`)}
+          </label>
+        {/each}
+      </div>
+      <label class="check">
+        <input type="checkbox" checked={sync} onchange={(e) => setSync(e.currentTarget.checked)} />
+        {$tr('photo.sync')}
+      </label>
+    </div>
+    <div class="group">
+      <button type="button" onclick={() => zoomTo(view.zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
+        >−</button
+      >
+      <button type="button" onclick={() => zoomTo(view.zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button
+      >
+      <button type="button" onclick={fit}>{$tr('view.fit')}</button>
+      <HelpTip label={$tr('view.help')} items={[$tr('view.hint'), $tr('photo.hint.align')]} align="right" />
+      <button type="button" onclick={onclose} title={$tr('photo.hide')} aria-label={$tr('photo.hide')}
+        >×</button
+      >
+    </div>
+  </div>
+  <div class="bar bottom">
+    {#if mode === 'overlay'}
+      <label class="group blend">
+        <span>{$tr('photo.blend')}</span>
+        <input type="range" min="0" max="100" step="5" bind:value={blend} />
+        <span class="value">{blend} %</span>
+      </label>
+    {/if}
+    <div class="group">
+      <span>{$tr('photo.layerScale')}</span>
+      <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
+        >−</button
+      >
+      <span class="value">{Math.round(alignment.scale * 100)} %</span>
+      <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}>+</button>
+      <button type="button" disabled={!aligned} onclick={() => onalign(NO_ALIGNMENT)}
+        >{$tr('photo.resetAlign')}</button
+      >
+    </div>
+  </div>
 </section>
 
 <style>
   .photo {
+    position: relative;
     display: flex;
-    flex-direction: column;
-    gap: 6px;
     min-width: 0;
     min-height: 0;
   }
-  .toolbar {
+  /* Смуги керування поверх фото; між групами кнопок кліки проходять до зображення */
+  .bar {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+  .bar.top {
+    top: 6px;
+  }
+  .bar.bottom {
+    bottom: 6px;
+    align-items: flex-end;
+  }
+  .group {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
-    font-size: 0.9rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(42, 42, 42, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    backdrop-filter: blur(4px);
+    pointer-events: auto;
   }
-  .toolbar button {
-    min-width: 2rem;
+  .group button {
+    min-width: 1.9rem;
+    padding: 1px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.24);
+    color: #fff;
+  }
+  .group button:not(:disabled):hover {
+    border-color: var(--gold);
+  }
+  .group :global(.icon) {
+    width: 22px;
+    height: 22px;
+    min-width: 0;
+    color: #fff;
   }
   .segmented {
     display: flex;
-    gap: 12px;
+    gap: 10px;
   }
+  .segmented label,
   .check {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
-    margin-left: 8px;
   }
-  .sep {
-    flex: 1;
+  .check {
+    margin-left: 4px;
   }
   .blend {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
+    flex: 1 1 200px;
+    max-width: 320px;
   }
   .blend input {
     flex: 1;
-    min-width: 80px;
+    min-width: 60px;
   }
   .value {
     min-width: 3.5em;
@@ -350,16 +389,13 @@
     min-height: 0;
     overflow: hidden;
     background: var(--stage);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: grab;
     touch-action: none;
     user-select: none;
   }
   .viewport.dragging {
     cursor: grabbing;
-  }
-  .viewport:focus-visible {
-    outline: 2px solid var(--accent);
   }
   img,
   canvas {
@@ -368,10 +404,5 @@
   }
   canvas {
     pointer-events: none;
-  }
-  .hint {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--muted);
   }
 </style>

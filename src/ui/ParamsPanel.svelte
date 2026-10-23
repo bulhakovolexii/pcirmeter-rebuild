@@ -113,12 +113,14 @@
     flex-direction: column;
     gap: 6px;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
+    background: var(--surface);
     padding: 8px 10px 10px;
     margin: 0;
   }
   legend {
     font-size: 0.9rem;
+    font-weight: 600;
     padding: 0 4px;
   }
   .field {

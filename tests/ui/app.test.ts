@@ -86,6 +86,9 @@ describe('App', () => {
     expect(body).toContain('34,5 °C')
     expect(body).toContain('25,8 °C')
     expect(body).toContain('Залізо')
+    // Довідка щодо керування — під кнопкою «?», а не постійним текстом
+    expect(body).toContain('aria-label="Довідка щодо керування"')
+    expect(body).not.toContain('Колесо — масштаб')
   })
 
   it("показує параметри об'єкта з файлу і τ", async () => {

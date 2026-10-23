@@ -1,34 +1,53 @@
+@import './fonts/fonts.css';
+
+/* Кольори й шрифт — за стилем лабораторних робіт кафедри (bulhakov.dev/ir-lab-1, стиль-гайд ХПІ) */
 :root {
-  --bg: #f6f7f9;
-  --fg: #1d2129;
-  --muted: #5b6270;
-  --border: #d5d9e0;
+  --bg: #fcfcfc;
+  --fg: #2a2a2a;
+  --muted: #6b6b6b;
+  --border: #e4e4e4;
+  --border-strong: #d0d0d0;
   --surface: #ffffff;
-  --stage: #2a2d33;
-  --accent: #1f6feb;
+  --surface-alt: #fafafa;
+  --stage: #2a2a2a;
+  --accent: #a0001b;
+  --accent-hover: #820016;
+  --gold: #fbba00;
+  --cyan: #3eb1c8;
+  --header: #2a2a2a;
   --warn: #b54708;
-  --error-bg: #fdecea;
+  --error-bg: #fbe9ec;
+  --radius: 10px;
+  --shadow: 0 2px 10px rgba(42, 42, 42, 0.06);
   font-family:
-    system-ui,
+    'Fira Sans',
     -apple-system,
+    BlinkMacSystemFont,
     'Segoe UI',
-    Roboto,
     sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
   color: var(--fg);
   background: var(--bg);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #15171c;
-    --fg: #e6e8ec;
-    --muted: #9aa1ad;
-    --border: #2c313a;
-    --surface: #1d2027;
-    --stage: #0c0d10;
-    --accent: #4c8dff;
+    --bg: #1b1b1b;
+    --fg: #ececec;
+    --muted: #a3a3a3;
+    --border: #353535;
+    --border-strong: #474747;
+    --surface: #242424;
+    --surface-alt: #2a2a2a;
+    --stage: #101010;
+    --accent: #d9455a;
+    --accent-hover: #e8687a;
+    --header: #111111;
     --warn: #f5a524;
-    --error-bg: #3a1d1b;
+    --error-bg: #3a1d21;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -49,11 +68,35 @@ button,
 select,
 input[type='number'] {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
   padding: 3px 8px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 button {
   cursor: pointer;
+}
+
+button:not(:disabled):hover,
+select:hover {
+  border-color: var(--fg);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
 }
