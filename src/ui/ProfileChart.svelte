@@ -153,10 +153,20 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  /* Рядок заголовка не переноситься: підказка обрізається, кнопка — завжди повністю */
   .readout {
     flex: 1;
+    min-width: 0;
     font-size: 0.85rem;
     font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  h2,
+  .head button {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .muted {
     color: var(--muted);

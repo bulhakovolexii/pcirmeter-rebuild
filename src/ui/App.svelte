@@ -5,6 +5,7 @@
   import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
   import { applyUpdate, dismissOfflineReady, onLaunchFiles, pwa } from './pwa'
   import { units } from './settings'
+  import FileTabs from './FileTabs.svelte'
   import Viewer from './Viewer.svelte'
 
   interface Props {
@@ -79,6 +80,17 @@
       <span class="logo" aria-hidden="true">ІЧ</span>
       <h1>{$tr('app.title')}</h1>
     </div>
+    <div class="tabs">
+      {#if files.length > 0}
+        <FileTabs
+          {files}
+          {activeId}
+          onselect={(id) => (activeId = id)}
+          onclose={close}
+          oncloseall={closeAll}
+        />
+      {/if}
+    </div>
     <div class="actions">
       <button type="button" class="primary" onclick={() => input?.click()}>{$tr('files.open')}</button>
       <input
@@ -130,29 +142,6 @@
   {/if}
 
   {#if files.length > 0}
-    <div class="tabs" role="tablist">
-      {#each files as f (f.id)}
-        <div class="tab" class:active={f.id === activeId}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={f.id === activeId}
-            onclick={() => (activeId = f.id)}
-          >
-            {f.name}
-          </button>
-          <button
-            type="button"
-            class="close"
-            aria-label="{$tr('files.close')} {f.name}"
-            onclick={() => close(f.id)}>×</button
-          >
-        </div>
-      {/each}
-      {#if files.length > 1}
-        <button type="button" class="close-all" onclick={closeAll}>{$tr('files.closeAll')}</button>
-      {/if}
-    </div>
     <main>
       <!-- Переглядачі всіх файлів лишаються змонтованими: вкладка зберігає палітру, шкалу й масштаб -->
       {#each files as f (f.id)}
@@ -172,6 +161,14 @@
   {/if}
 </div>
 
+<!-- Вужче за 1024 px інтерфейс не вміщається — замість нього заглушка (застосунок лишається змонтованим,
+     відкриті файли не губляться) -->
+<div class="narrow" role="alert">
+  <span class="logo" aria-hidden="true">ІЧ</span>
+  <h1>{$tr('narrow.title')}</h1>
+  <p>{$tr('narrow.text')}</p>
+</div>
+
 <style>
   .app {
     display: flex;
@@ -184,9 +181,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px 16px;
-    flex-wrap: wrap;
-    margin-top: 10px;
+    gap: 16px;
+    margin: 10px 0;
     padding: 8px 14px;
     background: var(--header);
     color: #fff;
@@ -196,6 +192,7 @@
     box-shadow: var(--shadow);
   }
   .brand {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -216,6 +213,7 @@
     margin: 0;
   }
   .actions {
+    flex-shrink: 0;
     display: flex;
     gap: 6px;
   }
@@ -255,7 +253,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 6px 12px;
     border: 1px solid var(--border);
     border-left: 4px solid var(--accent);
@@ -267,7 +265,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 8px 12px;
     border-left: 4px solid var(--accent);
     border-radius: var(--radius);
@@ -278,33 +276,9 @@
     padding-left: 18px;
   }
   .tabs {
+    flex: 1;
+    min-width: 0;
     display: flex;
-    gap: 4px;
-    margin: 10px 0;
-    overflow-x: auto;
-  }
-  .tab {
-    display: flex;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: var(--surface);
-    flex-shrink: 0;
-  }
-  .tab.active {
-    border-color: var(--accent);
-    box-shadow: inset 0 -2px 0 var(--accent);
-    font-weight: 600;
-  }
-  .tab button {
-    border: none;
-    background: none;
-  }
-  .tab .close {
-    color: var(--muted);
-  }
-  .close-all {
-    margin-left: auto;
-    flex-shrink: 0;
   }
   main {
     flex: 1;
@@ -324,6 +298,41 @@
   .muted {
     color: var(--muted);
   }
+  .narrow {
+    display: none;
+  }
+  @media (max-width: 1279px) {
+    .brand h1 {
+      display: none;
+    }
+  }
+  @media (max-width: 1023px) {
+    .app {
+      display: none;
+    }
+    .narrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 24px 16px;
+      text-align: center;
+    }
+    .narrow .logo {
+      width: 48px;
+      height: 48px;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    .narrow p {
+      max-width: 420px;
+      margin: 0;
+      color: var(--muted);
+    }
+  }
   .drop {
     position: fixed;
     inset: 12px;
@@ -334,12 +343,5 @@
     background: color-mix(in srgb, var(--bg) 85%, transparent);
     font-size: 1.3rem;
     pointer-events: none;
-  }
-
-  @media (max-width: 720px) {
-    .app {
-      height: auto;
-      min-height: 100vh;
-    }
   }
 </style>

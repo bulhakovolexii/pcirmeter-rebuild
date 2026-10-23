@@ -85,9 +85,4 @@
   .splitter:focus-visible {
     outline: none;
   }
-  @media (max-width: 720px) {
-    .splitter {
-      display: none;
-    }
-  }
 </style>

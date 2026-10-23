@@ -63,8 +63,9 @@
   `ParamsPanel.svelte` (параметри кадру / об'єкта), `ResultsTable.svelte`, `ColorBar.svelte`;
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
   об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
-  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`; довідка «?» — `HelpTip.svelte`.
-  Оформлення — токени в `src/ui/app.css` (стиль ir-lab-1 / ХПІ), шрифт Fira Sans — локально в `src/ui/fonts/` (офлайн). Аналіз: `ProfileChart.svelte`, `DistributionChart.svelte` (розподіл температур прямокутника), `IsothermPanel.svelte`, `Histogram.svelte`.
+  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`; довідка «?» — `HelpTip.svelte`; вкладки файлів у шапці — `FileTabs.svelte`.
+  Оформлення — токени в `src/ui/app.css` (стиль ir-lab-1 / ХПІ), шрифт Fira Sans — локально в `src/ui/fonts/` (офлайн);
+  смуги керування поверх зображень — глобальні класи `.float-bar` / `.float-group` там само. Аналіз: `ProfileChart.svelte`, `DistributionChart.svelte` (розподіл температур прямокутника), `IsothermPanel.svelte`, `Histogram.svelte`.
   Видиме фото й накладення — `PhotoPanel.svelte` + `photo.ts` (розміщення, розмір JPEG); масштаб/зсув — `view.ts`;
   текст і аудіо з камери — `attachments.ts`. Синтетичні термограми з додатковими блоками (тексту/аудіо у зразках
   немає) — `tests/support/blocks.ts`.
@@ -75,7 +76,9 @@
   production; нова версія чекає на кнопку «Оновити»). Маніфест — `public/manifest.webmanifest`, іконки
   `public/icons/` генерує `tools/make_icons.ts` (запуск — у шапці файлу). Деплой — job `deploy` у `ci.yml`
   на push у `main` → https://bulhakov.dev/pcirmeter-rebuild/.
-- У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Браузера в sandbox немає — UI перевіряє викладач.
+- У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Справжнього браузера в sandbox немає, але є headless Chromium
+  (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу).
+  Остаточно UI перевіряє викладач. Мінімальна ширина інтерфейсу — 1024 px; вужче — заглушка в `App.svelte`.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
 - Зразки: `samples/legacy-2013/` (160×120, 384×288; у git), `samples/latest-2021/` (CEM DT-980, 80×80, камера кафедри;

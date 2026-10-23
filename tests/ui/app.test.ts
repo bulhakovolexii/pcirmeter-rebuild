@@ -86,6 +86,9 @@ describe('App', () => {
     expect(body).toContain('34,5 °C')
     expect(body).toContain('25,8 °C')
     expect(body).toContain('Залізо')
+    // Вкладки файлів — у шапці; заглушка для вузького вікна є в розмітці (показується медіазапитом)
+    expect(body.indexOf('role="tablist"')).toBeLessThan(body.indexOf('</header>'))
+    expect(body).toContain('Вікно завузьке')
     // Довідка щодо керування — під кнопкою «?», а не постійним текстом
     expect(body).toContain('aria-label="Довідка щодо керування"')
     expect(body).not.toContain('Колесо — масштаб')

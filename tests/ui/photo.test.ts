@@ -144,9 +144,9 @@ describe('вкладення у файлі', () => {
 })
 
 describe('PhotoPanel', () => {
-  it('рендерить перемикач режимів і масштаб', () => {
-    const t = parseThermogram(bytes)
-    const { body } = render(PhotoPanel, {
+  const t = parseThermogram(bytes)
+  const renderPanel = (sync: boolean) =>
+    render(PhotoPanel, {
       props: {
         photo: t.visibleJpeg!,
         frame: new Uint8ClampedArray(160 * 120 * 4),
@@ -158,20 +158,25 @@ describe('PhotoPanel', () => {
         onirfit: () => {},
         alignment: NO_ALIGNMENT,
         onalign: () => {},
-        sync: true,
+        sync,
         onsync: () => {},
         onclose: () => {},
       },
-    })
+    }).body
+
+  it('рендерить перемикач режимів і масштаб', () => {
+    const body = renderPanel(true)
     expect(body).toContain('Фото')
     expect(body).toContain('Накладення')
-    expect(body).toContain('Вписати')
+    // За синхронізації масштаб фото — кнопками ІЧ, власних немає
+    expect(body).not.toContain('Вписати')
+    expect(renderPanel(false)).toContain('Вписати')
     expect(body).toContain('Синхронно з ІЧ')
     expect(body).toContain('Масштаб ІЧ-шару')
     expect(body).toContain('100 %')
     expect(body).toContain('Сховати видиме фото')
     // Керування — оверлеєм після вікна фото; довідка — під «?»
-    expect(body.indexOf('class="viewport')).toBeLessThan(body.indexOf('class="bar top'))
+    expect(body.indexOf('class="viewport')).toBeLessThan(body.indexOf('class="float-bar top'))
     expect(body).toContain('aria-label="Довідка щодо керування"')
     expect(body).not.toContain('Shift + колесо')
   })

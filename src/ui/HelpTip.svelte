@@ -69,20 +69,24 @@
     position: relative;
     display: inline-flex;
   }
+  /* Кольори кнопки перевизначаються змінними --help-* (напр. на темних смугах поверх зображення) */
   .icon {
-    width: 24px;
-    height: 24px;
+    width: var(--help-size, 24px);
+    height: var(--help-size, 24px);
     min-width: 0;
     padding: 0;
     border-radius: 50%;
     font-weight: 700;
     font-size: 0.85rem;
     line-height: 1;
-    color: var(--muted);
+    background: var(--help-bg, var(--surface));
+    border-color: var(--help-border, var(--border-strong));
+    color: var(--help-fg, var(--muted));
   }
-  .icon.active {
-    border-color: var(--accent);
-    color: var(--accent);
+  .icon.active,
+  .icon:hover {
+    border-color: var(--help-active, var(--accent));
+    color: var(--help-active, var(--accent));
   }
   .tip {
     position: absolute;
@@ -100,6 +104,7 @@
     font-size: 0.85rem;
     font-weight: 400;
     text-align: left;
+    white-space: normal;
   }
   .tip.left {
     left: 0;

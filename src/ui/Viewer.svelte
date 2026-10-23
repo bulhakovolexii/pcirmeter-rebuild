@@ -226,9 +226,10 @@
   let tool = $state<'select' | ShapeKind>('select')
   /** Довідка під «?»: дії кожного інструмента, вид і клавіші. */
   const help = $derived([
-    ...(['select', 'point', 'rect', 'line'] as const).map(
-      (t) => `${$tr(`tools.${t}`)}: ${$tr(`tools.hint.${t}`)}`,
-    ),
+    ...(['select', 'point', 'rect', 'line'] as const).map((t) => {
+      const hint = $tr(`tools.hint.${t}`)
+      return `${$tr(`tools.${t}`)}: ${hint.charAt(0).toLocaleLowerCase()}${hint.slice(1)}`
+    }),
     $tr('view.hint'),
     $tr('tools.keys'),
   ])
@@ -711,102 +712,113 @@
           {$tr('photo.show')}
         </label>
       {/if}
-      <span class="sep"></span>
-      <button type="button" onclick={() => zoomTo(zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}>−</button>
-      <span class="zoom">{Math.round(zoom * 100)} %</span>
-      <button type="button" onclick={() => zoomTo(zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button>
-      <button type="button" onclick={() => (autoFit = true)}>{$tr('view.fit')}</button>
-      <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
-      <HelpTip label={$tr('view.help')} items={help} align="right" />
     </div>
     <div class="views" bind:clientWidth={viewsWidth} style:--ir-share={photo && showPhoto ? $photoSplit : 1}>
       <div class="stage">
-        <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-        <div
-          class="viewport"
-          bind:this={viewport}
-          bind:clientWidth={viewWidth}
-          bind:clientHeight={viewHeight}
-          role="application"
-          aria-label={$tr('view.image')}
-          tabindex="0"
-          onpointerdown={onPointerDown}
-          onmousedown={(e) => {
-            // Середня кнопка — зсув, а не автопрокрутка браузера
-            if (e.button === 1) e.preventDefault()
-          }}
-          onpointermove={onPointerMove}
-          onpointerup={onPointerUp}
-          onpointercancel={onPointerUp}
-          onpointerleave={() => (hover = null)}
-          onkeydown={onKeyDown}
-          style:cursor={viewportCursor}
-        >
-          <canvas
-            bind:this={canvas}
-            width={ir.width}
-            height={ir.height}
-            style:left="{panX}px"
-            style:top="{panY}px"
-            style:width="{ir.width * zoom}px"
-            style:height="{ir.height * zoom}px"
-          ></canvas>
-          <svg class="overlay" aria-hidden="true">
-            {#each objects as o (o.id)}
-              {@const sh = o.shape}
-              {@const sel = o.id === selectedId}
-              <g class="object" class:selected={sel}>
-                {#if sh.kind === 'point'}
-                  <path class="shape" d="M {sx(sh.x) - 6} {sy(sh.y) - 6} l 12 12 m 0 -12 l -12 12" />
-                  <text x={sx(sh.x) + 8} y={sy(sh.y) + 14}>{o.name}</text>
-                {:else if sh.kind === 'rect'}
-                  {@const x = panX + sh.x0 * zoom}
-                  {@const y = panY + sh.y0 * zoom}
-                  {@const w = (sh.x1 - sh.x0 + 1) * zoom}
-                  {@const h = (sh.y1 - sh.y0 + 1) * zoom}
-                  <rect class="shape" {x} {y} width={w} height={h} />
-                  <text x={x + 4} y={y + 14}>{o.name}</text>
-                  {#if sel}
-                    {#each [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as [hx, hy], i (i)}
-                      <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
-                    {/each}
+        <div class="frame">
+          <!-- Полотно з власною клавіатурною взаємодією (+/−/0, стрілки): role="application" свідомо -->
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+          <div
+            class="viewport"
+            bind:this={viewport}
+            bind:clientWidth={viewWidth}
+            bind:clientHeight={viewHeight}
+            role="application"
+            aria-label={$tr('view.image')}
+            tabindex="0"
+            onpointerdown={onPointerDown}
+            onmousedown={(e) => {
+              // Середня кнопка — зсув, а не автопрокрутка браузера
+              if (e.button === 1) e.preventDefault()
+            }}
+            onpointermove={onPointerMove}
+            onpointerup={onPointerUp}
+            onpointercancel={onPointerUp}
+            onpointerleave={() => (hover = null)}
+            onkeydown={onKeyDown}
+            style:cursor={viewportCursor}
+          >
+            <canvas
+              bind:this={canvas}
+              width={ir.width}
+              height={ir.height}
+              style:left="{panX}px"
+              style:top="{panY}px"
+              style:width="{ir.width * zoom}px"
+              style:height="{ir.height * zoom}px"
+            ></canvas>
+            <svg class="overlay" aria-hidden="true">
+              {#each objects as o (o.id)}
+                {@const sh = o.shape}
+                {@const sel = o.id === selectedId}
+                <g class="object" class:selected={sel}>
+                  {#if sh.kind === 'point'}
+                    <path class="shape" d="M {sx(sh.x) - 6} {sy(sh.y) - 6} l 12 12 m 0 -12 l -12 12" />
+                    <text x={sx(sh.x) + 8} y={sy(sh.y) + 14}>{o.name}</text>
+                  {:else if sh.kind === 'rect'}
+                    {@const x = panX + sh.x0 * zoom}
+                    {@const y = panY + sh.y0 * zoom}
+                    {@const w = (sh.x1 - sh.x0 + 1) * zoom}
+                    {@const h = (sh.y1 - sh.y0 + 1) * zoom}
+                    <rect class="shape" {x} {y} width={w} height={h} />
+                    <text x={x + 4} y={y + 14}>{o.name}</text>
+                    {#if sel}
+                      {#each [[x, y], [x + w, y], [x, y + h], [x + w, y + h]] as [hx, hy], i (i)}
+                        <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                      {/each}
+                    {/if}
+                  {:else}
+                    <line class="shape" x1={sx(sh.x0)} y1={sy(sh.y0)} x2={sx(sh.x1)} y2={sy(sh.y1)} />
+                    <text x={sx(sh.x0) + 6} y={sy(sh.y0) - 6}>{o.name}</text>
+                    {#if sel}
+                      {#each [[sx(sh.x0), sy(sh.y0)], [sx(sh.x1), sy(sh.y1)]] as [hx, hy], i (i)}
+                        <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
+                      {/each}
+                    {/if}
                   {/if}
-                {:else}
-                  <line class="shape" x1={sx(sh.x0)} y1={sy(sh.y0)} x2={sx(sh.x1)} y2={sy(sh.y1)} />
-                  <text x={sx(sh.x0) + 6} y={sy(sh.y0) - 6}>{o.name}</text>
-                  {#if sel}
-                    {#each [[sx(sh.x0), sy(sh.y0)], [sx(sh.x1), sy(sh.y1)]] as [hx, hy], i (i)}
-                      <rect class="handle" x={hx! - 4} y={hy! - 4} width="8" height="8" />
-                    {/each}
-                  {/if}
-                {/if}
-              </g>
-            {/each}
-            {#each objectMarkers as m (m.key)}
-              <g class="marker small {m.kind}" transform="translate({m.x} {m.y})">
-                <path d="M -6 0 H 6 M 0 -6 V 6" />
-              </g>
-            {/each}
-            {#if profileMarker}
-              <rect
-                class="profile-marker"
-                x={panX + profileMarker.x * zoom - 3}
-                y={panY + profileMarker.y * zoom - 3}
-                width={zoom + 6}
-                height={zoom + 6}
-              />
-            {/if}
-            {#if showExtremes}
-              {#each markers as m (m.kind)}
-                <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
-                  <circle r="7" />
-                  <path d="M -11 0 H -4 M 4 0 H 11 M 0 -11 V -4 M 0 4 V 11" />
-                  <text x="12" y="-8">{m.label}</text>
                 </g>
               {/each}
-            {/if}
-          </svg>
+              {#each objectMarkers as m (m.key)}
+                <g class="marker small {m.kind}" transform="translate({m.x} {m.y})">
+                  <path d="M -6 0 H 6 M 0 -6 V 6" />
+                </g>
+              {/each}
+              {#if profileMarker}
+                <rect
+                  class="profile-marker"
+                  x={panX + profileMarker.x * zoom - 3}
+                  y={panY + profileMarker.y * zoom - 3}
+                  width={zoom + 6}
+                  height={zoom + 6}
+                />
+              {/if}
+              {#if showExtremes}
+                {#each markers as m (m.kind)}
+                  <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
+                    <circle r="7" />
+                    <path d="M -11 0 H -4 M 4 0 H 11 M 0 -11 V -4 M 0 4 V 11" />
+                    <text x="12" y="-8">{m.label}</text>
+                  </g>
+                {/each}
+              {/if}
+            </svg>
+          </div>
+          <!-- Масштаб і довідка — оверлеєм над кадром (як у видимого фото), щоб тулбар уміщався в один рядок -->
+          <div class="float-bar top">
+            <span></span>
+            <div class="float-group">
+              <button type="button" onclick={() => zoomTo(zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
+                >−</button
+              >
+              <span class="zoom">{Math.round(zoom * 100)} %</span>
+              <button type="button" onclick={() => zoomTo(zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}
+                >+</button
+              >
+              <button type="button" onclick={() => (autoFit = true)}>{$tr('view.fit')}</button>
+              <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
+              <HelpTip label={$tr('view.help')} items={help} align="right" />
+            </div>
+          </div>
         </div>
         <ColorBar {paletteId} maxLabel={fmt(scaleLabels.max)} minLabel={fmt(scaleLabels.min)} {bands} />
       </div>
@@ -990,8 +1002,14 @@
   .toolbar button {
     min-width: 2rem;
   }
+  .frame {
+    position: relative;
+    flex: 1;
+    display: flex;
+    min-width: 0;
+  }
   .zoom {
-    min-width: 4.5em;
+    min-width: 3.8em;
     text-align: center;
     font-variant-numeric: tabular-nums;
   }
@@ -1015,9 +1033,6 @@
     color: #fff;
     font-weight: 600;
     position: relative;
-  }
-  .sep {
-    flex: 1;
   }
   .views {
     flex: 1;
@@ -1130,29 +1145,5 @@
     paint-order: stroke;
     stroke: #000;
     stroke-width: 3px;
-  }
-
-  @media (max-width: 720px) {
-    .viewer {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto;
-      gap: 16px;
-      height: auto;
-    }
-    .image-area {
-      order: -1;
-    }
-    .views {
-      flex-direction: column;
-      flex: none;
-    }
-    .views > .stage,
-    .views > :global(:last-child:not(.stage)) {
-      height: 60vh;
-      flex: none;
-    }
-    .bottom {
-      flex-direction: column;
-    }
   }
 </style>

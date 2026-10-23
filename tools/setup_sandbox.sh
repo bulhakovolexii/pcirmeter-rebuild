@@ -44,6 +44,18 @@ dotnet tool list -g | grep -q ilspycmd || dotnet tool install -g ilspycmd --vers
 # REA MCP registration for Claude Code (restart the session afterwards)
 GHIDRA_INSTALL_DIR=$GHIDRA_DIR npx -y rea-agents@6.7.0 setup --client claude_code --yes >/dev/null
 
+# Playwright + headless Chromium for UI screenshots (tools/ui_screens.mjs). Ubuntu 26.04 is not on Playwright's
+# list — take the ubuntu24.04-arm64 build and install its shared libraries by hand.
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libatk1.0-0t64 libatspi2.0-0t64 libx11-6 \
+  libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 libxcb1 libxkbcommon0 libnss3 \
+  libasound2t64 >/dev/null
+if [ ! -d "$TOOLS/playwright/node_modules/playwright" ]; then
+  mkdir -p "$TOOLS/playwright"
+  (cd "$TOOLS/playwright" && npm init -y >/dev/null && npm install --silent playwright@1.56.1)
+fi
+(cd "$TOOLS/playwright" && PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-arm64 \
+  npx playwright install chromium-headless-shell >/dev/null)
+
 # Proprietary inputs (kept out of git)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ -f "$ROOT/Setup.exe" ] && [ ! -d "$ROOT/reference/original" ]; then

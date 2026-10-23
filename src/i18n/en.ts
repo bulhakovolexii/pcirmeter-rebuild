@@ -3,8 +3,13 @@ import type { MessageKey } from './uk'
 export const en: Record<MessageKey, string> = {
   'app.title': 'Thermogram Analysis',
   'app.language': 'Interface language',
+  'narrow.title': 'The window is too narrow',
+  'narrow.text':
+    'The interface needs a width of at least 1024\u00a0px. Widen the browser window or zoom the page out (Ctrl\u00a0− or ⌘\u00a0−).',
   'files.open': 'Open files…',
   'files.closeAll': 'Close all',
+  'files.prev': 'Previous file',
+  'files.next': 'Next file',
   'files.close': 'Close',
   'files.empty': 'Open a thermogram (.jpg, .hir) with “Open files…” or drag files into the window.',
   'files.drop': 'Release to open',

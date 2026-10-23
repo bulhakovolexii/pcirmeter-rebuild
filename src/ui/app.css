@@ -100,3 +100,55 @@ input[type='range'] {
   outline: 2px solid var(--gold);
   outline-offset: 1px;
 }
+
+/* Смуги керування поверх зображення (ІЧ-кадр, видиме фото). Батько — position: relative.
+   Між групами кліки проходять до зображення. Без backdrop-filter / z-index: інакше група стає окремим
+   шаром і спливна довідка «?» опиняється під сусідньою панеллю. */
+.float-bar {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.float-bar.top {
+  top: 6px;
+}
+.float-bar.bottom {
+  bottom: 6px;
+  align-items: flex-end;
+}
+.float-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(42, 42, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: auto;
+  --help-size: 22px;
+  --help-bg: rgba(255, 255, 255, 0.1);
+  --help-border: rgba(255, 255, 255, 0.24);
+  --help-fg: #fff;
+  --help-active: var(--gold);
+}
+.float-group button {
+  min-width: 1.9rem;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.float-group button:not(:disabled):hover,
+.float-group button[aria-expanded='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}

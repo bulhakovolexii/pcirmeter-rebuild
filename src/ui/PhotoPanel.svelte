@@ -252,8 +252,8 @@
       ></canvas>
     {/if}
   </div>
-  <div class="bar top">
-    <div class="group">
+  <div class="float-bar top">
+    <div class="float-group">
       <div class="segmented" role="radiogroup" aria-label={$tr('photo.mode')}>
         {#each ['photo', 'overlay'] as const as m (m)}
           <label>
@@ -267,36 +267,44 @@
         {$tr('photo.sync')}
       </label>
     </div>
-    <div class="group">
-      <button type="button" onclick={() => zoomTo(view.zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
-        >−</button
-      >
-      <button type="button" onclick={() => zoomTo(view.zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}>+</button
-      >
-      <button type="button" onclick={fit}>{$tr('view.fit')}</button>
+    <div class="float-group">
+      <!-- За синхронізації масштаб фото — це масштаб ІЧ (кнопки над кадром), власні не потрібні -->
+      {#if !sync}
+        <button type="button" onclick={() => zoomTo(view.zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
+          >−</button
+        >
+        <button type="button" onclick={() => zoomTo(view.zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}
+          >+</button
+        >
+        <button type="button" onclick={fit}>{$tr('view.fit')}</button>
+      {/if}
       <HelpTip label={$tr('view.help')} items={[$tr('view.hint'), $tr('photo.hint.align')]} align="right" />
       <button type="button" onclick={onclose} title={$tr('photo.hide')} aria-label={$tr('photo.hide')}
         >×</button
       >
     </div>
   </div>
-  <div class="bar bottom">
+  <div class="float-bar bottom">
     {#if mode === 'overlay'}
-      <label class="group blend">
+      <label class="float-group blend">
         <span>{$tr('photo.blend')}</span>
         <input type="range" min="0" max="100" step="5" bind:value={blend} />
         <span class="value">{blend} %</span>
       </label>
     {/if}
-    <div class="group">
+    <div class="float-group">
       <span>{$tr('photo.layerScale')}</span>
       <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
         >−</button
       >
       <span class="value">{Math.round(alignment.scale * 100)} %</span>
       <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}>+</button>
-      <button type="button" disabled={!aligned} onclick={() => onalign(NO_ALIGNMENT)}
-        >{$tr('photo.resetAlign')}</button
+      <button
+        type="button"
+        disabled={!aligned}
+        onclick={() => onalign(NO_ALIGNMENT)}
+        title={$tr('photo.resetAlign')}
+        aria-label={$tr('photo.resetAlign')}>↺</button
       >
     </div>
   </div>
@@ -308,62 +316,6 @@
     display: flex;
     min-width: 0;
     min-height: 0;
-  }
-  /* Смуги керування поверх фото; між групами кнопок кліки проходять до зображення */
-  .bar {
-    position: absolute;
-    left: 6px;
-    right: 6px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 6px;
-    flex-wrap: wrap;
-    font-size: 0.85rem;
-    pointer-events: none;
-  }
-  .bar.top {
-    top: 6px;
-  }
-  .bar.bottom {
-    bottom: 6px;
-    align-items: flex-end;
-  }
-  .group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    background: rgba(42, 42, 42, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #fff;
-    backdrop-filter: blur(4px);
-    pointer-events: auto;
-  }
-  .group button {
-    min-width: 1.9rem;
-    padding: 1px 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.24);
-    color: #fff;
-  }
-  .group button:not(:disabled):hover {
-    border-color: var(--gold);
-  }
-  /* «?» — дочірній компонент, стилі `.group button` на нього не діють */
-  .group :global(.icon) {
-    width: 22px;
-    height: 22px;
-    min-width: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.24);
-    color: #fff;
-  }
-  .group :global(.icon.active),
-  .group :global(.icon:hover) {
-    border-color: var(--gold);
-    color: var(--gold);
   }
   .segmented {
     display: flex;

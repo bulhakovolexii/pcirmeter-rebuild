@@ -96,6 +96,11 @@
     gap: 8px;
     margin-bottom: 6px;
   }
+  h2,
+  .head button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
   h2 {
     margin: 0;
     font-size: 0.85rem;
