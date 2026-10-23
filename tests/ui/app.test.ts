@@ -7,7 +7,9 @@ import { openFiles, planSync, restoreFiles, type FileSource } from '../../src/ui
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
 import {
   BOTTOM,
+  HISTOGRAM,
   clampBottomHeight,
+  clampHistogramHeight,
   clampPhotoSplit,
   clampSidebarWidth,
   PHOTO_SPLIT,
@@ -182,8 +184,9 @@ describe('App', () => {
       // Без курсора — заглушки, щоб панель не стрибала
       expect(body).toMatch(/Піксель: —/)
       expect(body).toContain('--sidebar-width: 320px')
-      // Три межі: бічна панель, ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга
-      expect(body.match(/role="separator"/g)).toHaveLength(3)
+      // Чотири межі: бічна панель, висота гістограми, ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга
+      expect(body.match(/role="separator"/g)).toHaveLength(4)
+      expect(body).toContain(`height: ${HISTOGRAM.default}px`)
       expect(body).toContain('aria-valuenow="320"')
       expect(body).toContain('aria-orientation="horizontal"')
       expect(body).toContain(`height: ${BOTTOM.default}px`)
@@ -243,6 +246,15 @@ describe('clampBottomHeight', () => {
     expect(clampBottomHeight(500, 600)).toBe(600 - BOTTOM.keepImage)
     expect(clampBottomHeight(500, 200)).toBe(BOTTOM.min)
     expect(clampBottomHeight(NaN)).toBe(BOTTOM.default)
+  })
+})
+
+describe('clampHistogramHeight', () => {
+  it('висота гістограми — у межах, некоректне — стандартна', () => {
+    expect(clampHistogramHeight(10)).toBe(HISTOGRAM.min)
+    expect(clampHistogramHeight(5000)).toBe(HISTOGRAM.max)
+    expect(clampHistogramHeight(100.6)).toBe(101)
+    expect(clampHistogramHeight(NaN)).toBe(HISTOGRAM.default)
   })
 })
 

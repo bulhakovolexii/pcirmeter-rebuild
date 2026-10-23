@@ -73,3 +73,16 @@ export const bottomHeight = persisted('pcirmeter.bottomHeight', BOTTOM.default, 
 export const photoSplit = persisted('pcirmeter.photoSplit', PHOTO_SPLIT.default, (raw) =>
   clampPhotoSplit(Number(raw)),
 )
+
+/** Висота гістограми кадру в бічній панелі, px. */
+export const HISTOGRAM = { default: 72, min: 48, max: 320 } as const
+
+export function clampHistogramHeight(height: number): number {
+  return Number.isFinite(height)
+    ? Math.round(Math.min(HISTOGRAM.max, Math.max(HISTOGRAM.min, height)))
+    : HISTOGRAM.default
+}
+
+export const histogramHeight = persisted('pcirmeter.histogramHeight', HISTOGRAM.default, (raw) =>
+  clampHistogramHeight(Number(raw)),
+)

@@ -129,6 +129,8 @@ export const uk = {
   'isotherm.share': 'Частка кадру',
   'isotherm.priority': 'Ізотерма 1 малюється поверх ізотерми 2.',
   'histogram.title': 'Гістограма кадру',
+  'histogram.height': 'Висота гістограми (перетягніть; подвійний клік — стандартна)',
+  'histogram.pixels': 'пкс',
   'photo.show': 'Видиме фото',
   'photo.title': 'Видиме фото',
   'photo.mode': 'Показ фото',

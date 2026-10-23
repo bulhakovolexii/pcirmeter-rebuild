@@ -6,6 +6,7 @@
     autoDisplayScale,
     frameExtremes,
     manualDisplayScale,
+    paletteBinAds,
     paletteHistogram,
     renderFrame,
   } from '../core/render'
@@ -484,6 +485,20 @@
 
   const fmt = (t: number) => formatTemperature(t, $locale, $units.temperature)
 
+  /** Температури стовпця гістограми: крайні — «≤» / «≥» межі шкали, решта — діапазон (або одне значення). */
+  function binLabel(index: number): string | null {
+    const { lo, hi } = paletteBinAds(index, scale)
+    if (lo > hi) return null
+    if (lo === -Infinity) return `≤ ${fmt(model.toCelsius(hi))}`
+    if (hi === Infinity) return `≥ ${fmt(model.toCelsius(lo))}`
+    const [from, to] = [model.toCelsius(lo), model.toCelsius(hi)]
+    const [a, b] = [fmt(from), fmt(to)]
+    if (a === b) return a
+    // Одиниця — лише в кінці діапазону
+    const num = formatNumber(fromCelsius(from, $units.temperature), $locale, 1)
+    return Number.isNaN(from) || Number.isNaN(to) ? `${a} … ${b}` : `${num} … ${b}`
+  }
+
   /** Екранна точка центру пікселя кадру. */
   const sx = (x: number) => panX + (x + 0.5) * zoom
   const sy = (y: number) => panY + (y + 0.5) * zoom
@@ -649,6 +664,7 @@
         {bands}
         minLabel={fmt(scaleLabels.min)}
         maxLabel={fmt(scaleLabels.max)}
+        {binLabel}
       />
     </fieldset>
 

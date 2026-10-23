@@ -131,6 +131,8 @@ export const en: Record<MessageKey, string> = {
   'isotherm.share': 'Share of frame',
   'isotherm.priority': 'Isotherm 1 is drawn over isotherm 2.',
   'histogram.title': 'Frame histogram',
+  'histogram.height': 'Histogram height (drag; double-click to reset)',
+  'histogram.pixels': 'px',
   'photo.show': 'Visible photo',
   'photo.title': 'Visible photo',
   'photo.mode': 'Photo display',

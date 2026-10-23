@@ -67,6 +67,19 @@ export function paletteHistogram(ad: Uint16Array, scale: DisplayScale): Uint32Ar
 }
 
 /**
+ * Діапазон AD стовпця гістограми `index` (межі входять): обернене до `paletteIndex`. Крайні стовпці відкриті —
+ * 0 збирає все нижче шкали (`lo = −∞`), 255 — усе вище (`hi = +∞`). Якщо `span < 255`, частина стовпців
+ * порожня за побудовою (`lo > hi`).
+ */
+export function paletteBinAds(index: number, scale: DisplayScale): { lo: number; hi: number } {
+  const start = (i: number) => scale.level + Math.ceil((i * scale.span) / 255)
+  return {
+    lo: index <= 0 ? -Infinity : start(index),
+    hi: index >= 255 ? Infinity : start(index + 1) - 1,
+  }
+}
+
+/**
  * Найменший AD, для якого T(AD) ≥ `celsius` (обернене до `toCelsius`); поза калібруванням — крайній AD таблиці.
  * Аналог нативного `getAD` оригіналу (його округлення не відновлено — [г], різниця ≤ 1 AD).
  */

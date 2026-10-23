@@ -8,6 +8,7 @@ import {
   celsiusToAd,
   frameExtremes,
   manualDisplayScale,
+  paletteBinAds,
   paletteHistogram,
   paletteIndex,
   renderFrame,
@@ -48,6 +49,24 @@ describe('індекс палітри', () => {
     expect(paletteIndex(1100, scale)).toBe(255)
     expect(paletteIndex(900, scale)).toBe(0)
     expect(paletteIndex(1200, scale)).toBe(255)
+  })
+
+  it.each([
+    { level: 1000, span: 100 },
+    { level: 1000, span: 255 },
+    { level: 2000, span: 1234 },
+  ])('paletteBinAds — обернене до paletteIndex (span $span)', (sc) => {
+    for (let ad = sc.level - 20; ad <= sc.level + sc.span + 20; ad++) {
+      const { lo, hi } = paletteBinAds(paletteIndex(ad, sc), sc)
+      expect(ad).toBeGreaterThanOrEqual(lo)
+      expect(ad).toBeLessThanOrEqual(hi)
+    }
+    expect(paletteBinAds(0, sc).lo).toBe(-Infinity)
+    expect(paletteBinAds(255, sc)).toEqual({ lo: sc.level + sc.span, hi: Infinity })
+    // Стовпці йдуть впритул, без перекриттів
+    for (let i = 0; i < 255; i++) {
+      expect(paletteBinAds(i + 1, sc).lo).toBe(paletteBinAds(i, sc).hi + 1)
+    }
   })
 
   it('renderFrame збігається з paletteIndex для кожного пікселя', () => {
