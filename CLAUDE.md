@@ -61,6 +61,8 @@
   `src/core/render.ts`. Візуальна звірка без браузера: `tools/render_png.ts` (запуск — у шапці файлу, через rolldown).
 - UI переглядача: `src/ui/App.svelte` (файли, вкладки, одиниці), `Viewer.svelte` (зображення, інструменти, накладення),
   `ParamsPanel.svelte` (параметри кадру / об'єкта), `ResultsTable.svelte`, `ColorBar.svelte`;
+  відкриті файли переживають перезавантаження вкладки браузера — `session.ts` (IndexedDB + ідентифікатор сеансу
+  в `sessionStorage` + Web Locks для прибирання закритих вкладок; лише файли, без об'єктів і параметрів);
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
   об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
   store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`; довідка «?» — `HelpTip.svelte`; вкладки файлів у шапці — `FileTabs.svelte`.

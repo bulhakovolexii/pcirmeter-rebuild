@@ -19,8 +19,9 @@ import {
 import ReportDialog from '../../src/ui/ReportDialog.svelte'
 
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
-const thermogram = parseThermogram(new Uint8Array(readFileSync(sample)))
-const file: OpenedFile = { id: 901, name: '130604_0002T.jpg', thermogram }
+const bytes = new Uint8Array(readFileSync(sample))
+const thermogram = parseThermogram(bytes)
+const file: OpenedFile = { id: 901, name: '130604_0002T.jpg', bytes, thermogram }
 
 const snapshot = (): ViewerSnapshot => ({
   name: file.name,

@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte'
   import { locale, tr } from '../i18n'
-  import { openFiles, type FileSource, type OpenError, type OpenedFile } from './files'
+  import { openFiles, restoreFiles, type FileSource, type OpenError, type OpenedFile } from './files'
   import { LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
   import { applyUpdate, dismissOfflineReady, onLaunchFiles, pwa } from './pwa'
+  import { openTabSession, type TabSession } from './session'
   import { units } from './settings'
   import FileTabs from './FileTabs.svelte'
   import ReportDialog from './ReportDialog.svelte'
@@ -35,6 +36,21 @@
 
   // Файли, відкриті з ОС через встановлений застосунок
   onMount(() => onLaunchFiles((launched) => void open(launched)))
+
+  // Відкриті файли переживають перезавантаження вкладки браузера (до закриття вкладки файлу чи браузера)
+  let session: TabSession | null = $state.raw(null)
+  onMount(() => {
+    void openTabSession().then((s) => {
+      if (!s) return
+      const restored = restoreFiles(s.files)
+      if (restored.length > 0) {
+        files = [...restored, ...files]
+        if (activeId === null) activeId = s.activeId ?? restored[0]!.id
+      }
+      session = s
+    })
+  })
+  $effect(() => session?.sync(files, activeId))
 
   function close(id: number) {
     const i = files.findIndex((f) => f.id === id)

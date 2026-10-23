@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { render } from 'svelte/server'
 import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
-import { openFiles, type FileSource } from '../../src/ui/files'
+import { openFiles, planSync, restoreFiles, type FileSource } from '../../src/ui/files'
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
 import {
   BOTTOM,
@@ -47,6 +47,30 @@ describe('openFiles', () => {
     const bytes = new Uint8Array(readFileSync(sample))
     const { opened } = await openFiles([source('a.jpg', bytes), source('a.jpg', bytes)])
     expect(new Set(opened.map((f) => f.id)).size).toBe(2)
+  })
+})
+
+describe('сеанс вкладки', () => {
+  it('відновлює файли з їхніми id у порядку id; нові id — більші; зіпсований запис пропускає', async () => {
+    const bytes = new Uint8Array(readFileSync(sample))
+    const restored = restoreFiles([
+      { id: 1002, name: 'b.jpg', bytes },
+      { id: 1000, name: 'a.jpg', bytes },
+      { id: 1001, name: 'broken.jpg', bytes: new Uint8Array(10) },
+    ])
+    expect(restored.map((f) => [f.id, f.name])).toEqual([
+      [1000, 'a.jpg'],
+      [1002, 'b.jpg'],
+    ])
+    expect(restored[0]!.thermogram.ir.width).toBe(160)
+    const { opened } = await openFiles([source('c.jpg', bytes)])
+    expect(opened[0]!.id).toBeGreaterThan(1002)
+    expect(opened[0]!.bytes.byteLength).toBe(bytes.byteLength)
+  })
+
+  it('синхронізація: дописати нові, видалити закриті', () => {
+    expect(planSync(new Set([1, 2, 3]), [{ id: 1 }, { id: 3 }, { id: 4 }])).toEqual({ add: [4], remove: [2] })
+    expect(planSync(new Set(), [])).toEqual({ add: [], remove: [] })
   })
 })
 
