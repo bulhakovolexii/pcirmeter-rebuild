@@ -1,8 +1,7 @@
 <script lang="ts">
   import { locale, tr } from '../i18n'
   import { formatNumber } from './format'
-  import { clampHistogramHeight, HISTOGRAM, histogramHeight } from './settings'
-  import Splitter from './Splitter.svelte'
+  import { histogramHeight } from './settings'
 
   interface Props {
     /** 256 стовпців за індексом палітри (`paletteHistogram`). */
@@ -39,9 +38,6 @@
     const i = Math.floor(((e.clientX - box.left) / Math.max(1, box.width)) * 256)
     hovered = Math.min(255, Math.max(0, i))
   }
-
-  let dragFrom = 0
-  const setHeight = (h: number) => histogramHeight.set(clampHistogramHeight(h))
 </script>
 
 <figure class="histogram">
@@ -87,19 +83,6 @@
         >
       </div>
     {/if}
-  </div>
-  <div class="resize">
-    <Splitter
-      label={$tr('histogram.height')}
-      orientation="horizontal"
-      valuenow={$histogramHeight}
-      valuemin={HISTOGRAM.min}
-      valuemax={HISTOGRAM.max}
-      onstart={() => (dragFrom = $histogramHeight)}
-      ondrag={(dy) => setHeight(dragFrom + dy)}
-      onstep={(n) => setHeight($histogramHeight + 8 * n)}
-      onreset={() => setHeight(HISTOGRAM.default)}
-    />
   </div>
   <figcaption>
     <span>{minLabel}</span>
@@ -153,12 +136,6 @@
   }
   .tip.end {
     transform: translateX(calc(-100% + 8px));
-  }
-  /* Межа зміни висоти накладається на нижній край графіка, не додаючи відступу */
-  .resize {
-    margin: -6px 0;
-    position: relative;
-    z-index: 1;
   }
   figcaption {
     display: flex;

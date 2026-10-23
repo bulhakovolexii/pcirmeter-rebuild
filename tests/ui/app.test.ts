@@ -184,7 +184,7 @@ describe('App', () => {
       // Без курсора — заглушки, щоб панель не стрибала
       expect(body).toMatch(/Піксель: —/)
       expect(body).toContain('--sidebar-width: 320px')
-      // Чотири межі: бічна панель, висота гістограми, ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга
+      // Чотири межі: бічна панель, висота гістограми (між «Шкалою» та «Ізотермами»), ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга
       expect(body.match(/role="separator"/g)).toHaveLength(4)
       expect(body).toContain(`height: ${HISTOGRAM.default}px`)
       expect(body).toContain('aria-valuenow="320"')

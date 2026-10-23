@@ -54,8 +54,11 @@
     BOTTOM,
     bottomHeight,
     clampBottomHeight,
+    clampHistogramHeight,
     clampPhotoSplit,
     clampSidebarWidth,
+    HISTOGRAM,
+    histogramHeight,
     PHOTO_SPLIT,
     photoSplit,
     SIDEBAR,
@@ -547,6 +550,7 @@
   let areaHeight = $state(0)
   const setBottomHeight = (height: number) =>
     bottomHeight.set(clampBottomHeight(height, areaHeight || Infinity))
+  const setHistogramHeight = (height: number) => histogramHeight.set(clampHistogramHeight(height))
   // Після зменшення вікна збережена висота смуги не витісняє зображення
   const shownBottomHeight = $derived(clampBottomHeight($bottomHeight, areaHeight || Infinity))
 </script>
@@ -667,6 +671,21 @@
         {binLabel}
       />
     </fieldset>
+
+    <!-- Межа між «Шкалою» та «Ізотермами» змінює висоту гістограми -->
+    <div class="histogram-resize">
+      <Splitter
+        label={$tr('histogram.height')}
+        orientation="horizontal"
+        valuenow={$histogramHeight}
+        valuemin={HISTOGRAM.min}
+        valuemax={HISTOGRAM.max}
+        onstart={() => (dragFrom = $histogramHeight)}
+        ondrag={(dy) => setHistogramHeight(dragFrom + dy)}
+        onstep={(n) => setHistogramHeight($histogramHeight + 8 * n)}
+        onreset={() => setHistogramHeight(HISTOGRAM.default)}
+      />
+    </div>
 
     <fieldset class="isotherms">
       <legend>{$tr('isotherm.section')}</legend>
@@ -982,6 +1001,10 @@
     background: var(--surface);
     padding: 8px 10px 10px;
     margin: 0;
+  }
+  /* Межа (12 px) лежить у проміжку між блоками й не збільшує його */
+  .histogram-resize {
+    margin: -13px 0;
   }
   .isotherms {
     display: flex;
