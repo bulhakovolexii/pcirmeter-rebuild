@@ -8,6 +8,7 @@ import { audioType, decodeUserText } from '../../src/ui/attachments'
 import { openFiles } from '../../src/ui/files'
 import {
   defaultPlacement,
+  centerOffset,
   irViewFor,
   jpegSize,
   layerRect,
@@ -208,6 +209,23 @@ describe('суміщення і синхронізація з ІЧ', () => {
     expect([x0, y0, x1, y1].map((n) => +n!.toFixed(6))).toEqual([30, -12, 30 + 80 * 5, -12 + 80 * 5])
     const back = irViewFor(v, layer, 80)
     expect(back.zoom).toBeCloseTo(ir.zoom)
+    expect(back.panX).toBeCloseTo(ir.panX)
+    expect(back.panY).toBeCloseTo(ir.panY)
+  })
+
+  it('синхронний вид відносно центрів вікон: центр ІЧ-вікна ↔ центр вікна фото', () => {
+    const layer = layerRect(base, { scale: 0.9, dx: -5, dy: 2 })
+    // ІЧ-вікно 600×400, вікно фото 300×400
+    const offset = centerOffset(600, 400, 300, 400)
+    const v = syncedPhotoView(ir, layer, 80, offset)
+    // Точка кадру в центрі ІЧ-вікна
+    const fx = (300 - ir.panX) / ir.zoom
+    const fy = (200 - ir.panY) / ir.zoom
+    const k = layer.width / 80
+    const [sx, sy] = screen(v, layer.x + fx * k, layer.y + fy * k)
+    expect(sx).toBeCloseTo(150)
+    expect(sy).toBeCloseTo(200)
+    const back = irViewFor(v, layer, 80, offset)
     expect(back.panX).toBeCloseTo(ir.panX)
     expect(back.panY).toBeCloseTo(ir.panY)
   })

@@ -857,6 +857,7 @@
           frameHeight={ir.height}
           id={file.id}
           irView={{ zoom, panX, panY }}
+          irViewSize={{ width: viewWidth, height: viewHeight }}
           onirview={(v) => {
             ;({ zoom, panX, panY } = v)
             autoFit = false

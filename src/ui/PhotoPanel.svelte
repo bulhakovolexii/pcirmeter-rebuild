@@ -2,6 +2,7 @@
   import { tr } from '../i18n'
   import HelpTip from './HelpTip.svelte'
   import {
+    centerOffset,
     defaultPlacement,
     irViewFor,
     jpegSize,
@@ -25,6 +26,8 @@
     id: number
     /** Вид ІЧ-вікна; за синхронізації вид фото виводиться з нього, а зміни виду фото передаються в `onirview`. */
     irView: View
+    /** Розмір ІЧ-вікна, px: синхронізація — відносно центрів вікон. */
+    irViewSize: { width: number; height: number }
     onirview: (view: View) => void
     /** «Вписати» за синхронізації — вписати ІЧ-зображення. */
     onirfit: () => void
@@ -42,6 +45,7 @@
     frameHeight,
     id,
     irView,
+    irViewSize,
     onirview,
     onirfit,
     alignment,
@@ -79,7 +83,8 @@
   let ownView = $state<View>({ zoom: 1, panX: 0, panY: 0 })
   let autoFit = $state(true)
 
-  const view = $derived(sync && layer ? syncedPhotoView(irView, layer, frameWidth) : ownView)
+  const offset = $derived(centerOffset(irViewSize.width, irViewSize.height, viewWidth, viewHeight))
+  const view = $derived(sync && layer ? syncedPhotoView(irView, layer, frameWidth, offset) : ownView)
 
   $effect(() => {
     if (sync || !autoFit || !size || viewWidth === 0 || viewHeight === 0) return
@@ -88,7 +93,7 @@
 
   function setView(next: View) {
     if (sync && layer) {
-      onirview(irViewFor(next, layer, frameWidth))
+      onirview(irViewFor(next, layer, frameWidth, offset))
     } else {
       ownView = next
       autoFit = false

@@ -84,18 +84,41 @@ function alignmentFor(base: Rect, r: Rect): Alignment {
   }
 }
 
-/** Вид фото, синхронний з ІЧ-вікном: кожна точка ІЧ-шару — там само у вікні, що й на ІЧ-зображенні. */
-export function syncedPhotoView(ir: View, layer: Rect, frameWidth: number): View {
+/** Зсув вікна фото відносно ІЧ-вікна, за якого їхні центри збігаються: (розмір фото − розмір ІЧ) / 2. */
+export interface Offset {
+  x: number
+  y: number
+}
+
+export function centerOffset(irW: number, irH: number, photoW: number, photoH: number): Offset {
+  return { x: (photoW - irW) / 2, y: (photoH - irH) / 2 }
+}
+
+/**
+ * Вид фото, синхронний з ІЧ-вікном: кожна точка ІЧ-шару стоїть відносно центру вікна фото там само, де на
+ * ІЧ-зображенні відносно центру ІЧ-вікна (`offset` — `centerOffset`; нуль — синхронізація за лівим верхнім кутом).
+ */
+export function syncedPhotoView(
+  ir: View,
+  layer: Rect,
+  frameWidth: number,
+  offset: Offset = { x: 0, y: 0 },
+): View {
   const zoom = (ir.zoom * frameWidth) / layer.width
-  return { zoom, panX: ir.panX - layer.x * zoom, panY: ir.panY - layer.y * zoom }
+  return { zoom, panX: ir.panX + offset.x - layer.x * zoom, panY: ir.panY + offset.y - layer.y * zoom }
 }
 
 /** Обернене до `syncedPhotoView`: вид ІЧ-вікна для заданого виду фото. */
-export function irViewFor(photo: View, layer: Rect, frameWidth: number): View {
+export function irViewFor(
+  photo: View,
+  layer: Rect,
+  frameWidth: number,
+  offset: Offset = { x: 0, y: 0 },
+): View {
   return {
     zoom: (photo.zoom * layer.width) / frameWidth,
-    panX: photo.panX + layer.x * photo.zoom,
-    panY: photo.panY + layer.y * photo.zoom,
+    panX: photo.panX + layer.x * photo.zoom - offset.x,
+    panY: photo.panY + layer.y * photo.zoom - offset.y,
   }
 }
 
