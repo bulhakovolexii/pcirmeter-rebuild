@@ -21,7 +21,7 @@ import ReportDialog from '../../src/ui/ReportDialog.svelte'
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
 const bytes = new Uint8Array(readFileSync(sample))
 const thermogram = parseThermogram(bytes)
-const file: OpenedFile = { id: 901, name: '130604_0002T.jpg', bytes, thermogram }
+const file: OpenedFile = { id: 901, name: '130604_0002T.jpg', bytes, kind: 'pcirmeter', thermogram }
 
 const snapshot = (): ViewerSnapshot => ({
   name: file.name,
@@ -50,7 +50,8 @@ describe('реєстр знімків переглядачів', () => {
     const offOld = registerReportSource(file.id, snapshot)
     const offNew = registerReportSource(file.id, () => ({ ...snapshot(), paletteId: 'grey' }))
     offOld()
-    expect(viewerSnapshot(file.id)?.paletteId).toBe('grey')
+    const s = viewerSnapshot(file.id)
+    expect(s && 'paletteId' in s && s.paletteId).toBe('grey')
     offNew()
   })
 })

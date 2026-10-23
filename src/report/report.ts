@@ -28,6 +28,7 @@ import {
   type ObjectParams,
 } from '../core/temperature'
 import { fromCelsius } from '../core/units'
+import type { UtiSnapshot } from '../core/uti'
 import type { Locale } from '../i18n'
 import type { MessageKey } from '../i18n/uk'
 import { decodeUserText } from '../ui/attachments'
@@ -43,6 +44,7 @@ import { toIsotherm, type IsothermState } from '../ui/isotherms'
 import { displayValue, paramDigits, PARAM_FIELDS, type Units } from '../ui/params'
 import { areaDistribution, lineProfile, measureObjects, rowNote, type ResultRow } from '../ui/results'
 import type { MeasureObject } from '../ui/tools'
+import { utiSavedAt, utiValues } from '../ui/uti'
 
 /** Титульні дані звіту (поля діалогу). */
 export interface ReportMeta {
@@ -73,6 +75,16 @@ export interface ReportFile {
   /** Коментар до термограми з діалогу звіту. */
   comment: string
 }
+
+/** Знімок UNI-T: зображення екрана камери й три значення (docs/spec/uti89pro.md). */
+export interface UtiReportFile {
+  name: string
+  uti: UtiSnapshot
+  showMarkers: boolean
+  comment: string
+}
+
+export type ReportEntry = ReportFile | UtiReportFile
 
 export interface ReportFonts {
   regular: Uint8Array
@@ -108,6 +120,8 @@ const BLACK = rgb(0, 0, 0)
 const SHAPE = rgb(0.651, 1, 0.302)
 const MAX_MARK = WHITE
 const MIN_MARK = rgb(0, 1, 1)
+/** Значення поза діапазоном камери — як `--warn` у застосунку. */
+const WARN = rgb(0.71, 0.278, 0.031)
 
 function hexColor(hex: string): Color {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
@@ -341,7 +355,7 @@ export function reportFileName(meta: ReportMeta, t: (key: MessageKey) => string)
 /** Створює PDF-звіт за знімками переглядачів `files` (порядок — як у списку). */
 export async function buildReport(
   meta: ReportMeta,
-  files: readonly ReportFile[],
+  files: readonly ReportEntry[],
   fonts: ReportFonts,
   { locale, units, t }: ReportOptions,
 ): Promise<Uint8Array> {
@@ -393,7 +407,9 @@ export async function buildReport(
     // Кожна термограма — з нової сторінки, крім першої, якщо після титулу лишилось місце
     if (index > 0 || L.y > PAGE_H * 0.4) L.newPage()
     else L.y += 14
-    await drawFileSection(L, file, index, { locale, units, t, fmtT, tUnit })
+    const ctx = { locale, units, t, fmtT, tUnit }
+    if ('uti' in file) drawUtiSection(L, file, index, ctx)
+    else await drawFileSection(L, file, index, ctx)
   }
 
   if (meta.conclusion.trim() || meta.author.trim() || meta.teacher.trim()) {
@@ -704,6 +720,87 @@ async function drawFileSection(L: Layout, file: ReportFile, index: number, ctx: 
     L.y += 8
     L.heading(t('info.note'), 10)
     L.paragraph(note)
+  }
+}
+
+/** Знімок UNI-T: зображення екрана, маркери й таблиця трьох значень, примітка про обмеження формату. */
+function drawUtiSection(L: Layout, file: UtiReportFile, index: number, ctx: SectionContext) {
+  const { t, fmtT } = ctx
+  const { uti } = file
+  L.heading(`${t('report.thermogram')} ${index + 1}. ${file.name}`, 12)
+  L.rule()
+  L.y += 8
+
+  const h = 300
+  const w = (h * uti.width) / uti.height
+  L.ensure(h + 10)
+  const top = L.y
+  const k = w / uti.width
+  const values = utiValues(uti)
+  drawRgb(
+    L.page,
+    embedRgb(L.doc, rgbaToRgb(uti.screen), uti.width, uti.height),
+    MARGIN,
+    L.pdfY(top + h),
+    w,
+    h,
+  )
+  if (file.showMarkers) {
+    for (const v of values) {
+      const x = MARGIN + (v.point.x + 0.5) * k
+      const y = L.pdfY(top + (v.point.y + 0.5) * k)
+      const color = v.kind === 'max' ? MAX_MARK : v.kind === 'min' ? MIN_MARK : SHAPE
+      const line = (ax: number, ay: number, bx: number, by: number) =>
+        L.page.drawLine({ start: { x: ax, y: ay }, end: { x: bx, y: by }, thickness: 1, color })
+      if (v.kind !== 'center') L.page.drawCircle({ x, y, size: 4, borderColor: color, borderWidth: 1 })
+      line(x - 7, y, x - 2.5, y)
+      line(x + 2.5, y, x + 7, y)
+      line(x, y - 7, x, y - 2.5)
+      line(x, y + 2.5, x, y + 7)
+      const text = `${t(`uti.${v.kind}`)} ${fmtT(v.point.celsius)}`
+      const tw = L.bold.widthOfTextAtSize(text, SMALL)
+      const tx = x + 8 + tw > MARGIN + w ? x - 8 - tw : x + 8
+      // Центр і точки біля верхнього краю — підпис під маркером
+      const below = v.kind === 'center' || y + 5 + SMALL > L.pdfY(top)
+      outlinedText(L.page, text, tx, below ? y - 12 : y + 5, SMALL, L.bold, WHITE)
+    }
+  }
+
+  // Праворуч від знімка — відомості й значення
+  const left = MARGIN + w + 18
+  const colW = PAGE_W - MARGIN - left
+  L.y = top
+  const savedAt = utiSavedAt(file.name)
+  const info: [string, string][] = [
+    [t('info.camera'), 'UNI-T UTi89 PRO'],
+    [t('uti.sensor'), '80 × 60'],
+    ...(savedAt ? [[t('info.date'), formatSavedAt(savedAt)] as [string, string]] : []),
+  ]
+  for (const [key, value] of info) {
+    L.text(key, left, L.y, BODY, { color: MUTED })
+    L.text(value, left + 70, L.y, BODY)
+    L.y += BODY * LINE
+  }
+  L.y += 8
+  L.text(t('uti.values'), left, L.y, 10, { bold: true, color: ACCENT })
+  L.y += 10 * LINE + 2
+  for (const v of values) {
+    L.text(t(`uti.${v.kind}`), left, L.y, BODY, { bold: true })
+    const value = fmtT(v.point.celsius) + (v.outOfRange ? ` (${t('cursor.outOfRange')})` : '')
+    L.text(value, left + 70, L.y, BODY, v.outOfRange ? { color: WARN } : {})
+    L.y += BODY * LINE
+  }
+  L.y += 8
+  for (const line of wrapText(t('report.utiNote'), L.regular, SMALL, colW)) {
+    L.text(line, left, L.y, SMALL, { color: MUTED })
+    L.y += SMALL * LINE
+  }
+  L.y = Math.max(L.y, top + h) + 8
+
+  if (file.comment.trim()) {
+    L.y += 8
+    L.heading(t('report.comment'), 10)
+    L.paragraph(file.comment)
   }
 }
 

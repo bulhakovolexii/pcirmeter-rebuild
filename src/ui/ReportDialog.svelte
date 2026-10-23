@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { locale, tr } from '../i18n'
-  import type { ReportFile } from '../report/report'
+  import type { ReportEntry } from '../report/report'
   import type { OpenedFile } from './files'
   import { createReport, reportMeta, savePerson, viewerSnapshot } from './report'
   import { units } from './settings'
@@ -44,7 +44,7 @@
       return
     }
     warning = ''
-    const snapshots: ReportFile[] = []
+    const snapshots: ReportEntry[] = []
     for (const f of selected) {
       const s = viewerSnapshot(f.id)
       if (s) snapshots.push({ ...s, comment: comments[f.id] ?? '' })

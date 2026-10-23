@@ -3,7 +3,14 @@ import { join } from 'node:path'
 import { render } from 'svelte/server'
 import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
-import { openFiles, planSync, restoreFiles, type FileSource } from '../../src/ui/files'
+import {
+  openFiles,
+  planSync,
+  restoreFiles,
+  type FileSource,
+  type OpenedFile,
+  type OpenedThermogram,
+} from '../../src/ui/files'
 import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
 import {
   BOTTOM,
@@ -17,6 +24,12 @@ import {
 } from '../../src/ui/settings'
 
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
+
+/** Файл PCIRMeter (тест падає, якщо відкрито інший формат). */
+function pc(f: OpenedFile | undefined): OpenedThermogram {
+  if (f?.kind !== 'pcirmeter') throw new Error(`очікувався файл PCIRMeter: ${f?.kind}`)
+  return f
+}
 
 const source = (name: string, bytes: Uint8Array): FileSource => ({
   name,
@@ -35,7 +48,7 @@ describe('openFiles', () => {
       { name: 'broken.jpg', arrayBuffer: () => Promise.reject(new Error('io')) },
     ])
     expect(opened.map((f) => f.name)).toEqual(['130604_0002T.hir'])
-    expect(opened[0]!.thermogram.ir.width).toBe(160)
+    expect(pc(opened[0]).thermogram.ir.width).toBe(160)
     expect(errors).toEqual([
       { name: 'photo.jpg', reason: 'not-thermogram' },
       { name: 'tiny.jpg', reason: 'not-thermogram' },
@@ -62,7 +75,7 @@ describe('сеанс вкладки', () => {
       [1000, 'a.jpg'],
       [1002, 'b.jpg'],
     ])
-    expect(restored[0]!.thermogram.ir.width).toBe(160)
+    expect(pc(restored[0]).thermogram.ir.width).toBe(160)
     const { opened } = await openFiles([source('c.jpg', bytes)])
     expect(opened[0]!.id).toBeGreaterThan(1002)
     expect(opened[0]!.bytes.byteLength).toBe(bytes.byteLength)
@@ -80,8 +93,8 @@ describe('сеанс вкладки', () => {
       { id: 2000, name: 'a.jpg', bytes, markup },
       { id: 2001, name: 'b.jpg', bytes, markup: { overrides: {}, objects: [{ id: 'x' }] } as never },
     ])
-    expect(withMarkup!.markup).toEqual(markup)
-    expect(broken!.markup).toBeUndefined()
+    expect(pc(withMarkup).markup).toEqual(markup)
+    expect(pc(broken).markup).toBeUndefined()
 
     const { body } = render(App, { props: { initialFiles: [withMarkup!] } })
     expect(body).toContain('value="0.9"')

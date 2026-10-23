@@ -20,7 +20,14 @@ export const BlockType = {
 } as const
 
 export type ThermogramErrorCode =
-  'too-short' | 'no-trailer' | 'bad-block' | 'no-ir-block' | 'ir-truncated' | 'bad-calibration'
+  | 'too-short'
+  | 'no-trailer'
+  | 'bad-block'
+  | 'no-ir-block'
+  | 'ir-truncated'
+  | 'bad-calibration'
+  /** BMP, але не знімок UNI-T (`uti.ts`). */
+  | 'bmp-not-uti'
 
 /** Файл не є термограмою підтримуваного формату або пошкоджений. */
 export class ThermogramError extends Error {

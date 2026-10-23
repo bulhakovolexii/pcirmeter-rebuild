@@ -8,6 +8,7 @@
   import { units } from './settings'
   import FileTabs from './FileTabs.svelte'
   import ReportDialog from './ReportDialog.svelte'
+  import UtiViewer from './UtiViewer.svelte'
   import Viewer from './Viewer.svelte'
 
   interface Props {
@@ -118,7 +119,7 @@
       <input
         bind:this={input}
         type="file"
-        accept=".jpg,.jpeg,.hir"
+        accept=".jpg,.jpeg,.hir,.bmp"
         multiple
         hidden
         onchange={onInputChange}
@@ -174,7 +175,11 @@
       <!-- Переглядачі всіх файлів лишаються змонтованими: вкладка зберігає палітру, шкалу й масштаб -->
       {#each files as f (f.id)}
         <div class="pane" hidden={f.id !== activeId}>
-          <Viewer file={f} onmarkup={(m) => session?.saveMarkup(f.id, m)} />
+          {#if f.kind === 'uti'}
+            <UtiViewer file={f} />
+          {:else}
+            <Viewer file={f} onmarkup={(m) => session?.saveMarkup(f.id, m)} />
+          {/if}
         </div>
       {/each}
     </main>

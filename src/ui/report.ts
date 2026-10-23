@@ -4,10 +4,10 @@
  */
 
 import { writable } from 'svelte/store'
-import type { ReportFile, ReportMeta, ReportOptions } from '../report/report'
+import type { ReportEntry, ReportFile, ReportMeta, ReportOptions, UtiReportFile } from '../report/report'
 
 /** Знімок переглядача без коментаря (коментар вводиться в діалозі звіту). */
-export type ViewerSnapshot = Omit<ReportFile, 'comment'>
+export type ViewerSnapshot = Omit<ReportFile, 'comment'> | Omit<UtiReportFile, 'comment'>
 
 const sources = new Map<number, () => ViewerSnapshot>()
 
@@ -71,7 +71,7 @@ export const reportMeta = writable<ReportMeta>({
 /** Створює PDF; повертає байти й ім'я файлу. Генератор і шрифти — окремі файли збірки (кешуються SW). */
 export async function createReport(
   meta: ReportMeta,
-  files: readonly ReportFile[],
+  files: readonly ReportEntry[],
   options: ReportOptions,
 ): Promise<{ bytes: Uint8Array; fileName: string }> {
   // `new URL(…, import.meta.url)` — Vite копіює шрифти в збірку як окремі файли

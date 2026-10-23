@@ -1,19 +1,34 @@
 /** Відкриття файлів термограм у браузері (без DOM-залежностей — тестується в Node). */
 
-import { parseThermogram, ThermogramError, type Thermogram } from '../core/parser'
+import { ThermogramError, type Thermogram } from '../core/parser'
+import { openThermogram, type AnyThermogram } from '../core/thermogram'
+import type { UtiSnapshot } from '../core/uti'
 import type { ObjectParams } from '../core/temperature'
 import type { MeasureObject } from './tools'
 
-/** Відкритий файл. `id` — унікальний у межах сеансу (ключ вкладки). */
-export interface OpenedFile {
+interface FileBase {
+  /** Унікальний у межах сеансу (ключ вкладки). */
   id: number
   name: string
   /** Байти файлу як є — для збереження в сеансі вкладки (`session.ts`). */
   bytes: Uint8Array
+}
+
+/** Відкрита радіометрична термограма PCIRMeter / CEM. */
+export interface OpenedThermogram extends FileBase {
+  kind: 'pcirmeter'
   thermogram: Thermogram
   /** Розмітка, відновлена з сеансу вкладки (стартовий стан переглядача). */
   markup?: FileMarkup
 }
+
+/** Відкритий знімок UNI-T: без температурної карти, тож і без розмітки. */
+export interface OpenedUti extends FileBase {
+  kind: 'uti'
+  uti: UtiSnapshot
+}
+
+export type OpenedFile = OpenedThermogram | OpenedUti
 
 /** Що користувач змінив у файлі й що переживає перезавантаження: параметри кадру та об'єкти. */
 export interface FileMarkup {
@@ -22,7 +37,7 @@ export interface FileMarkup {
 }
 
 /** Причина, з якої файл не відкрито (ключ повідомлення `error.<reason>`). */
-export type OpenErrorReason = 'not-thermogram' | 'damaged' | 'read'
+export type OpenErrorReason = 'not-thermogram' | 'unsupported-bmp' | 'damaged' | 'read'
 
 export interface OpenError {
   name: string
@@ -53,7 +68,7 @@ export async function openFiles(
     }
     try {
       const bytes = new Uint8Array(buffer)
-      opened.push({ id: nextId++, name: file.name, bytes, thermogram: parseThermogram(bytes) })
+      opened.push(toOpened(nextId++, file.name, bytes, openThermogram(bytes)))
     } catch (e) {
       errors.push({ name: file.name, reason: errorReason(e) })
     }
@@ -78,13 +93,19 @@ export function restoreFiles(stored: StoredFile[]): OpenedFile[] {
   for (const { id, name, bytes, markup } of [...stored].sort((a, b) => a.id - b.id)) {
     nextId = Math.max(nextId, id + 1)
     try {
-      const thermogram = parseThermogram(bytes)
-      opened.push({ id, name, bytes, thermogram, ...(isMarkup(markup) && { markup }) })
+      const file = toOpened(id, name, bytes, openThermogram(bytes))
+      opened.push(file.kind === 'pcirmeter' && isMarkup(markup) ? { ...file, markup } : file)
     } catch {
       // Пошкоджений запис — просто не відновлюємо
     }
   }
   return opened
+}
+
+function toOpened(id: number, name: string, bytes: Uint8Array, t: AnyThermogram): OpenedFile {
+  return t.kind === 'pcirmeter'
+    ? { id, name, bytes, kind: t.kind, thermogram: t.thermogram }
+    : { id, name, bytes, kind: t.kind, uti: t.uti }
 }
 
 /** Перевірка форми збереженої розмітки (запис міг лишитися від іншої версії застосунку). */
@@ -116,6 +137,7 @@ export function planSync(saved: ReadonlySet<number>, files: readonly { id: numbe
 
 function errorReason(e: unknown): OpenErrorReason {
   if (!(e instanceof ThermogramError)) return 'damaged'
+  if (e.code === 'bmp-not-uti') return 'unsupported-bmp'
   return e.code === 'too-short' || e.code === 'no-trailer' || e.code === 'no-ir-block'
     ? 'not-thermogram'
     : 'damaged'

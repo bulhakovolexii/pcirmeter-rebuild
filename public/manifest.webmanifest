@@ -16,7 +16,11 @@
   "file_handlers": [
     {
       "action": "./",
-      "accept": { "image/jpeg": [".jpg", ".jpeg"], "application/octet-stream": [".hir"] }
+      "accept": {
+        "image/jpeg": [".jpg", ".jpeg"],
+        "application/octet-stream": [".hir"],
+        "image/bmp": [".bmp"]
+      }
     }
   ]
 }

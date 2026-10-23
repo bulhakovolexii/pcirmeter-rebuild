@@ -3,11 +3,14 @@
 Запуск:
     python3 -I tools/dump_uti.py samples/uti89pro/Images/*.bmp
     python3 -I tools/dump_uti.py --png OUT_DIR samples/uti89pro/Images/*.bmp   # BMP | сіре (повернуте) з точками
+    python3 -I tools/dump_uti.py --json samples/uti89pro/Images/*.bmp > tests/fixtures/uti/samples.json
+        # еталони для Vitest (лише числа): T і точки в системі екрана, обмежені межами кадру
 
 Для кожного файлу: заголовок BMP, поля блоку параметрів P, перевірка точок min/max на сірому зображенні,
 температура центру за лінійною інтерполяцією сірого (для порівняння з полем T центру).
 """
 
+import json
 import struct
 import sys
 import zlib
@@ -62,7 +65,7 @@ def write_png(path: Path, w: int, h: int, rgb: bytearray) -> None:
 
 
 def render(data: bytes, info: dict, path: Path) -> None:
-    """Ліворуч — BMP (RGB565, знизу вгору), праворуч — сіре, повернуте до орієнтації екрана, з точками."""
+    """Ліворуч — BMP (X1R5G5B5, знизу вгору), праворуч — сіре, повернуте до орієнтації екрана, з точками."""
     stride = 2 * W + 8
     img = bytearray(stride * H * 3)
     gray = info['gray']
@@ -70,7 +73,7 @@ def render(data: bytes, info: dict, path: Path) -> None:
         for x in range(W):
             (v,) = struct.unpack_from('<H', data, 54 + ((H - 1 - y) * W + x) * 2)
             i = (y * stride + x) * 3
-            img[i : i + 3] = bytes(((v >> 11 & 31) * 255 // 31, (v >> 5 & 63) * 255 // 63, (v & 31) * 255 // 31))
+            img[i : i + 3] = bytes(((v >> 10 & 31) * 255 // 31, (v >> 5 & 31) * 255 // 31, (v & 31) * 255 // 31))
             k = gray[W * H - 1 - (y * W + x)]
             i = (y * stride + W + 8 + x) * 3
             img[i : i + 3] = bytes((k, k, k))
@@ -86,7 +89,23 @@ def render(data: bytes, info: dict, path: Path) -> None:
     write_png(path, stride, H, img)
 
 
+def fixture(info: dict) -> dict:
+    def point(p: tuple[int, int], t: float) -> dict:
+        x, y = to_screen(*p)
+        return {'celsius': t, 'x': min(W - 1, max(0, x)), 'y': min(H - 1, max(0, y))}
+
+    return {
+        'max': point(info['pmax'], info['tmax']),
+        'min': point(info['pmin'], info['tmin']),
+        'center': point(info['pcenter'], info['tcenter']),
+    }
+
+
 def main(argv: list[str]) -> None:
+    if argv[:1] == ['--json']:
+        out = {Path(n).name: fixture(parse(Path(n).read_bytes())) for n in sorted(argv[1:])}
+        print(json.dumps(out, indent=2, ensure_ascii=False))
+        return
     png_dir = None
     if argv[:1] == ['--png']:
         png_dir = Path(argv[1])

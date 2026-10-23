@@ -22,7 +22,7 @@
   import { audioType, decodeUserText } from './attachments'
   import ColorBar from './ColorBar.svelte'
   import DistributionChart from './DistributionChart.svelte'
-  import type { FileMarkup, OpenedFile } from './files'
+  import type { FileMarkup, OpenedThermogram } from './files'
   import {
     formatNumber,
     formatSavedAt,
@@ -78,7 +78,7 @@
   import { fitView, wheelFactor, ZOOM_STEP, zoomAt } from './view'
 
   interface Props {
-    file: OpenedFile
+    file: OpenedThermogram
     /** Зміна параметрів кадру чи об'єктів — для збереження в сеансі вкладки. */
     onmarkup?: (markup: FileMarkup) => void
   }

@@ -15,8 +15,10 @@ import {
   type ReportFile,
   type ReportMeta,
 } from '../../src/report/report'
+import { parseUti } from '../../src/core/uti'
 import { defaultIsotherms } from '../../src/ui/isotherms'
 import type { MeasureObject } from '../../src/ui/tools'
+import { utiFile } from '../support/uti'
 
 const root = join(import.meta.dirname, '..', '..')
 const fonts = {
@@ -103,6 +105,35 @@ describe('buildReport', () => {
       fonts,
       { locale: 'en', units: { temperature: 'F', length: 'ft' }, t: (k) => en[k] },
     )
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1)
+  })
+
+  it('знімок UNI-T поруч із термограмою PCIRMeter: знімок, три значення, примітка', async () => {
+    const uti = {
+      name: 'img20261005_202703.bmp',
+      uti: parseUti(utiFile()),
+      showMarkers: true,
+      comment: 'Труба опалення.',
+    }
+    const bytes = await buildReport(meta, [snapshot(join(legacy, '130604_0002T.jpg')), uti], fonts, {
+      locale: 'uk',
+      units,
+      t,
+    })
+    if (process.env.REPORT_OUT) writeFileSync(process.env.REPORT_OUT.replace(/\.pdf$/, '-uti.pdf'), bytes)
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(2)
+  })
+
+  const utiSample = join(root, 'samples', 'uti89pro', 'Images', 'img20261005_202703.bmp')
+  it.skipIf(!existsSync(utiSample))('знімок UTi89 PRO (локально)', async () => {
+    const file = { name: 'img20261005_202703.bmp', showMarkers: true, comment: '' }
+    const bytes = await buildReport(
+      meta,
+      [{ ...file, uti: parseUti(new Uint8Array(readFileSync(utiSample))) }],
+      fonts,
+      { locale: 'uk', units, t },
+    )
+    if (process.env.REPORT_OUT) writeFileSync(process.env.REPORT_OUT.replace(/\.pdf$/, '-uti89.pdf'), bytes)
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1)
   })
 
