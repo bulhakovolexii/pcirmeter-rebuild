@@ -10,10 +10,12 @@
     results: readonly ResultRow[]
     selectedId: number | null
     onselect: (id: number) => void
+    /** Зміна примітки об'єкта (клітинка «Примітка» — поле введення). */
+    onnote: (id: number, note: string) => void
     onexport: () => void
   }
 
-  let { results, selectedId, onselect, onexport }: Props = $props()
+  let { results, selectedId, onselect, onnote, onexport }: Props = $props()
 
   /** Видимих рядків таблиці. */
   const ROWS = 7
@@ -75,7 +77,17 @@
             {#each PARAM_FIELDS as k (k)}
               <td>{formatNumber(displayValue(k, r.params[k], $units), $locale, paramDigits(k))}</td>
             {/each}
-            <td class="note-col" title={r.object.note || undefined}>{r.object.note ?? ''}</td>
+            <td class="note-col">
+              <input
+                type="text"
+                maxlength="200"
+                value={r.object.note ?? ''}
+                title={r.object.note || undefined}
+                placeholder={$t('objectNote.hint')}
+                aria-label="{$t('objectNote.title')} {r.object.name}"
+                oninput={(e) => onnote(r.object.id, e.currentTarget.value)}
+              />
+            </td>
           </tr>
         {/each}
       </tbody>
@@ -192,9 +204,32 @@
   }
   .note-col {
     text-align: left;
-    max-width: 240px;
-    overflow: hidden;
+    min-width: 180px;
+    padding: 0 4px;
+  }
+  .note-col input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 20px;
+    padding: 0 4px;
+    font-size: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
     text-overflow: ellipsis;
+  }
+  .note-col input::placeholder {
+    color: var(--muted);
+    opacity: 0;
+  }
+  tr:hover .note-col input,
+  .note-col input:focus {
+    border-color: var(--border-strong);
+    background: var(--surface);
+  }
+  tr:hover .note-col input::placeholder,
+  .note-col input:focus::placeholder {
+    opacity: 1;
   }
   td.flag {
     color: var(--warn);

@@ -87,7 +87,7 @@ describe('resultsCsv', () => {
 describe('ResultsTable', () => {
   it('порожня таблиця — підказка', () => {
     const { body } = render(ResultsTable, {
-      props: { results: [], selectedId: null, onselect: () => {}, onexport: () => {} },
+      props: { results: [], selectedId: null, onselect: () => {}, onnote: () => {}, onexport: () => {} },
     })
     expect(body).toContain('Результати')
     expect(body).toContain('Додайте точку')
@@ -99,7 +99,7 @@ describe('ResultsTable', () => {
   it('рядки об’єктів з температурами й параметрами', () => {
     const results = measureObjects(ir, objects)
     const { body } = render(ResultsTable, {
-      props: { results, selectedId: 2, onselect: () => {}, onexport: () => {} },
+      props: { results, selectedId: 2, onselect: () => {}, onnote: () => {}, onexport: () => {} },
     })
     expect(body).toContain('P1')
     expect(body).toContain('R1')
@@ -114,10 +114,13 @@ describe('ResultsTable', () => {
   it('колонка «Примітка» з текстом користувача', () => {
     const results = measureObjects(ir, [{ ...objects[0]!, note: 'кут укосу' }])
     const { body } = render(ResultsTable, {
-      props: { results, selectedId: null, onselect: () => {}, onexport: () => {} },
+      props: { results, selectedId: null, onselect: () => {}, onnote: () => {}, onexport: () => {} },
     })
     expect(body).toContain('Примітка')
-    expect(body).toMatch(/title="кут укосу"[^>]*>кут укосу</)
+    // Клітинка «Примітка» — поле введення з текстом об'єкта
+    const input = /<input type="text"[^>]*>/.exec(body.slice(body.indexOf('<tbody')))?.[0] ?? ''
+    expect(input).toContain('value="кут укосу"')
+    expect(input).toContain('aria-label="Примітка до об\'єкта P1"')
   })
 })
 
