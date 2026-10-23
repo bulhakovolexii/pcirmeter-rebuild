@@ -92,6 +92,10 @@
   ondrop={onDrop}
 />
 
+<svelte:head>
+  <title>{$tr('app.title')}</title>
+</svelte:head>
+
 <div class="app">
   <header>
     <div class="brand">
