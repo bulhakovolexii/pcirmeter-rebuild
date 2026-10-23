@@ -174,7 +174,7 @@
       <!-- Переглядачі всіх файлів лишаються змонтованими: вкладка зберігає палітру, шкалу й масштаб -->
       {#each files as f (f.id)}
         <div class="pane" hidden={f.id !== activeId}>
-          <Viewer file={f} />
+          <Viewer file={f} onmarkup={(m) => session?.saveMarkup(f.id, m)} />
         </div>
       {/each}
     </main>

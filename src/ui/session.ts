@@ -6,18 +6,33 @@
  * Кожна вкладка тримає Web Lock свого сеансу до закриття. Сеанси без утримуваного замка — від закритих вкладок
  * браузера — видаляються під час запуску. Дубльована вкладка (копія `sessionStorage`) бачить замок зайнятим і
  * переносить файли в новий сеанс, щоб закриття файлу в одній вкладці не зачіпало іншу.
+ *
+ * Розмітка файлу (параметри кадру, об'єкти) — в окремому сховищі: вона змінюється часто (перетягування), а байти
+ * файлу переписувати щоразу не варто. Запис відкладається на `MARKUP_DELAY` мс після останньої зміни.
  */
 
-import { planSync, type OpenedFile, type StoredFile } from './files'
+import { planSync, type FileMarkup, type OpenedFile, type StoredFile } from './files'
 
 const DB_NAME = 'pcirmeter-session'
 const STORE = 'files'
+const MARKUP = 'markup'
+const STORES = [STORE, MARKUP]
+const MARKUP_DELAY = 300
 const SESSION_KEY = 'pcirmeter.session'
 const ACTIVE_KEY = 'pcirmeter.activeFile'
 const LOCK_PREFIX = 'pcirmeter-session:'
 
-interface Row extends StoredFile {
+interface Row {
   session: string
+  id: number
+  name: string
+  bytes: Uint8Array
+}
+
+interface MarkupRow {
+  session: string
+  id: number
+  markup: FileMarkup
 }
 
 const done = (r: IDBRequest | IDBTransaction) =>
@@ -32,17 +47,21 @@ const done = (r: IDBRequest | IDBTransaction) =>
   })
 
 function openDb(): Promise<IDBDatabase> {
-  const req = indexedDB.open(DB_NAME, 1)
+  const req = indexedDB.open(DB_NAME, 2)
   req.onupgradeneeded = () => {
-    req.result.createObjectStore(STORE, { keyPath: ['session', 'id'] }).createIndex('session', 'session')
+    for (const name of STORES) {
+      if (!req.result.objectStoreNames.contains(name)) {
+        req.result.createObjectStore(name, { keyPath: ['session', 'id'] }).createIndex('session', 'session')
+      }
+    }
   }
   return done(req).then(() => req.result)
 }
 
-async function rowsOf(db: IDBDatabase, session: string): Promise<Row[]> {
-  const req = db.transaction(STORE).objectStore(STORE).index('session').getAll(session)
+async function rowsOf<T>(db: IDBDatabase, store: string, session: string): Promise<T[]> {
+  const req = db.transaction(store).objectStore(store).index('session').getAll(session)
   await done(req)
-  return req.result as Row[]
+  return req.result as T[]
 }
 
 /** Тримає замок до закриття вкладки; `false` — його вже тримає інша вкладка. */
@@ -70,6 +89,8 @@ export interface TabSession {
   activeId: number | null
   /** Привести збережене до відкритих файлів. */
   sync(files: readonly OpenedFile[], activeId: number | null): void
+  /** Зберегти розмітку відкритого файлу (із затримкою). */
+  saveMarkup(id: number, markup: FileMarkup): void
 }
 
 /** Сеанс вкладки; `null`, якщо сховища недоступні (Node, приватний режим, заборона) — тоді нічого не зберігається. */
@@ -80,14 +101,17 @@ export async function openTabSession(): Promise<TabSession | null> {
     const db = await openDb()
     const previous = ss.getItem(SESSION_KEY)
     let session = previous ?? crypto.randomUUID()
-    let rows = previous ? await rowsOf(db, previous) : []
+    let rows = previous ? await rowsOf<Row>(db, STORE, previous) : []
+    let markups = previous ? await rowsOf<MarkupRow>(db, MARKUP, previous) : []
     if (!(await holdLock(session))) {
       // Дубльована вкладка (або попередня сторінка ще не відпустила замок) — копія файлів у новий сеанс
       session = crypto.randomUUID()
       await holdLock(session)
       rows = rows.map((r) => ({ ...r, session }))
-      const tx = db.transaction(STORE, 'readwrite')
+      markups = markups.map((r) => ({ ...r, session }))
+      const tx = db.transaction(STORES, 'readwrite')
       for (const r of rows) tx.objectStore(STORE).put(r)
+      for (const r of markups) tx.objectStore(MARKUP).put(r)
       await done(tx)
     }
     ss.setItem(SESSION_KEY, session)
@@ -95,28 +119,58 @@ export async function openTabSession(): Promise<TabSession | null> {
 
     const saved = new Set(rows.map((r) => r.id))
     const active = Number(ss.getItem(ACTIVE_KEY))
+    const markupOf = new Map(markups.map((r) => [r.id, r.markup]))
     let queue = Promise.resolve()
+    /** Записи по черзі: кожна зміна — окрема транзакція; переповнення сховища — запис просто не збережеться. */
+    const write = (stores: string[], fill: (tx: IDBTransaction) => void) => {
+      queue = queue
+        .then(() => {
+          const tx = db.transaction(stores, 'readwrite')
+          fill(tx)
+          return done(tx)
+        })
+        .catch((e: unknown) => console.warn('Сеанс вкладки не збережено:', e))
+    }
+    const pending = new Map<number, ReturnType<typeof setTimeout>>()
     return {
-      files: rows.map(({ id, name, bytes }) => ({ id, name, bytes })),
+      files: rows.map(({ id, name, bytes }) => {
+        const markup = markupOf.get(id)
+        return markup ? { id, name, bytes, markup } : { id, name, bytes }
+      }),
       activeId: saved.has(active) ? active : null,
       sync(files, activeId) {
         ss.setItem(ACTIVE_KEY, String(activeId ?? ''))
         const { add, remove } = planSync(saved, files)
         if (add.length === 0 && remove.length === 0) return
         for (const id of add) saved.add(id)
-        for (const id of remove) saved.delete(id)
+        for (const id of remove) {
+          saved.delete(id)
+          clearTimeout(pending.get(id))
+          pending.delete(id)
+        }
         const rows = files
           .filter((f) => add.includes(f.id))
           .map((f): Row => ({ session, id: f.id, name: f.name, bytes: f.bytes }))
-        // Записи по черзі: кожна зміна — окрема транзакція; переповнення сховища — файл просто не збережеться
-        queue = queue
-          .then(() => {
-            const tx = db.transaction(STORE, 'readwrite')
-            for (const id of remove) tx.objectStore(STORE).delete([session, id])
-            for (const r of rows) tx.objectStore(STORE).put(r)
-            return done(tx)
-          })
-          .catch((e: unknown) => console.warn('Файли вкладки не збережено:', e))
+        write(STORES, (tx) => {
+          for (const id of remove) {
+            tx.objectStore(STORE).delete([session, id])
+            tx.objectStore(MARKUP).delete([session, id])
+          }
+          for (const r of rows) tx.objectStore(STORE).put(r)
+        })
+      },
+      saveMarkup(id, markup) {
+        clearTimeout(pending.get(id))
+        pending.set(
+          id,
+          setTimeout(() => {
+            pending.delete(id)
+            // Файл тим часом закрили — розмітка вже не потрібна
+            if (!saved.has(id)) return
+            const row: MarkupRow = { session, id, markup }
+            write([MARKUP], (tx) => tx.objectStore(MARKUP).put(row))
+          }, MARKUP_DELAY),
+        )
       },
     }
   } catch (e) {
@@ -125,19 +179,21 @@ export async function openTabSession(): Promise<TabSession | null> {
   }
 }
 
-/** Видаляє файли сеансів, чий замок ніхто не тримає (вкладки браузера закрито). */
+/** Видаляє файли й розмітку сеансів, чий замок ніхто не тримає (вкладки браузера закрито). */
 async function dropOrphans(db: IDBDatabase, own: string) {
   const held = new Set((await navigator.locks.query()).held?.map((l) => l.name) ?? [])
-  const tx = db.transaction(STORE, 'readwrite')
-  const req = tx.objectStore(STORE).index('session').openKeyCursor(null, 'nextunique')
-  req.onsuccess = () => {
-    const cursor = req.result
-    if (!cursor) return
-    const session = cursor.key as string
-    if (session !== own && !held.has(LOCK_PREFIX + session)) {
-      tx.objectStore(STORE).delete(IDBKeyRange.bound([session, -Infinity], [session, Infinity]))
+  const tx = db.transaction(STORES, 'readwrite')
+  for (const store of STORES) {
+    const req = tx.objectStore(store).index('session').openKeyCursor(null, 'nextunique')
+    req.onsuccess = () => {
+      const cursor = req.result
+      if (!cursor) return
+      const session = cursor.key as string
+      if (session !== own && !held.has(LOCK_PREFIX + session)) {
+        tx.objectStore(store).delete(IDBKeyRange.bound([session, -Infinity], [session, Infinity]))
+      }
+      cursor.continue()
     }
-    cursor.continue()
   }
   await done(tx)
 }

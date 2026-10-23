@@ -22,7 +22,7 @@
   import { audioType, decodeUserText } from './attachments'
   import ColorBar from './ColorBar.svelte'
   import DistributionChart from './DistributionChart.svelte'
-  import type { OpenedFile } from './files'
+  import type { FileMarkup, OpenedFile } from './files'
   import {
     formatNumber,
     formatSavedAt,
@@ -79,9 +79,11 @@
 
   interface Props {
     file: OpenedFile
+    /** Зміна параметрів кадру чи об'єктів — для збереження в сеансі вкладки. */
+    onmarkup?: (markup: FileMarkup) => void
   }
 
-  let { file }: Props = $props()
+  let { file, onmarkup }: Props = $props()
 
   const ir = $derived(file.thermogram.ir)
   const info = $derived(file.thermogram.info)
@@ -105,7 +107,7 @@
 
   // Параметри кадру: модель отримує лише змінені користувачем значення, решта — з файлу
   const fileParams = $derived(objectParams(ir.params))
-  let overrides = $state<Partial<ObjectParams>>({})
+  let overrides = $state<Partial<ObjectParams>>(untrack(() => file.markup?.overrides ?? {}))
   const params = $derived({ ...fileParams, ...overrides })
   const model = $derived(temperatureModel(ir, overrides))
 
@@ -237,9 +239,9 @@
     $tr('view.hint'),
     $tr('tools.keys'),
   ])
-  let objects = $state<MeasureObject[]>([])
+  let objects = $state<MeasureObject[]>(untrack(() => file.markup?.objects ?? []))
   let selectedId = $state<number | null>(null)
-  let nextId = 1
+  let nextId = untrack(() => Math.max(0, ...objects.map((o) => o.id)) + 1)
   const selected = $derived(objects.find((o) => o.id === selectedId) ?? null)
   const results = $derived(measureObjects(ir, objects, overrides))
   const selectedResult = $derived(results.find((r) => r.object.id === selectedId) ?? null)
@@ -514,6 +516,11 @@
       showExtremes,
     })),
   )
+
+  $effect(() => {
+    const markup = { overrides: $state.snapshot(overrides), objects: $state.snapshot(objects) }
+    untrack(() => onmarkup?.(markup))
+  })
 
   // Розміри панелей (спільні для вкладок, див. settings.ts): ширина бічної панелі й частка ІЧ поруч із фото
   let viewerEl: HTMLDivElement | undefined = $state()

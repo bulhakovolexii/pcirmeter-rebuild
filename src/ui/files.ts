@@ -1,6 +1,8 @@
 /** Відкриття файлів термограм у браузері (без DOM-залежностей — тестується в Node). */
 
 import { parseThermogram, ThermogramError, type Thermogram } from '../core/parser'
+import type { ObjectParams } from '../core/temperature'
+import type { MeasureObject } from './tools'
 
 /** Відкритий файл. `id` — унікальний у межах сеансу (ключ вкладки). */
 export interface OpenedFile {
@@ -9,6 +11,14 @@ export interface OpenedFile {
   /** Байти файлу як є — для збереження в сеансі вкладки (`session.ts`). */
   bytes: Uint8Array
   thermogram: Thermogram
+  /** Розмітка, відновлена з сеансу вкладки (стартовий стан переглядача). */
+  markup?: FileMarkup
+}
+
+/** Що користувач змінив у файлі й що переживає перезавантаження: параметри кадру та об'єкти. */
+export interface FileMarkup {
+  overrides: Partial<ObjectParams>
+  objects: MeasureObject[]
 }
 
 /** Причина, з якої файл не відкрито (ключ повідомлення `error.<reason>`). */
@@ -56,6 +66,7 @@ export interface StoredFile {
   id: number
   name: string
   bytes: Uint8Array
+  markup?: FileMarkup
 }
 
 /**
@@ -64,15 +75,34 @@ export interface StoredFile {
  */
 export function restoreFiles(stored: StoredFile[]): OpenedFile[] {
   const opened: OpenedFile[] = []
-  for (const { id, name, bytes } of [...stored].sort((a, b) => a.id - b.id)) {
+  for (const { id, name, bytes, markup } of [...stored].sort((a, b) => a.id - b.id)) {
     nextId = Math.max(nextId, id + 1)
     try {
-      opened.push({ id, name, bytes, thermogram: parseThermogram(bytes) })
+      const thermogram = parseThermogram(bytes)
+      opened.push({ id, name, bytes, thermogram, ...(isMarkup(markup) && { markup }) })
     } catch {
       // Пошкоджений запис — просто не відновлюємо
     }
   }
   return opened
+}
+
+/** Перевірка форми збереженої розмітки (запис міг лишитися від іншої версії застосунку). */
+function isMarkup(m: unknown): m is FileMarkup {
+  if (typeof m !== 'object' || m === null) return false
+  const { overrides, objects } = m as Partial<FileMarkup>
+  return (
+    typeof overrides === 'object' &&
+    overrides !== null &&
+    Array.isArray(objects) &&
+    objects.every(
+      (o) =>
+        typeof o?.id === 'number' &&
+        typeof o.name === 'string' &&
+        typeof o.shape?.kind === 'string' &&
+        typeof o.overrides === 'object',
+    )
+  )
 }
 
 /** Які файли дописати й які `id` видалити, щоб збережене в сеансі вкладки відповідало відкритим. */

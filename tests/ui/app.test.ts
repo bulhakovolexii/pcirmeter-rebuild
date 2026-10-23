@@ -68,6 +68,26 @@ describe('сеанс вкладки', () => {
     expect(opened[0]!.bytes.byteLength).toBe(bytes.byteLength)
   })
 
+  it("відновлює розмітку файлу: параметри кадру й об'єкти; пошкоджену — ігнорує", () => {
+    const bytes = new Uint8Array(readFileSync(sample))
+    const markup = {
+      overrides: { emissivity: 0.9 },
+      objects: [
+        { id: 3, name: 'P1', shape: { kind: 'point' as const, x: 10, y: 20 }, overrides: {}, note: 'стіна' },
+      ],
+    }
+    const [withMarkup, broken] = restoreFiles([
+      { id: 2000, name: 'a.jpg', bytes, markup },
+      { id: 2001, name: 'b.jpg', bytes, markup: { overrides: {}, objects: [{ id: 'x' }] } as never },
+    ])
+    expect(withMarkup!.markup).toEqual(markup)
+    expect(broken!.markup).toBeUndefined()
+
+    const { body } = render(App, { props: { initialFiles: [withMarkup!] } })
+    expect(body).toContain('value="0.9"')
+    expect(body).toContain('стіна')
+  })
+
   it('синхронізація: дописати нові, видалити закриті', () => {
     expect(planSync(new Set([1, 2, 3]), [{ id: 1 }, { id: 3 }, { id: 4 }])).toEqual({ add: [4], remove: [2] })
     expect(planSync(new Set(), [])).toEqual({ add: [], remove: [] })
