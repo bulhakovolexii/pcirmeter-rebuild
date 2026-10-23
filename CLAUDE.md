@@ -95,7 +95,8 @@
 - Декомпільований C#: `reference/decompiled/{IrMeter,PCIRMeter}/`; знімок Ghidra-аналізу DLL:
   `reference/FPGA_CalcTemp_List.rea-snapshot` (передавати в `open_binary` як `snapshot_path`).
 - UNI-T: інсталятор ПК-програми `reference/uti/UTi-Live-Screen-1.68.exe` (Inno Setup → `innoextract -d extracted`),
-  знімок Ghidra-аналізу `reference/uti/LiveScreen.rea-snapshot`; висновки — `docs/spec/uti89pro.md`.
+  знімок Ghidra-аналізу `reference/uti/LiveScreen.rea-snapshot`; висновки — `docs/spec/uti89pro.md`;
+  дамп/рендер файлів UTi89 PRO — `python3 -I tools/dump_uti.py [--png DIR] файли.bmp`.
 - `IrMeter.dll` також імпортує `FPGA_CalcTemp.dll`, якої немає в інсталяторі (стара/інша серія камер?).
 
 ## Технічні рішення
