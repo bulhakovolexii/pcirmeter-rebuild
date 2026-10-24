@@ -8,13 +8,11 @@
     /** Підпис для читачів екрана, якщо поруч немає видимого. */
     ariaLabel?: string
     id?: string
-    /** overlay — на темних смугах (шапка, панелі поверх зображення). */
-    variant?: 'default' | 'overlay'
     class?: string
     onchange?: (value: T) => void
   }
 
-  let { value = $bindable(), options, ariaLabel, id, variant, class: className, onchange }: Props = $props()
+  let { value = $bindable(), options, ariaLabel, id, class: className, onchange }: Props = $props()
 </script>
 
 <Select.Root
@@ -22,7 +20,7 @@
   bind:value={() => value, (v) => ((value = v as T), onchange?.(v as T))}
   items={options.map((o) => ({ ...o }))}
 >
-  <Select.Trigger {id} {variant} aria-label={ariaLabel} class={className}>
+  <Select.Trigger {id} aria-label={ariaLabel} class={className}>
     {options.find((o) => o.value === value)?.label ?? value}
   </Select.Trigger>
   <Select.Content>

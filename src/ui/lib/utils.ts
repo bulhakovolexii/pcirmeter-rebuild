@@ -1,10 +1,9 @@
-// Помічники компонентів shadcn-svelte (src/ui/lib/components/ui)
+// Помічники компонентів shadcn-svelte (src/ui/lib/components/ui) — як у документації бібліотеки
 import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
-/** Склеює класи. Без tailwind-merge (≈ 9 КБ gzip): конфліктні утиліти не перекриваються — вигляд
- *  змінюють варіантами компонентів (`variant`, `size`), а не класами з однаковою властивістю. */
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+  return twMerge(clsx(inputs))
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

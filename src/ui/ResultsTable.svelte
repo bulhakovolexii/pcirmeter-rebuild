@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Input } from '$lib/components/ui/input'
   import { Button } from '$lib/components/ui/button'
+  import * as Table from '$lib/components/ui/table'
   // Store перекладу імпортовано як `t`: ім'я `tr` у шаблоні з <tr> Svelte сприймає як компонент
   import { locale, tr as t } from '../i18n'
   import { formatNumber, formatTemperature, LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
@@ -32,27 +33,30 @@
     {:else}
       <span class="note"></span>
     {/if}
-    <Button class="shrink-0" disabled={results.length === 0} onclick={onexport}>{$t('results.export')}</Button
+    <Button variant="outline" class="shrink-0" disabled={results.length === 0} onclick={onexport}
+      >{$t('results.export')}</Button
     >
   </div>
   <!-- Висоту задає нижня смуга (межу тягнуть); далі — прокрутка: додавання об'єктів не зсуває решту інтерфейсу -->
   <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>{$t('results.object')}</th>
-          <th>{$t('results.value')}</th>
-          <th>{$t('results.max')}</th>
-          <th>{$t('results.min')}</th>
-          <th>{$t('results.emissivity')}</th>
-          <th>{$t('results.reflectedTemp')}, {tUnit}</th>
-          <th>{$t('results.airTemp')}, {tUnit}</th>
-          <th>{$t('results.humidity')}, %</th>
-          <th>{$t('results.distance')}, {LENGTH_SYMBOL[$units.length][$locale]}</th>
-          <th class="note-col">{$t('results.note')}</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table.Root>
+      <Table.Header>
+        <Table.Row>
+          <Table.Head>{$t('results.object')}</Table.Head>
+          <Table.Head class="text-end">{$t('results.value')}</Table.Head>
+          <Table.Head class="text-end">{$t('results.max')}</Table.Head>
+          <Table.Head class="text-end">{$t('results.min')}</Table.Head>
+          <Table.Head class="text-end">{$t('results.emissivity')}</Table.Head>
+          <Table.Head class="text-end">{$t('results.reflectedTemp')}, {tUnit}</Table.Head>
+          <Table.Head class="text-end">{$t('results.airTemp')}, {tUnit}</Table.Head>
+          <Table.Head class="text-end">{$t('results.humidity')}, %</Table.Head>
+          <Table.Head class="text-end"
+            >{$t('results.distance')}, {LENGTH_SYMBOL[$units.length][$locale]}</Table.Head
+          >
+          <Table.Head class="note-col">{$t('results.note')}</Table.Head>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
         {#each results as r (r.object.id)}
           {@const point = r.object.shape.kind === 'point'}
           {@const reason =
@@ -60,25 +64,33 @@
               ? undefined
               : $t(r.status === 'out-of-range' ? 'cursor.outOfRange' : 'cursor.noCalibration')}
           <!-- Клік по рядку — для миші; з клавіатури вибір — кнопкою з назвою об'єкта -->
-          <tr class:selected={r.object.id === selectedId} onclick={() => onselect(r.object.id)}>
-            <th scope="row">
+          <Table.Row
+            class="group/row cursor-pointer"
+            data-state={r.object.id === selectedId ? 'selected' : undefined}
+            onclick={() => onselect(r.object.id)}
+          >
+            <Table.Head scope="row" class="h-auto">
               <button type="button" class="name" aria-pressed={r.object.id === selectedId}
                 >{r.object.name}</button
               >
               {#if r.ownParams}<span class="own" title={$t('results.ownParams')}>*</span>{/if}
-            </th>
-            <td class:flag={reason} title={reason}>{fmt(r.value)}</td>
-            <td class:flag={reason && !point} title={point ? undefined : reason}>
+            </Table.Head>
+            <Table.Cell class={['text-end', reason && 'flag']} title={reason}>{fmt(r.value)}</Table.Cell>
+            <Table.Cell class={['text-end', reason && !point && 'flag']} title={point ? undefined : reason}>
               {point ? '' : fmt(r.stats.max)}
-            </td>
-            <td class:flag={reason && !point} title={point ? undefined : reason}>
+            </Table.Cell>
+            <Table.Cell class={['text-end', reason && !point && 'flag']} title={point ? undefined : reason}>
               {point ? '' : fmt(r.stats.min)}
-            </td>
+            </Table.Cell>
             {#each PARAM_FIELDS as k (k)}
-              <td>{formatNumber(displayValue(k, r.params[k], $units), $locale, paramDigits(k))}</td>
+              <Table.Cell class="text-end"
+                >{formatNumber(displayValue(k, r.params[k], $units), $locale, paramDigits(k))}</Table.Cell
+              >
             {/each}
-            <td class="note-col">
+            <Table.Cell class="note-col py-0">
+              <!-- Поле «вбудоване» в рядок: рамка й підказка — лише при наведенні на рядок або у фокусі -->
               <Input
+                class="h-7 truncate border-transparent bg-transparent shadow-none group-hover/row:border-input group-hover/row:bg-background placeholder:opacity-0 group-hover/row:placeholder:opacity-100 focus-visible:placeholder:opacity-100 dark:bg-transparent"
                 type="text"
                 maxlength={200}
                 value={r.object.note ?? ''}
@@ -87,11 +99,11 @@
                 aria-label="{$t('objectNote.title')} {r.object.name}"
                 oninput={(e) => onnote(r.object.id, e.currentTarget.value)}
               />
-            </td>
-          </tr>
+            </Table.Cell>
+          </Table.Row>
         {/each}
-      </tbody>
-    </table>
+      </Table.Body>
+    </Table.Root>
     {#if results.length === 0}
       <p class="muted empty">{$t('results.empty')}</p>
     {/if}
@@ -116,7 +128,7 @@
   }
   h2 {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -124,12 +136,12 @@
   }
   p {
     margin: 2px 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
   }
   .note {
     flex: 1;
     min-width: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -139,7 +151,7 @@
     color: var(--muted);
   }
   .table-wrap {
-    --row: 24px;
+    --row: 40px;
     position: relative;
     box-sizing: content-box;
     flex: 1 1 0;
@@ -158,82 +170,29 @@
     padding: 0 12px;
     text-align: center;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
+  /* Таблиця — shadcn Table; прокрутка (і липкий заголовок) — у .table-wrap, а не в контейнері таблиці */
+  .table-wrap :global([data-slot='table-container']) {
+    overflow: visible;
+  }
+  .table-wrap :global([data-slot='table']) {
     font-variant-numeric: tabular-nums;
   }
-  tr {
-    height: var(--row);
-  }
-  th,
-  td {
-    box-sizing: border-box;
-    padding: 0 8px;
-    text-align: right;
-    white-space: nowrap;
-    border-bottom: 1px solid var(--border);
-  }
-  thead th {
+  .table-wrap :global([data-slot='table-header'] [data-slot='table-head']) {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--surface-alt);
-    color: var(--muted);
-    font-weight: 600;
-  }
-  tbody th {
-    text-align: left;
-  }
-  tbody tr {
-    cursor: pointer;
-  }
-  tbody tr:hover {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-  }
-  tbody tr.selected {
-    background: color-mix(in srgb, var(--accent) 18%, transparent);
-  }
-  .name {
-    border: none;
-    background: none;
-    padding: 0;
-    font-weight: 600;
-  }
-  .note-col {
-    text-align: left;
-    min-width: 180px;
-    padding: 0 4px;
-  }
-  /* Поле примітки — «вбудоване» в рядок: рамка лише при наведенні на рядок або у фокусі */
-  .note-col :global(input) {
-    box-sizing: border-box;
-    width: 100%;
-    height: 20px;
-    padding: 0 4px;
-    font-size: inherit;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 5px;
-    text-overflow: ellipsis;
-  }
-  .note-col :global(input::placeholder) {
-    color: var(--muted);
-    opacity: 0;
-  }
-  tr:hover .note-col :global(input),
-  .note-col :global(input:focus) {
-    border-color: var(--border-strong);
     background: var(--surface);
+    box-shadow: inset 0 -1px 0 var(--border);
   }
-  tr:hover .note-col :global(input::placeholder),
-  .note-col :global(input:focus::placeholder) {
-    opacity: 1;
-  }
-  td.flag {
+  .table-wrap :global(.flag) {
     color: var(--warn);
     font-weight: 600;
+  }
+  .name {
+    font-weight: 600;
+  }
+  .results :global(.note-col) {
+    min-width: 180px;
   }
   .own {
     color: var(--accent);

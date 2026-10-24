@@ -1,6 +1,9 @@
 <script lang="ts" module>
   import { getContext, setContext } from 'svelte'
-  import type { ToggleVariants } from '$lib/components/ui/toggle/index.js'
+  import type { VariantProps } from 'tailwind-variants'
+  import { toggleVariants } from '$lib/components/ui/toggle/index.js'
+
+  type ToggleVariants = VariantProps<typeof toggleVariants>
 
   interface ToggleGroupContext extends ToggleVariants {
     spacing?: number
@@ -33,10 +36,11 @@
   }: ToggleGroupPrimitive.RootProps &
     ToggleVariants & {
       spacing?: number
-      /** bits-ui ставить role="group"; для одиночного вибору (пункти — role="radio") — "radiogroup". */
+      /** Доповнення до shadcn: bits-ui ставить role="group"; для одиночного вибору (пункти — role="radio") — "radiogroup". */
       role?: AriaRole
     } = $props()
 
+  // Геттери — щоб пункти бачили актуальні значення (Svelte 5: state_referenced_locally)
   setToggleGroupCtx({
     get variant() {
       return variant
@@ -62,7 +66,10 @@ get along, so we shut typescript up by casting `value` to `never`.
   data-size={size}
   data-spacing={spacing}
   style={`--gap: ${spacing}`}
-  class={cn('group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md', className)}
+  class={cn(
+    'group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs',
+    className,
+  )}
   {...restProps}
 >
   {#snippet child({ props })}

@@ -1,5 +1,12 @@
 <script lang="ts">
   import { Button } from '$lib/components/ui/button'
+  import * as Tabs from '$lib/components/ui/tabs'
+  import * as Alert from '$lib/components/ui/alert'
+  import * as Empty from '$lib/components/ui/empty'
+  import CircleAlertIcon from '@lucide/svelte/icons/circle-alert'
+  import FolderOpenIcon from '@lucide/svelte/icons/folder-open'
+  import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw'
+  import WifiOffIcon from '@lucide/svelte/icons/wifi-off'
   import { onMount, untrack } from 'svelte'
   import { locale, tr } from '../i18n'
   import { openFiles, restoreFiles, type FileSource, type OpenError, type OpenedFile } from './files'
@@ -108,12 +115,17 @@
   <title>{$tr('app.title')}</title>
 </svelte:head>
 
-<div class="app">
+<!-- Вкладки файлів (shadcn Tabs): список — у шапці, панелі — переглядачі в main -->
+<Tabs.Root
+  class="app gap-0"
+  value={activeId === null ? '' : String(activeId)}
+  onValueChange={(v) => (activeId = Number(v))}
+>
   <header>
     <div class="brand">
       <h1>{$tr('app.title')}</h1>
     </div>
-    <div class="tabs">
+    <div class="tabs dark">
       {#if files.length > 0}
         <FileTabs
           {files}
@@ -124,8 +136,8 @@
         />
       {/if}
     </div>
-    <div class="actions">
-      <Button variant="primary" onclick={() => input?.click()}>{$tr('files.open')}</Button>
+    <div class="actions dark">
+      <Button onclick={() => input?.click()}>{$tr('files.open')}</Button>
       <input
         bind:this={input}
         type="file"
@@ -135,7 +147,7 @@
         onchange={onInputChange}
       />
       <Button
-        variant="overlay"
+        variant="outline"
         disabled={files.length === 0}
         title={$tr('report.buttonTitle')}
         onclick={() => {
@@ -146,19 +158,16 @@
       <SelectField
         bind:value={$units.temperature}
         ariaLabel={$tr('units.temperature')}
-        variant="overlay"
         options={(['C', 'F', 'K'] as const).map((u) => ({ value: u, label: TEMPERATURE_SYMBOL[u] }))}
       />
       <SelectField
         bind:value={$units.length}
         ariaLabel={$tr('units.length')}
-        variant="overlay"
         options={(['m', 'ft'] as const).map((u) => ({ value: u, label: LENGTH_SYMBOL[u][$locale] }))}
       />
       <SelectField
         bind:value={$locale}
         ariaLabel={$tr('app.language')}
-        variant="overlay"
         options={[
           { value: 'uk', label: 'Українська' },
           { value: 'en', label: 'English' },
@@ -167,41 +176,59 @@
     </div>
   </header>
 
+  <!-- Повідомлення — shadcn Alert; кнопка дії — праворуч -->
   {#if $pwa.update}
-    <div class="notice" role="status">
-      <span>{$tr('pwa.update')}</span>
-      <Button variant="primary" onclick={applyUpdate}>{$tr('pwa.reload')}</Button>
-    </div>
+    <Alert.Root class="mb-2.5 flex items-center gap-3" role="status">
+      <RefreshCwIcon />
+      <Alert.Description class="flex-1">{$tr('pwa.update')}</Alert.Description>
+      <Button size="sm" onclick={applyUpdate}>{$tr('pwa.reload')}</Button>
+    </Alert.Root>
   {:else if $pwa.offlineReady}
-    <div class="notice" role="status">
-      <span>{$tr('pwa.offlineReady')}</span>
-      <Button onclick={dismissOfflineReady}>{$tr('error.dismiss')}</Button>
-    </div>
+    <Alert.Root class="mb-2.5 flex items-center gap-3" role="status">
+      <WifiOffIcon />
+      <Alert.Description class="flex-1">{$tr('pwa.offlineReady')}</Alert.Description>
+      <Button variant="outline" size="sm" onclick={dismissOfflineReady}>{$tr('error.dismiss')}</Button>
+    </Alert.Root>
   {/if}
 
   {#if errors.length > 0}
-    <div class="errors" role="alert">
-      <ul>
-        {#each errors as err, i (i)}
-          <li><strong>{err.name}</strong>: {$tr(`error.${err.reason}`)}</li>
-        {/each}
-      </ul>
-      <Button onclick={() => (errors = [])}>{$tr('error.dismiss')}</Button>
-    </div>
+    <Alert.Root variant="destructive" class="mb-2.5 flex items-start gap-3">
+      <CircleAlertIcon />
+      <div class="flex-1">
+        <Alert.Title>{$tr('error.title')}</Alert.Title>
+        <Alert.Description>
+          <ul class="m-0 list-disc ps-4">
+            {#each errors as err, i (i)}
+              <li><strong>{err.name}</strong>: {$tr(`error.${err.reason}`)}</li>
+            {/each}
+          </ul>
+        </Alert.Description>
+      </div>
+      <Button variant="outline" size="sm" onclick={() => (errors = [])}>{$tr('error.dismiss')}</Button>
+    </Alert.Root>
   {/if}
 
   {#if files.length > 0}
     <main>
       <!-- Переглядачі всіх файлів лишаються змонтованими: вкладка зберігає палітру, шкалу й масштаб -->
       {#each files as f (f.id)}
-        <div class="pane" hidden={f.id !== activeId}>
+        <Tabs.Content value={String(f.id)} tabindex={-1} class="pane">
           <Viewer file={f} onmarkup={(m) => session?.saveMarkup(f.id, m)} />
-        </div>
+        </Tabs.Content>
       {/each}
     </main>
   {:else}
     <main class="empty">
-      <p class="muted">{$tr('files.empty')}</p>
+      <Empty.Root class="border">
+        <Empty.Header>
+          <Empty.Media variant="icon"><FolderOpenIcon /></Empty.Media>
+          <Empty.Title>{$tr('files.emptyTitle')}</Empty.Title>
+          <Empty.Description>{$tr('files.empty')}</Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          <Button onclick={() => input?.click()}>{$tr('files.open')}</Button>
+        </Empty.Content>
+      </Empty.Root>
     </main>
   {/if}
 
@@ -216,18 +243,22 @@
   {#if dragging}
     <div class="drop" aria-hidden="true">{$tr('files.drop')}</div>
   {/if}
-</div>
+</Tabs.Root>
 
 <!-- Вужче за 1024 px інтерфейс не вміщається — замість нього заглушка (застосунок лишається змонтованим,
      відкриті файли не губляться) -->
 <div class="narrow" role="alert">
-  <img class="logo" src={logoUrl} alt={$tr('app.logo')} />
-  <h1>{$tr('narrow.title')}</h1>
-  <p>{$tr('narrow.text')}</p>
+  <Empty.Root>
+    <Empty.Header>
+      <Empty.Media><img class="logo" src={logoUrl} alt={$tr('app.logo')} /></Empty.Media>
+      <Empty.Title>{$tr('narrow.title')}</Empty.Title>
+      <Empty.Description>{$tr('narrow.text')}</Empty.Description>
+    </Empty.Header>
+  </Empty.Root>
 </div>
 
 <style>
-  .app {
+  :global(.app) {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -255,7 +286,7 @@
     gap: 10px;
   }
   h1 {
-    font-size: 1.15rem;
+    font-size: 1.006rem;
     font-weight: 600;
     margin: 0;
   }
@@ -263,41 +294,6 @@
     flex-shrink: 0;
     display: flex;
     gap: 6px;
-  }
-  /* У шапці (темна в обох темах) — червоний ХПІ і в темній темі; рамка при наведенні — золота */
-  header :global([data-slot='button'][class*='bg-primary']) {
-    background: #a0001b;
-    border-color: #a0001b;
-  }
-  header :global([data-slot='button'][class*='bg-primary']:hover) {
-    border-color: var(--gold);
-  }
-  .notice {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-  .errors {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-left: 4px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--error-bg);
-  }
-  .errors ul {
-    margin: 0;
-    padding-left: 18px;
   }
   .tabs {
     flex: 1;
@@ -308,19 +304,16 @@
     flex: 1;
     min-height: 0;
   }
-  .pane {
+  main :global(.pane) {
     height: 100%;
   }
-  .pane[hidden] {
+  main :global(.pane[hidden]) {
     display: none;
   }
   .empty {
     display: grid;
     place-items: center;
     text-align: center;
-  }
-  .muted {
-    color: var(--muted);
   }
   .narrow {
     display: none;
@@ -331,28 +324,18 @@
     }
   }
   @media (max-width: 1023px) {
-    .app {
+    :global(.app) {
       display: none;
     }
     .narrow {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
       min-height: 100vh;
       box-sizing: border-box;
-      padding: 24px 16px;
-      text-align: center;
+      padding: 16px;
     }
     /* Логотип кафедри (tools/extract_logo.py) */
     .narrow .logo {
       height: 120px;
-    }
-    .narrow p {
-      max-width: 420px;
-      margin: 0;
-      color: var(--muted);
     }
   }
   .drop {
@@ -363,7 +346,7 @@
     border: 3px dashed var(--accent);
     border-radius: 12px;
     background: color-mix(in srgb, var(--bg) 85%, transparent);
-    font-size: 1.3rem;
+    font-size: 1.137rem;
     pointer-events: none;
   }
 </style>

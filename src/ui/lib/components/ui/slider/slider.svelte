@@ -10,7 +10,7 @@
     thumbLabel,
     ...restProps
   }: WithoutChildrenOrChild<SliderPrimitive.RootProps> & {
-    /** Підпис повзунка (role="slider") для читачів екрана. */
+    /** Доповнення до shadcn: підпис повзунка (role="slider") для читачів екрана. */
     thumbLabel?: string
   } = $props()
 </script>
@@ -35,7 +35,7 @@ get along, so we shut typescript up by casting `value` to `never`.
       data-orientation={orientation}
       data-slot="slider-track"
       class={cn(
-        'bg-input relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5',
+        'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5',
       )}
     >
       <SliderPrimitive.Range
@@ -50,7 +50,7 @@ get along, so we shut typescript up by casting `value` to `never`.
         data-slot="slider-thumb"
         index={thumb}
         aria-label={thumbLabel}
-        class="border-primary ring-ring/50 block size-4.5 shrink-0 cursor-pointer rounded-full border-2 bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+        class="border-primary ring-ring/50 block size-4 shrink-0 rounded-full border bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
       />
     {/each}
   {/snippet}

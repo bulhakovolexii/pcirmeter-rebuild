@@ -3,6 +3,7 @@
 //
 //   npx vite --host 127.0.0.1 --port 5173 &          # або npm run build && npm run preview
 //   NO_PROXY=127.0.0.1 node tools/ui_screens.mjs <outdir> [ширини, напр. 1600,1280,1024] <файли термограм…>
+//   COLOR_SCHEME=dark …                               # темна тема (знімки — <outdir>/w<ширина>-dark.png)
 //
 // Для кожної ширини: відкрити файли, намалювати 3 точки, прямокутник і лінію, зберегти <outdir>/w<ширина>.png;
 // у консоль — чи є горизонтальна прокрутка сторінки.
@@ -12,6 +13,7 @@ const PW = process.env.PLAYWRIGHT_DIR ?? '/home/agent/tools/playwright'
 const { chromium } = createRequire(`${PW}/`)('playwright')
 
 const URL = process.env.APP_URL ?? 'http://127.0.0.1:5173/'
+const scheme = process.env.COLOR_SCHEME === 'dark' ? 'dark' : 'light'
 const [out, widthList, ...files] = process.argv.slice(2)
 if (!out || !widthList || files.length === 0) {
   console.error('usage: node tools/ui_screens.mjs <outdir> <w1,w2,…> <files…>')
@@ -21,7 +23,10 @@ if (!out || !widthList || files.length === 0) {
 // Playwright за замовчуванням ховає смуги прокрутки — на знімках вони потрібні
 const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] })
 for (const width of widthList.split(',').map(Number)) {
-  const page = await browser.newPage({ viewport: { width, height: Math.max(700, Math.round(width * 0.6)) } })
+  const page = await browser.newPage({
+    viewport: { width, height: Math.max(700, Math.round(width * 0.6)) },
+    colorScheme: scheme,
+  })
   page.on('pageerror', (e) => console.log(`[${width}] pageerror:`, e.message))
   await page.goto(URL)
   await page.setInputFiles('input[type=file]', files)
@@ -47,7 +52,7 @@ for (const width of widthList.split(',').map(Number)) {
     await drag([0.1, 0.2], [0.8, 0.7])
     await page.waitForTimeout(200)
   }
-  await page.screenshot({ path: `${out}/w${width}.png` })
+  await page.screenshot({ path: `${out}/w${width}${scheme === 'dark' ? '-dark' : ''}.png` })
   const scroll = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
   console.log(`${width}: ${box ? 'інтерфейс' : 'заглушка / немає кадру'}, горизонтальна прокрутка ${scroll} px`)
   await page.close()

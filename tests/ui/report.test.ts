@@ -18,6 +18,9 @@ import {
 } from '../../src/ui/report'
 import ReportDialog from '../../src/ui/ReportDialog.svelte'
 
+/** Розмітка без атрибутів class: класи Tailwind містять «>» (`has-[>svg]`), що ламає пошук тегів регулярками. */
+const withoutClasses = (html: string) => html.replace(/ class="[^"]*"/g, '')
+
 const sample = join(import.meta.dirname, '..', '..', 'samples', 'legacy-2013', '130604_0002T.jpg')
 const bytes = new Uint8Array(readFileSync(sample))
 const thermogram = parseThermogram(bytes)
@@ -85,7 +88,8 @@ describe('ReportDialog (смоук)', () => {
     expect(
       render(ReportDialog, { props: { open: false, files: [file], onclose: () => {} } }).body,
     ).not.toContain('role="dialog"')
-    const { body } = render(ReportDialog, { props: { open: true, files: [file], onclose: () => {} } })
+    const html = render(ReportDialog, { props: { open: true, files: [file], onclose: () => {} } }).body
+    const body = withoutClasses(html)
     expect(body).toContain('role="dialog"')
     for (const text of ["Об'єкт обстеження", 'Виконавець', 'Група', 'Викладач', 'Дата звіту', 'Висновок']) {
       expect(body).toContain(text)
@@ -95,14 +99,14 @@ describe('ReportDialog (смоук)', () => {
     expect(body).toContain('Коментар до термограми: 130604_0002T.jpg')
     // Замість кнопки «Створити PDF» — меню формату (PDF / ODT); місце під мініатюру — біля коментаря
     expect(body).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*>(<!---->)?\s*Створити звіт/)
-    expect(body).toContain('class="thumb')
+    expect(html).toContain('class="thumb')
   })
 
   it('кнопка «Звіт» у шапці неактивна без файлів', () => {
-    const empty = render(App).body
+    const empty = withoutClasses(render(App).body)
     expect(empty).toMatch(/<button[^>]*disabled=""[^>]*>(<!---->)?Звіт(<!---->)?<\/button>/)
     expect(empty).not.toContain('role="dialog"')
-    const withFile = render(App, { props: { initialFiles: [file] } }).body
+    const withFile = withoutClasses(render(App, { props: { initialFiles: [file] } }).body)
     expect(withFile).toMatch(/<button(?![^>]*disabled="")[^>]*>(<!---->)?Звіт(<!---->)?<\/button>/)
   })
 })

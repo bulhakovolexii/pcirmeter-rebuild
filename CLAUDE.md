@@ -65,7 +65,7 @@
   в `sessionStorage` + Web Locks для прибирання закритих вкладок; разом з файлами — розмітка: параметри кадру й об'єкти, `FileMarkup` у `files.ts`; палітра, шкала, ізотерми — ні);
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
   об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
-  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`; довідка «?» — `HelpTip.svelte`; вкладки файлів у шапці — `FileTabs.svelte`.
+  store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte` (власна: розміри в px; вигляд — ResizableHandle); довідка «?» — `HelpTip.svelte` (Popover); вкладки файлів — `FileTabs.svelte` (Tabs.List; Tabs.Root і панелі — в `App.svelte`).
   Логотип кафедри (лише заглушка вузького вікна) — `src/ui/images/kafedra-logo.svg` (з `docs/brand/kafedra-logo.cdr`, `tools/extract_logo.py`).
   Оформлення — токени в `src/ui/app.css` (стиль ir-lab-1 / ХПІ), шрифт Fira Sans — локально в `src/ui/fonts/` (офлайн);
   смуги керування поверх зображень — глобальні класи `.float-bar` / `.float-group` там само. Аналіз: `ProfileChart.svelte`, `DistributionChart.svelte` (розподіл температур прямокутника), `IsothermPanel.svelte`, `Histogram.svelte`.
@@ -90,7 +90,7 @@
   перегляд сторінок — `pdftoppm -r 80 -png file.pdf page`; ODT → PDF — `soffice --headless --convert-to pdf file.odt`
   (LibreOffice ставить `setup_sandbox.sh`).
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Справжнього браузера в sandbox немає, але є headless Chromium
-  (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу).
+  (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу; `COLOR_SCHEME=dark` — темна тема).
   Остаточно UI перевіряє викладач. Мінімальна ширина інтерфейсу — 1024 px; вужче — заглушка в `App.svelte`.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.
@@ -105,10 +105,13 @@
 ## Технічні рішення
 
 - TypeScript (strict) + Vite; UI — Svelte; рендеринг — Canvas 2D (WebGL лише за потреби).
-- Елементи керування — shadcn-svelte (bits-ui + Tailwind 4) у `src/ui/lib/components/ui/` (аліас `$lib` → `src/ui/lib`;
-  нові — `npx shadcn-svelte add <name>`, потім підігнати класи під компактний стиль). Tailwind — без preflight;
-  токени — `@theme inline` в `app.css`. `cn` = clsx без tailwind-merge: конфліктні утиліти не передавати через `class`,
-  вигляд змінювати варіантами (`variant="overlay"` — на темних смугах) або scoped `:global(...)`.
+- Елементи керування — shadcn-svelte (bits-ui + Tailwind 4) у `src/ui/lib/components/ui/` (аліас `$lib` → `src/ui/lib`).
+  **Стандартний вигляд і пропорції shadcn** (U-03): змінено лише шрифт і палітру (токени `@theme inline` в `app.css`);
+  корінь 16 px, текст інтерфейсу 14 px. Нові — `python3 -I tools/shadcn_add.py <name>` (CLI `npx shadcn-svelte add`
+  тут не працює), без підгонки класів; власні доповнення в компонентах позначено «Доповнення до shadcn».
+  `cn` = clsx + tailwind-merge (як у документації: `class` перекриває утиліти). Tailwind — без preflight (частковий скид
+  для `[data-slot]` у `app.css`). Темні смуги (шапка, панелі над зображенням) — клас `.dark` (темні токени, варіант `dark:`),
+  на них звичайні `variant="outline"` / `ghost`. Перелік власних компонентів з обґрунтуванням — U-03 у `docs/PLAN.md`.
   Спливні елементи — у порталі (у SSR-тестах не рендеряться; діалог звіту вимикає портал на сервері).
   Список із фіксованими значеннями — `src/ui/SelectField.svelte`. Діалог звіту вантажиться окремим chunk-ом.
 - Ядро (`src/core/`) — чистий TS без залежностей від DOM: парсер, обчислення температур, статистика. Важкі обчислення — у Web Worker.

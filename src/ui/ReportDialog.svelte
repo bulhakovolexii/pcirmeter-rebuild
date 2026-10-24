@@ -18,6 +18,8 @@
   import * as Dialog from '$lib/components/ui/dialog'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Input } from '$lib/components/ui/input'
+  import { Label } from '$lib/components/ui/label'
+  import ChevronDownIcon from '@lucide/svelte/icons/chevron-down'
   import { Textarea } from '$lib/components/ui/textarea'
 
   interface Props {
@@ -112,57 +114,61 @@
 
 <Dialog.Root {open} onOpenChange={(v) => !v && onclose()}>
   <!-- Портал — лише в браузері: SSR-смоук-тести (svelte/server) бачать вміст діалогу на місці -->
-  <Dialog.Content closeLabel={$tr('report.cancel')} portalProps={{ disabled: typeof window === 'undefined' }}>
-    <Dialog.Header class="dialog-head">
+  <Dialog.Content
+    class="flex max-h-[calc(100vh-3rem)] flex-col sm:max-w-2xl"
+    closeLabel={$tr('report.cancel')}
+    portalProps={{ disabled: typeof window === 'undefined' }}
+  >
+    <Dialog.Header>
       <Dialog.Title>{$tr('report.dialog')}</Dialog.Title>
+      <Dialog.Description>{$tr('report.remember')}</Dialog.Description>
     </Dialog.Header>
 
-    <div class="body">
-      <div class="grid">
-        <label class="wide">
-          <span>{$tr('report.subject')}</span>
-          <Input type="text" bind:value={$reportMeta.subject} />
-        </label>
-        <label>
-          <span>{$tr('report.author')}</span>
-          <Input type="text" bind:value={$reportMeta.author} autocomplete="name" />
-        </label>
-        <label>
-          <span>{$tr('report.group')}</span>
-          <Input type="text" bind:value={$reportMeta.group} />
-        </label>
-        <label>
-          <span>{$tr('report.teacher')}</span>
-          <Input type="text" bind:value={$reportMeta.teacher} />
-        </label>
-        <label>
-          <span>{$tr('report.date')}</span>
-          <Input type="date" bind:value={$reportMeta.date} />
-        </label>
-        <label class="wide">
-          <span>{$tr('report.description')}</span>
+    <div class="-mx-6 flex min-h-0 flex-col gap-6 overflow-y-auto px-6 py-1">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-2 col-span-2">
+          <Label for="report-subject">{$tr('report.subject')}</Label>
+          <Input id="report-subject" type="text" bind:value={$reportMeta.subject} />
+        </div>
+        <div class="grid gap-2">
+          <Label for="report-author">{$tr('report.author')}</Label>
+          <Input id="report-author" type="text" bind:value={$reportMeta.author} autocomplete="name" />
+        </div>
+        <div class="grid gap-2">
+          <Label for="report-group">{$tr('report.group')}</Label>
+          <Input id="report-group" type="text" bind:value={$reportMeta.group} />
+        </div>
+        <div class="grid gap-2">
+          <Label for="report-teacher">{$tr('report.teacher')}</Label>
+          <Input id="report-teacher" type="text" bind:value={$reportMeta.teacher} />
+        </div>
+        <div class="grid gap-2">
+          <Label for="report-date">{$tr('report.date')}</Label>
+          <Input id="report-date" type="date" bind:value={$reportMeta.date} />
+        </div>
+        <div class="grid gap-2 col-span-2">
+          <Label for="report-description">{$tr('report.description')}</Label>
           <Textarea
-            class="min-h-0"
+            id="report-description"
             rows={2}
             bind:value={$reportMeta.description}
             placeholder={$tr('report.descriptionHint')}
           />
-        </label>
+        </div>
       </div>
-      <p class="hint">{$tr('report.remember')}</p>
 
-      <fieldset>
-        <legend>{$tr('report.files')}</legend>
+      <fieldset class="m-0 grid gap-3 border-0 p-0">
+        <legend class="mb-3 p-0 text-sm font-medium">{$tr('report.files')}</legend>
         <ol class="files">
           {#each files as f (f.id)}
             <li class:excluded={excluded[f.id]}>
-              <label class="check">
+              <Label class="col-start-1">
                 <Checkbox checked={!excluded[f.id]} onCheckedChange={(c) => (excluded[f.id] = !c)} />
-                <strong>{f.name}</strong>
-              </label>
+                {f.name}
+              </Label>
               {#if !excluded[f.id]}
                 <Textarea
-                  class="comment"
+                  class="col-start-1"
                   rows={3}
                   aria-label="{$tr('report.comment')}: {f.name}"
                   placeholder={$tr('report.commentHint')}
@@ -180,14 +186,14 @@
         </ol>
       </fieldset>
 
-      <label class="block">
-        <span>{$tr('report.conclusion')}</span>
-        <Textarea class="min-h-0" rows={3} bind:value={$reportMeta.conclusion} />
-      </label>
+      <div class="grid gap-2">
+        <Label for="report-conclusion">{$tr('report.conclusion')}</Label>
+        <Textarea id="report-conclusion" rows={3} bind:value={$reportMeta.conclusion} />
+      </div>
     </div>
 
-    <footer>
-      <p class="status" role="status">
+    <Dialog.Footer class="items-center">
+      <p class="text-muted-foreground me-auto text-sm" role="status">
         {#if busy}
           {$tr('report.creating')}
         {:else if warning}
@@ -196,10 +202,11 @@
           <span class="warning">{error}</span>
         {/if}
       </p>
-      <Button onclick={onclose}>{$tr('report.cancel')}</Button>
+      <Button variant="outline" onclick={onclose}>{$tr('report.cancel')}</Button>
       <DropdownMenu.Root bind:open={menuOpen}>
-        <DropdownMenu.Trigger class={buttonVariants({ variant: 'primary' })} disabled={busy}>
-          {$tr('report.create')} <span aria-hidden="true">▾</span>
+        <DropdownMenu.Trigger class={buttonVariants()} disabled={busy}>
+          {$tr('report.create')}
+          <ChevronDownIcon />
         </DropdownMenu.Trigger>
         <DropdownMenu.Content side="top" align="end" class="min-w-64" aria-label={$tr('report.format')}>
           {#each FORMATS as format (format)}
@@ -210,76 +217,24 @@
           {/each}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
-    </footer>
+    </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
 
 <style>
-  :global(.dialog-head),
-  footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-  }
-  :global(.dialog-head) {
-    flex-direction: row;
-    min-height: 44px;
-    border-bottom: 1px solid var(--border);
-  }
-  .body {
-    overflow-y: auto;
-    padding: 12px 16px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-  }
-  .wide {
-    grid-column: 1 / -1;
-  }
-  label:not(.check) {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    font-size: 0.85rem;
-  }
-  label > span {
-    color: var(--muted);
-  }
-  .hint {
-    margin: 6px 0 10px;
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  fieldset {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin: 0 0 10px;
-    padding: 6px 10px 10px;
-  }
-  legend {
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
   .files {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
   .files li {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-rows: auto 1fr;
-    gap: 4px 10px;
-  }
-  .files li > :global(.comment) {
-    grid-column: 1;
-    min-height: 60px;
+    gap: 8px 12px;
   }
   .thumb {
     grid-column: 2;
@@ -291,7 +246,7 @@
     justify-content: center;
     background: var(--stage);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-md, 8px);
     overflow: hidden;
   }
   .thumb img {
@@ -301,25 +256,6 @@
   }
   .excluded .thumb {
     opacity: 0.35;
-  }
-  .check {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-  }
-  .block {
-    margin-top: 4px;
-  }
-  footer {
-    justify-content: flex-end;
-    border-top: 1px solid var(--border);
-  }
-  .status {
-    flex: 1;
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--muted);
   }
   .warning {
     color: var(--warn);

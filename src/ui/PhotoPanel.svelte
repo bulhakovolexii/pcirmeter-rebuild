@@ -1,6 +1,11 @@
 <script lang="ts">
   import { tr } from '../i18n'
   import HelpTip from './HelpTip.svelte'
+  import * as ButtonGroup from '$lib/components/ui/button-group'
+  import MinusIcon from '@lucide/svelte/icons/minus'
+  import PlusIcon from '@lucide/svelte/icons/plus'
+  import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw'
+  import XIcon from '@lucide/svelte/icons/x'
   import { Button } from '$lib/components/ui/button'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import * as RadioGroup from '$lib/components/ui/radio-group'
@@ -262,7 +267,7 @@
       ></canvas>
     {/if}
   </div>
-  <div class="float-bar top">
+  <div class="float-bar top dark">
     <div class="float-group">
       <RadioGroup.Root
         class="segmented"
@@ -285,21 +290,23 @@
     <div class="float-group">
       <!-- За синхронізації масштаб фото — це масштаб ІЧ (кнопки над кадром), власні не потрібні -->
       {#if !sync}
-        <Button
-          variant="overlay"
-          size="icon-sm"
-          onclick={() => zoomTo(view.zoom / ZOOM_STEP)}
-          title={$tr('view.zoomOut')}
-          aria-label={$tr('view.zoomOut')}>−</Button
-        >
-        <Button
-          variant="overlay"
-          size="icon-sm"
-          onclick={() => zoomTo(view.zoom * ZOOM_STEP)}
-          title={$tr('view.zoomIn')}
-          aria-label={$tr('view.zoomIn')}>+</Button
-        >
-        <Button variant="overlay" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
+        <ButtonGroup.Root aria-label={$tr('view.zoom')}>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onclick={() => zoomTo(view.zoom / ZOOM_STEP)}
+            title={$tr('view.zoomOut')}
+            aria-label={$tr('view.zoomOut')}><MinusIcon /></Button
+          >
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onclick={() => zoomTo(view.zoom * ZOOM_STEP)}
+            title={$tr('view.zoomIn')}
+            aria-label={$tr('view.zoomIn')}><PlusIcon /></Button
+          >
+        </ButtonGroup.Root>
+        <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
       {/if}
       <HelpTip
         label={$tr('view.help')}
@@ -307,15 +314,15 @@
         align="right"
       />
       <Button
-        variant="overlay"
+        variant="outline"
         size="icon-sm"
         onclick={onclose}
         title={$tr('photo.hide')}
-        aria-label={$tr('photo.hide')}>×</Button
+        aria-label={$tr('photo.hide')}><XIcon /></Button
       >
     </div>
   </div>
-  <div class="float-bar bottom">
+  <div class="float-bar bottom dark">
     <!-- Прозорість і суміщення ІЧ-шару мають сенс лише в режимі накладення -->
     {#if mode === 'overlay'}
       <div class="float-group blend">
@@ -325,28 +332,32 @@
       </div>
       <div class="float-group">
         <span>{$tr('photo.layerScale')}</span>
+        <ButtonGroup.Root>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onclick={() => scaleLayer(1 / ALIGN_STEP)}
+            title={$tr('photo.layerSmaller')}
+            aria-label={$tr('photo.layerSmaller')}><MinusIcon /></Button
+          >
+          <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+            >{Math.round(alignment.scale * 100)} %</ButtonGroup.Text
+          >
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onclick={() => scaleLayer(ALIGN_STEP)}
+            title={$tr('photo.layerLarger')}
+            aria-label={$tr('photo.layerLarger')}><PlusIcon /></Button
+          >
+        </ButtonGroup.Root>
         <Button
-          variant="overlay"
-          size="icon-sm"
-          onclick={() => scaleLayer(1 / ALIGN_STEP)}
-          title={$tr('photo.layerSmaller')}
-          aria-label={$tr('photo.layerSmaller')}>−</Button
-        >
-        <span class="value">{Math.round(alignment.scale * 100)} %</span>
-        <Button
-          variant="overlay"
-          size="icon-sm"
-          onclick={() => scaleLayer(ALIGN_STEP)}
-          title={$tr('photo.layerLarger')}
-          aria-label={$tr('photo.layerLarger')}>+</Button
-        >
-        <Button
-          variant="overlay"
+          variant="outline"
           size="icon-sm"
           disabled={!aligned}
           onclick={() => onalign(NO_ALIGNMENT)}
           title={$tr('photo.resetAlign')}
-          aria-label={$tr('photo.resetAlign')}>↺</Button
+          aria-label={$tr('photo.resetAlign')}><RotateCcwIcon /></Button
         >
       </div>
     {/if}

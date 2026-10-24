@@ -1,37 +1,38 @@
 <script lang="ts" module>
   import { cn, type WithElementRef } from '$lib/utils.js'
   import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements'
+  import { type VariantProps, tv } from 'tailwind-variants'
 
-  // Варіанти й розміри — під стиль ХПІ (токени app.css); фокус — спільна золота рамка :focus-visible
-  // Без tailwind-variants: класи не зливаються (див. cn у $lib/utils), тож вистачає таблиць
-  const BUTTON_BASE =
-    "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md text-sm whitespace-nowrap transition-[background-color,border-color,color] disabled:cursor-default disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-  const BUTTON_VARIANTS = {
-    default: 'border-input bg-card enabled:hover:border-foreground border',
-    primary:
-      'border-primary bg-primary text-primary-foreground enabled:hover:border-primary-hover enabled:hover:bg-primary-hover border font-semibold',
-    ghost: 'enabled:hover:bg-accent',
-    /** На темних смугах (шапка, панелі поверх зображення). */
-    overlay:
-      'enabled:hover:border-gold enabled:hover:text-gold aria-expanded:border-gold aria-expanded:text-gold data-[state=on]:border-gold data-[state=on]:text-gold border border-white/25 bg-white/10 text-white',
-    link: 'text-primary underline-offset-4 hover:underline',
-  }
-  const BUTTON_SIZES = {
-    default: 'h-9 px-3',
-    sm: 'h-7.5 px-2',
-    icon: 'size-9',
-    'icon-sm': 'size-7.5',
-  }
+  export const buttonVariants = tv({
+    base: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs',
+        destructive:
+          'bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white shadow-xs',
+        outline:
+          'bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 border shadow-xs',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-xs',
+        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
+        sm: 'h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5',
+        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
+        icon: 'size-9',
+        'icon-sm': 'size-8',
+        'icon-lg': 'size-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  })
 
-  export function buttonVariants({
-    variant = 'default',
-    size = 'default',
-  }: { variant?: ButtonVariant; size?: ButtonSize } = {}) {
-    return `${BUTTON_BASE} ${BUTTON_VARIANTS[variant]} ${BUTTON_SIZES[size]}`
-  }
-
-  export type ButtonVariant = keyof typeof BUTTON_VARIANTS
-  export type ButtonSize = keyof typeof BUTTON_SIZES
+  export type ButtonVariant = VariantProps<typeof buttonVariants>['variant']
+  export type ButtonSize = VariantProps<typeof buttonVariants>['size']
 
   export type ButtonProps = WithElementRef<HTMLButtonAttributes> &
     WithElementRef<HTMLAnchorAttributes> & {

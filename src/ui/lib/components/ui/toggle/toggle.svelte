@@ -1,31 +1,28 @@
 <script lang="ts" module>
-  // Сегментовані перемикачі в стилі ХПІ: увімкнений — червоний (primary); overlay — на темних смугах
-  // Без tailwind-variants: класи не зливаються (див. cn у $lib/utils), тож вистачає таблиць
-  const TOGGLE_BASE =
-    "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md text-sm whitespace-nowrap transition-[background-color,border-color,color] disabled:cursor-default disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-  const TOGGLE_VARIANTS = {
-    default:
-      'enabled:hover:bg-accent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary-hover bg-transparent',
-    outline:
-      'border-input bg-card enabled:hover:bg-accent data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:enabled:hover:bg-primary-hover border',
-    overlay:
-      'enabled:hover:border-gold enabled:hover:text-gold data-[state=on]:border-gold data-[state=on]:text-gold border border-white/25 bg-white/10 text-white',
-  }
-  const TOGGLE_SIZES = {
-    default: 'h-9 min-w-9 px-2.5',
-    sm: 'h-7.5 min-w-7.5 px-2',
-  }
+  import { type VariantProps, tv } from 'tailwind-variants'
 
-  export function toggleVariants({
-    variant = 'default',
-    size = 'default',
-  }: { variant?: ToggleVariant; size?: ToggleSize } = {}) {
-    return `${TOGGLE_BASE} ${TOGGLE_VARIANTS[variant]} ${TOGGLE_SIZES[size]}`
-  }
+  export const toggleVariants = tv({
+    base: "hover:bg-muted hover:text-muted-foreground data-[state=on]:bg-accent data-[state=on]:text-accent-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    variants: {
+      variant: {
+        default: 'bg-transparent',
+        outline: 'border-input hover:bg-accent hover:text-accent-foreground border bg-transparent shadow-xs',
+      },
+      size: {
+        default: 'h-9 min-w-9 px-2',
+        sm: 'h-8 min-w-8 px-1.5',
+        lg: 'h-10 min-w-10 px-2.5',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  })
 
-  export type ToggleVariant = keyof typeof TOGGLE_VARIANTS
-  export type ToggleSize = keyof typeof TOGGLE_SIZES
-  export type ToggleVariants = { variant?: ToggleVariant; size?: ToggleSize }
+  export type ToggleVariant = VariantProps<typeof toggleVariants>['variant']
+  export type ToggleSize = VariantProps<typeof toggleVariants>['size']
+  export type ToggleVariants = VariantProps<typeof toggleVariants>
 </script>
 
 <script lang="ts">

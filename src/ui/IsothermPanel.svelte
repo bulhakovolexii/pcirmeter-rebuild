@@ -118,15 +118,30 @@
     display: flex;
     gap: 6px;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: 0.787rem;
   }
+  /* Вибір кольору — нативний (у shadcn-svelte відповідника немає), рамка й заокруглення — як у Input */
   input[type='color'] {
-    width: 32px;
-    height: 22px;
+    box-sizing: border-box;
+    width: 40px;
+    height: 28px;
+    padding: 3px;
+    border: 1px solid var(--color-input, var(--border-strong));
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+  }
+  input[type='color']::-webkit-color-swatch-wrapper {
     padding: 0;
-    border: 1px solid var(--border);
+  }
+  input[type='color']::-webkit-color-swatch {
+    border: none;
     border-radius: 4px;
-    background: none;
+  }
+  input[type='color']::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
   }
   .limits {
     display: grid;
@@ -137,11 +152,11 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
   }
   p {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
   }
   .muted {
     color: var(--muted);

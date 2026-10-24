@@ -3,7 +3,11 @@
    * Межа між двома областями: вертикальна (між колонками) або горизонтальна (між рядами). Перетягування
    * мишею/пальцем, стрілки ←/→ (↑/↓ для горизонтальної) з фокусом (Shift — більший крок), подвійний клік —
    * стандартне значення. Саме значення (ширину, висоту, частку) зберігає й обмежує власник: межа лише повідомляє зсув.
+   * Вигляд — як ResizableHandle shadcn-svelte з ручкою (withHandle). Сам Resizable (paneforge) не підходить:
+   * розміри в ньому — лише частки контейнера, а тут — пікселі з межами (ширина бічної панелі, висота гістограми
+   * в прокручуваній панелі, висота нижньої смуги з мінімумом для зображення).
    */
+  import GripVerticalIcon from '@lucide/svelte/icons/grip-vertical'
   interface Props {
     label: string
     /** Орієнтація самої межі (як `aria-orientation`); за замовчуванням вертикальна. */
@@ -77,21 +81,30 @@
   onpointercancel={() => (active = false)}
   ondblclick={onreset}
   onkeydown={key}
-></div>
+>
+  <div class="grip"><GripVerticalIcon class={horizontal ? 'size-2.5 rotate-90' : 'size-2.5'} /></div>
+</div>
 
 <style>
   .splitter {
     position: relative;
     flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 12px;
     cursor: col-resize;
     touch-action: none;
+    outline: none;
   }
-  .splitter::after {
+  /* Лінія межі (bg-border) */
+  .splitter::before {
     content: '';
     position: absolute;
-    inset: 0 5px;
-    border-radius: 1px;
+    inset: 0 auto;
+    left: calc(50% - 0.5px);
+    width: 1px;
+    background: var(--border);
     transition: background 0.15s;
   }
   .splitter.horizontal {
@@ -99,15 +112,39 @@
     height: 12px;
     cursor: row-resize;
   }
-  .splitter.horizontal::after {
-    inset: 5px 0;
+  .splitter.horizontal::before {
+    inset: auto 0;
+    top: calc(50% - 0.5px);
+    width: auto;
+    height: 1px;
   }
-  .splitter:hover::after,
-  .splitter.active::after,
-  .splitter:focus-visible::after {
-    background: var(--accent);
+  /* Ручка (rounded-xs border bg-border, h-4 w-3) */
+  .grip {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--border);
+    color: var(--fg);
   }
-  .splitter:focus-visible {
-    outline: none;
+  .horizontal .grip {
+    width: 16px;
+    height: 12px;
+  }
+  .splitter:hover::before,
+  .splitter.active::before {
+    background: var(--border-strong);
+  }
+  .splitter:focus-visible .grip {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 50%, transparent);
+    border-color: var(--gold);
+  }
+  .splitter:focus-visible::before {
+    background: var(--gold);
   }
 </style>

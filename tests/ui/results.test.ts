@@ -107,7 +107,7 @@ describe('ResultsTable', () => {
     expect(body).toContain('26,7 °C')
     expect(body).toContain('0,50')
     expect(body).toContain('власні параметри')
-    expect(body).toMatch(/<tr class="[^"]*selected/)
+    expect(body).toContain('data-state="selected"')
   })
 
   it('колонка «Примітка» з текстом користувача', () => {

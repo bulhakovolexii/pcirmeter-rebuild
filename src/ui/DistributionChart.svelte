@@ -66,7 +66,7 @@
         {total} {$tr('distribution.pixels')}
       {/if}
     </span>
-    <Button class="shrink-0" disabled={bins.length === 0} onclick={onexport}
+    <Button variant="outline" class="shrink-0" disabled={bins.length === 0} onclick={onexport}
       >{$tr('distribution.export')}</Button
     >
   </div>
@@ -136,7 +136,7 @@
   }
   h2 {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -146,7 +146,7 @@
   .readout {
     flex: 1;
     min-width: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-variant-numeric: tabular-nums;
     overflow: hidden;
     text-overflow: ellipsis;

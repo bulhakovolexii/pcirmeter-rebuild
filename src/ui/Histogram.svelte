@@ -125,7 +125,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     pointer-events: none;
@@ -140,7 +140,7 @@
   figcaption {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
   }

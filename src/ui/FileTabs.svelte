@@ -1,7 +1,13 @@
 <script lang="ts">
+  // Вкладки відкритих файлів у шапці — список вкладок shadcn-svelte (Tabs.List; Tabs.Root і панелі — в App).
+  // Стрілки ←/→ переходять між вкладками, Delete закриває вкладку у фокусі, середня кнопка миші — вкладку під
+  // вказівником. Якщо вкладки не вміщаються — кнопки «‹ ›» перемикають на попередню / наступну, активна
+  // вкладка прокручується в поле зору.
+  import * as Tabs from '$lib/components/ui/tabs'
   import { Button } from '$lib/components/ui/button'
-  // Вкладки відкритих файлів у шапці. Якщо не вміщаються — кнопки «‹ ›» перемикають на попередню / наступну,
-  // активна вкладка прокручується в поле зору.
+  import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left'
+  import ChevronRightIcon from '@lucide/svelte/icons/chevron-right'
+  import XIcon from '@lucide/svelte/icons/x'
   import { tr } from '../i18n'
 
   interface Props {
@@ -14,7 +20,7 @@
 
   let { files, activeId, onselect, onclose, oncloseall }: Props = $props()
 
-  let strip: HTMLDivElement | undefined = $state()
+  let strip: HTMLElement | null = $state(null)
   let overflow = $state(false)
   const index = $derived(files.findIndex((f) => f.id === activeId))
 
@@ -35,7 +41,7 @@
     if (activeId === null || !strip) return
     void overflow
     strip
-      .querySelector<HTMLElement>(`[data-id="${activeId}"]`)
+      .querySelector<HTMLElement>(`[data-value="${activeId}"]`)
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   })
 
@@ -45,108 +51,62 @@
   }
 </script>
 
-<div class="file-tabs">
+<div class="flex min-w-0 items-center gap-1">
   {#if overflow}
     <Button
-      variant="overlay"
+      variant="ghost"
       size="icon"
-      class="shrink-0 font-bold"
+      class="shrink-0"
       disabled={index <= 0}
       onclick={() => step(-1)}
       title={$tr('files.prev')}
-      aria-label={$tr('files.prev')}>‹</Button
+      aria-label={$tr('files.prev')}><ChevronLeftIcon /></Button
     >
   {/if}
-  <div class="strip" role="tablist" bind:this={strip}>
+  <Tabs.List
+    bind:ref={strip}
+    class="max-w-full min-w-0 justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+  >
     {#each files as f (f.id)}
-      <div class="tab" class:active={f.id === activeId} data-id={f.id}>
-        <button
-          type="button"
-          role="tab"
-          class="name"
-          aria-selected={f.id === activeId}
+      <div class="relative flex h-full shrink-0">
+        <Tabs.Trigger
+          value={String(f.id)}
           title={f.name}
-          onclick={() => onselect(f.id)}
+          class="max-w-56 flex-none pe-7"
+          onkeydown={(e) => {
+            if (e.key === 'Delete') onclose(f.id)
+          }}
+          onauxclick={(e) => {
+            if (e.button === 1) onclose(f.id)
+          }}
         >
-          {f.name}
-        </button>
-        <button
-          type="button"
-          class="close"
+          <span class="truncate">{f.name}</span>
+        </Tabs.Trigger>
+        <!-- Закриття — окрема кнопка поверх вкладки (кнопка в кнопці неприпустима); з клавіатури — Delete -->
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          tabindex={-1}
+          class="absolute end-1 top-1/2 size-5 -translate-y-1/2 rounded-sm opacity-60 hover:opacity-100"
+          title="{$tr('files.close')} {f.name}"
           aria-label="{$tr('files.close')} {f.name}"
-          onclick={() => onclose(f.id)}>×</button
+          onclick={() => onclose(f.id)}><XIcon class="size-3.5" /></Button
         >
       </div>
     {/each}
-  </div>
+  </Tabs.List>
   {#if overflow}
     <Button
-      variant="overlay"
+      variant="ghost"
       size="icon"
-      class="shrink-0 font-bold"
+      class="shrink-0"
       disabled={index >= files.length - 1}
       onclick={() => step(1)}
       title={$tr('files.next')}
-      aria-label={$tr('files.next')}>›</Button
+      aria-label={$tr('files.next')}><ChevronRightIcon /></Button
     >
   {/if}
   {#if files.length > 1}
-    <Button variant="overlay" class="shrink-0" onclick={oncloseall}>{$tr('files.closeAll')}</Button>
+    <Button variant="outline" class="shrink-0" onclick={oncloseall}>{$tr('files.closeAll')}</Button>
   {/if}
 </div>
-
-<style>
-  .file-tabs {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-  }
-  .strip {
-    display: flex;
-    gap: 4px;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    scroll-behavior: smooth;
-  }
-  .strip::-webkit-scrollbar {
-    display: none;
-  }
-  .tab {
-    display: flex;
-    flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 7px;
-    background: rgba(255, 255, 255, 0.06);
-  }
-  .tab:hover {
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-  .tab.active {
-    background: rgba(255, 255, 255, 0.16);
-    border-color: var(--gold);
-    box-shadow: inset 0 -2px 0 var(--gold);
-  }
-  .tab button {
-    border: none;
-    background: none;
-    color: #fff;
-  }
-  .name {
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tab.active .name {
-    font-weight: 600;
-  }
-  .close {
-    color: #bdbdbd;
-    padding-left: 2px;
-  }
-  .close:hover {
-    color: #fff;
-  }
-</style>

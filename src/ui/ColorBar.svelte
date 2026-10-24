@@ -72,7 +72,7 @@
     right: 0;
   }
   .label {
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }

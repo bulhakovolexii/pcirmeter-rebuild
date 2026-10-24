@@ -33,6 +33,10 @@
   } from './format'
   import HelpTip from './HelpTip.svelte'
   import { Button } from '$lib/components/ui/button'
+  import * as ButtonGroup from '$lib/components/ui/button-group'
+  import * as Accordion from '$lib/components/ui/accordion'
+  import MinusIcon from '@lucide/svelte/icons/minus'
+  import PlusIcon from '@lucide/svelte/icons/plus'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { Input } from '$lib/components/ui/input'
   import * as RadioGroup from '$lib/components/ui/radio-group'
@@ -131,6 +135,8 @@
   let manualLimits = $state({ min: 0, max: 0 })
   let scaleInput = $state<{ min: number | null; max: number | null }>({ min: 0, max: 0 })
   let showExtremes = $state(true)
+  /** Розгорнуті блоки бічної панелі (спершу — усі). */
+  let openSections = $state(['scale', 'isotherms', 'params', 'object'])
 
   const showTemp = (celsius: number, u: Units) => Math.round(fromCelsius(celsius, u.temperature) * 10) / 10
 
@@ -609,6 +615,7 @@
           <h2>{$tr('audio.title')}</h2>
           <audio controls src={audioUrl}></audio>
           <Button
+            variant="outline"
             disabled={!audioUrl}
             onclick={() =>
               audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
@@ -617,124 +624,132 @@
         </section>
       {/if}
 
-      <fieldset>
-        <legend>{$tr('scale.title')}</legend>
-        <RadioGroup.Root
-          class="segmented"
-          orientation="horizontal"
-          aria-label={$tr('scale.title')}
-          value={scaleMode}
-          onValueChange={(v) => setScaleMode(v as 'auto' | 'manual')}
+      <!-- Блоки панелі — shadcn Accordion: кожен можна згорнути -->
+      <Accordion.Root type="multiple" bind:value={openSections}>
+        <Accordion.Item value="scale">
+          <Accordion.Trigger>{$tr('scale.title')}</Accordion.Trigger>
+          <Accordion.Content>
+            <RadioGroup.Root
+              class="segmented"
+              orientation="horizontal"
+              aria-label={$tr('scale.title')}
+              value={scaleMode}
+              onValueChange={(v) => setScaleMode(v as 'auto' | 'manual')}
+            >
+              {#each ['auto', 'manual'] as const as m (m)}
+                <label class="check">
+                  <RadioGroup.Item value={m} />
+                  {$tr(`scale.${m}`)}
+                </label>
+              {/each}
+            </RadioGroup.Root>
+            {#if scaleMode === 'manual'}
+              <div class="limits">
+                <label class="field">
+                  <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    bind:value={scaleInput.max}
+                    oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
+                  />
+                </label>
+                <label class="field">
+                  <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    bind:value={scaleInput.min}
+                    oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
+                  />
+                </label>
+              </div>
+              {#if !manualValid}
+                <p class="warning" role="alert">{$tr('scale.invalid')}</p>
+              {/if}
+            {/if}
+            <Histogram
+              bins={histogram}
+              rgb={palette(paletteId)}
+              {bands}
+              minLabel={fmt(scaleLabels.min)}
+              maxLabel={fmt(scaleLabels.max)}
+              {binLabel}
+            />
+            <!-- Нижня межа гістограми змінює її висоту -->
+            <div class="histogram-resize">
+              <Splitter
+                label={$tr('histogram.height')}
+                orientation="horizontal"
+                valuenow={$histogramHeight}
+                valuemin={HISTOGRAM.min}
+                valuemax={HISTOGRAM.max}
+                onstart={() => (dragFrom = $histogramHeight)}
+                ondrag={(dy) => setHistogramHeight(dragFrom + dy)}
+                onstep={(n) => setHistogramHeight($histogramHeight + 8 * n)}
+                onreset={() => setHistogramHeight(HISTOGRAM.default)}
+              />
+            </div>
+          </Accordion.Content>
+        </Accordion.Item>
+
+        <Accordion.Item value="isotherms">
+          <Accordion.Trigger>{$tr('isotherm.section')}</Accordion.Trigger>
+          <Accordion.Content class="isotherms">
+            {#each isotherms as iso, k (k)}
+              <IsothermPanel
+                index={k + 1}
+                value={iso}
+                onchange={(v) => (isotherms[k] = v)}
+                share={frame.shares[k] ?? null}
+              />
+            {/each}
+            {#if isotherms.every((i) => i.enabled)}
+              <p class="note">{$tr('isotherm.priority')}</p>
+            {/if}
+          </Accordion.Content>
+        </Accordion.Item>
+
+        <ParamsPanel
+          value="params"
+          title={$tr('params.title')}
+          base={fileParams}
+          {overrides}
+          onchange={(o) => (overrides = o)}
+          baseLabel={$tr('params.fromFile')}
+          resetLabel={$tr('params.reset')}
+          tau={model.tau}
         >
-          {#each ['auto', 'manual'] as const as m (m)}
-            <label class="check">
-              <RadioGroup.Item value={m} />
-              {$tr(`scale.${m}`)}
-            </label>
-          {/each}
-        </RadioGroup.Root>
-        {#if scaleMode === 'manual'}
-          <div class="limits">
-            <label class="field">
-              <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-              <Input
-                type="number"
-                step="0.1"
-                bind:value={scaleInput.max}
-                oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
-              />
-            </label>
-            <label class="field">
-              <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-              <Input
-                type="number"
-                step="0.1"
-                bind:value={scaleInput.min}
-                oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
-              />
-            </label>
+          <div class="field">
+            <label for="palette-{file.id}">{$tr('palette.title')}</label>
+            <SelectField
+              id="palette-{file.id}"
+              class="w-full"
+              bind:value={paletteId}
+              options={PALETTE_IDS.map((id) => ({ value: id, label: $tr(`palette.${id}`) }))}
+            />
           </div>
-          {#if !manualValid}
-            <p class="warning" role="alert">{$tr('scale.invalid')}</p>
-          {/if}
+          <label class="check">
+            <Checkbox bind:checked={showExtremes} />
+            {$tr('view.extremes')}
+          </label>
+        </ParamsPanel>
+
+        {#if selected && selectedResult}
+          {#key selected.id}
+            <ParamsPanel
+              value="object"
+              title="{$tr('objectParams.title')} {selected.name}"
+              base={params}
+              overrides={selected.overrides}
+              onchange={(o) => updateObject(selected.id, { overrides: o })}
+              baseLabel={$tr('objectParams.inherit')}
+              resetLabel={$tr('objectParams.reset')}
+              tau={temperatureModel(ir, { ...overrides, ...selected.overrides }).tau}
+            />
+          {/key}
         {/if}
-        <Histogram
-          bins={histogram}
-          rgb={palette(paletteId)}
-          {bands}
-          minLabel={fmt(scaleLabels.min)}
-          maxLabel={fmt(scaleLabels.max)}
-          {binLabel}
-        />
-      </fieldset>
-
-      <!-- Межа між «Шкалою» та «Ізотермами» змінює висоту гістограми -->
-      <div class="histogram-resize">
-        <Splitter
-          label={$tr('histogram.height')}
-          orientation="horizontal"
-          valuenow={$histogramHeight}
-          valuemin={HISTOGRAM.min}
-          valuemax={HISTOGRAM.max}
-          onstart={() => (dragFrom = $histogramHeight)}
-          ondrag={(dy) => setHistogramHeight(dragFrom + dy)}
-          onstep={(n) => setHistogramHeight($histogramHeight + 8 * n)}
-          onreset={() => setHistogramHeight(HISTOGRAM.default)}
-        />
-      </div>
-
-      <fieldset class="isotherms">
-        <legend>{$tr('isotherm.section')}</legend>
-        {#each isotherms as iso, k (k)}
-          <IsothermPanel
-            index={k + 1}
-            value={iso}
-            onchange={(v) => (isotherms[k] = v)}
-            share={frame.shares[k] ?? null}
-          />
-        {/each}
-        {#if isotherms.every((i) => i.enabled)}
-          <p class="note">{$tr('isotherm.priority')}</p>
-        {/if}
-      </fieldset>
-
-      <ParamsPanel
-        title={$tr('params.title')}
-        base={fileParams}
-        {overrides}
-        onchange={(o) => (overrides = o)}
-        baseLabel={$tr('params.fromFile')}
-        resetLabel={$tr('params.reset')}
-        tau={model.tau}
-      >
-        <div class="field">
-          <label for="palette-{file.id}">{$tr('palette.title')}</label>
-          <SelectField
-            id="palette-{file.id}"
-            class="w-full"
-            bind:value={paletteId}
-            options={PALETTE_IDS.map((id) => ({ value: id, label: $tr(`palette.${id}`) }))}
-          />
-        </div>
-        <label class="check">
-          <Checkbox bind:checked={showExtremes} />
-          {$tr('view.extremes')}
-        </label>
-      </ParamsPanel>
-
-      {#if selected && selectedResult}
-        {#key selected.id}
-          <ParamsPanel
-            title="{$tr('objectParams.title')} {selected.name}"
-            base={params}
-            overrides={selected.overrides}
-            onchange={(o) => updateObject(selected.id, { overrides: o })}
-            baseLabel={$tr('objectParams.inherit')}
-            resetLabel={$tr('objectParams.reset')}
-            tau={temperatureModel(ir, { ...overrides, ...selected.overrides }).tau}
-          />
-        {/key}
-      {/if}
+      </Accordion.Root>
     </div>
   </aside>
 
@@ -763,8 +778,12 @@
           <ToggleGroup.Item value={t}>{$tr(`tools.${t}`)}</ToggleGroup.Item>
         {/each}
       </ToggleGroup.Root>
-      <Button disabled={selectedId === null} onclick={deleteSelected}>{$tr('tools.deleteSelected')}</Button>
-      <Button disabled={objects.length === 0} onclick={deleteAll}>{$tr('tools.deleteAll')}</Button>
+      <Button variant="outline" disabled={selectedId === null} onclick={deleteSelected}
+        >{$tr('tools.deleteSelected')}</Button
+      >
+      <Button variant="outline" disabled={objects.length === 0} onclick={deleteAll}
+        >{$tr('tools.deleteAll')}</Button
+      >
       {#if photo}
         <label class="check">
           <Checkbox bind:checked={showPhoto} />
@@ -863,26 +882,33 @@
             </svg>
           </div>
           <!-- Масштаб і довідка — оверлеєм над кадром (як у видимого фото), щоб тулбар уміщався в один рядок -->
-          <div class="float-bar top">
+          <div class="float-bar top dark">
             <span></span>
             <div class="float-group">
-              <Button
-                variant="overlay"
-                size="icon-sm"
-                onclick={() => zoomTo(zoom / ZOOM_STEP)}
-                title={$tr('view.zoomOut')}
-                aria-label={$tr('view.zoomOut')}>−</Button
-              >
-              <span class="zoom">{Math.round(zoom * 100)} %</span>
-              <Button
-                variant="overlay"
-                size="icon-sm"
-                onclick={() => zoomTo(zoom * ZOOM_STEP)}
-                title={$tr('view.zoomIn')}
-                aria-label={$tr('view.zoomIn')}>+</Button
-              >
-              <Button variant="overlay" size="sm" onclick={() => (autoFit = true)}>{$tr('view.fit')}</Button>
-              <Button variant="overlay" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
+              <ButtonGroup.Root aria-label={$tr('view.zoom')}>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onclick={() => zoomTo(zoom / ZOOM_STEP)}
+                  title={$tr('view.zoomOut')}
+                  aria-label={$tr('view.zoomOut')}><MinusIcon /></Button
+                >
+                <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+                  >{Math.round(zoom * 100)} %</ButtonGroup.Text
+                >
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  onclick={() => zoomTo(zoom * ZOOM_STEP)}
+                  title={$tr('view.zoomIn')}
+                  aria-label={$tr('view.zoomIn')}><PlusIcon /></Button
+                >
+              </ButtonGroup.Root>
+              <ButtonGroup.Root>
+                <Button variant="outline" size="sm" onclick={() => (autoFit = true)}>{$tr('view.fit')}</Button
+                >
+                <Button variant="outline" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
+              </ButtonGroup.Root>
               <HelpTip label={$tr('view.help')} items={help} align="right" />
             </div>
           </div>
@@ -1001,7 +1027,7 @@
   }
   h2 {
     margin: 0 0 4px;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -1011,28 +1037,16 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 0.9rem;
+    font-size: 0.787rem;
   }
-  fieldset {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    padding: 8px 10px 10px;
-    margin: 0;
-  }
-  /* Межа (12 px) лежить у проміжку між блоками й не збільшує його */
+  /* Межа (12 px) — одразу під гістограмою */
   .histogram-resize {
-    margin: -13px 0;
+    margin: 0 0 -12px;
   }
-  .isotherms {
+  .controls :global(.isotherms) {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
-  legend {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0 4px;
   }
   .controls :global(.segmented) {
     display: flex;
@@ -1047,14 +1061,14 @@
   }
   .note {
     margin: 4px 0 0;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--muted);
   }
   .check {
     display: flex;
     gap: 6px;
     align-items: center;
-    font-size: 0.9rem;
+    font-size: 0.787rem;
   }
   .readout .temp {
     display: flex;
@@ -1062,7 +1076,7 @@
     gap: 8px;
     /* Нижній відступ — як у заголовків h2 */
     margin: 0 0 4px;
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -1072,7 +1086,7 @@
   }
   /* До двох рядків дрібним шрифтом — не вищі за рядок температури */
   .temp .status {
-    font-size: 0.75rem;
+    font-size: 0.656rem;
     font-weight: 400;
     line-height: 1.15;
     white-space: normal;
@@ -1080,7 +1094,7 @@
   .warning {
     margin: 4px 0 0;
     color: var(--warn);
-    font-size: 0.85rem;
+    font-size: 0.744rem;
   }
   .muted {
     color: var(--muted);
@@ -1090,7 +1104,7 @@
     grid-template-columns: auto 1fr;
     gap: 2px 10px;
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
   }
   dt {
     color: var(--muted);
@@ -1118,11 +1132,6 @@
     display: flex;
     min-width: 0;
   }
-  .zoom {
-    min-width: 3.8em;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
   .views {
     flex: 1;
     display: flex;
@@ -1144,13 +1153,13 @@
   }
   h3 {
     margin: 8px 0 2px;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     font-weight: 600;
     color: var(--muted);
   }
   .note-text {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.744rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     /* Довга примітка не забирає місце в закріпленій частині панелі */

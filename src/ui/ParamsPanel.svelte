@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
+  import * as Accordion from '$lib/components/ui/accordion'
   import { untrack, type Snippet } from 'svelte'
   import { PARAM_LIMITS, type EditableParam, type ObjectParams } from '../core/temperature'
   import { locale, tr } from '../i18n'
@@ -19,6 +20,8 @@
   import { units } from './settings'
 
   interface Props {
+    /** Ідентифікатор блоку в Accordion бічної панелі. */
+    value: string
     title: string
     /** Значення, коли поле не змінено (параметри з файлу або параметри кадру для об'єкта). */
     base: ObjectParams
@@ -34,7 +37,7 @@
     children?: Snippet
   }
 
-  let { title, base, overrides, onchange, baseLabel, resetLabel, tau, children }: Props = $props()
+  let { value, title, base, overrides, onchange, baseLabel, resetLabel, tau, children }: Props = $props()
 
   const params = $derived({ ...base, ...overrides })
   const changed = $derived(PARAM_FIELDS.some((k) => isChanged(k, params[k], base[k], $units)))
@@ -79,57 +82,49 @@
   }
 </script>
 
-<fieldset class="params">
-  <legend>{title}</legend>
-  {#if children}
-    {@render children()}
-    <hr />
-  {/if}
-  {#each PARAM_FIELDS as key (key)}
-    {@const unit = unitOf(key, $units)}
-    {@const invalid = parseParam(key, input[key], $units) === null}
-    {@const fieldChanged = isChanged(key, params[key], base[key], $units)}
-    {@const show = (v: number) =>
-      `${formatNumber(displayValue(key, v, $units), $locale, paramDigits(key))}${unit ? ` ${unit}` : ''}`}
-    <label class="field" class:changed={fieldChanged}>
-      <span>{$tr(`params.${key}`)}{unit ? `, ${unit}` : ''}</span>
-      <Input
-        type="number"
-        min={displayLimits(key, $units).min}
-        max={displayLimits(key, $units).max}
-        step={paramStep(key)}
-        aria-invalid={invalid}
-        bind:value={input[key]}
-        oninput={(e) => setParam(key, e.currentTarget.valueAsNumber)}
-      />
-    </label>
-    {#if invalid}
-      <p class="warning" role="alert">
-        {$tr('params.allowed')}: {show(PARAM_LIMITS[key].min)} … {show(PARAM_LIMITS[key].max)}
-      </p>
-    {:else if fieldChanged}
-      <p class="note">{baseLabel}: {show(base[key])}</p>
+<Accordion.Item {value}>
+  <Accordion.Trigger>{title}</Accordion.Trigger>
+  <Accordion.Content class="params-fields">
+    {#if children}
+      {@render children()}
+      <hr />
     {/if}
-  {/each}
-  <p class="note">{$tr('params.tau')} = {formatNumber(tau, $locale, 3)}</p>
-  <Button class="self-start" disabled={!changed} onclick={reset}>{resetLabel}</Button>
-</fieldset>
+    {#each PARAM_FIELDS as key (key)}
+      {@const unit = unitOf(key, $units)}
+      {@const invalid = parseParam(key, input[key], $units) === null}
+      {@const fieldChanged = isChanged(key, params[key], base[key], $units)}
+      {@const show = (v: number) =>
+        `${formatNumber(displayValue(key, v, $units), $locale, paramDigits(key))}${unit ? ` ${unit}` : ''}`}
+      <label class="field" class:changed={fieldChanged}>
+        <span>{$tr(`params.${key}`)}{unit ? `, ${unit}` : ''}</span>
+        <Input
+          type="number"
+          min={displayLimits(key, $units).min}
+          max={displayLimits(key, $units).max}
+          step={paramStep(key)}
+          aria-invalid={invalid}
+          bind:value={input[key]}
+          oninput={(e) => setParam(key, e.currentTarget.valueAsNumber)}
+        />
+      </label>
+      {#if invalid}
+        <p class="warning" role="alert">
+          {$tr('params.allowed')}: {show(PARAM_LIMITS[key].min)} … {show(PARAM_LIMITS[key].max)}
+        </p>
+      {:else if fieldChanged}
+        <p class="note">{baseLabel}: {show(base[key])}</p>
+      {/if}
+    {/each}
+    <p class="note">{$tr('params.tau')} = {formatNumber(tau, $locale, 3)}</p>
+    <Button variant="outline" class="self-start" disabled={!changed} onclick={reset}>{resetLabel}</Button>
+  </Accordion.Content>
+</Accordion.Item>
 
 <style>
-  fieldset {
+  :global(.params-fields) {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    padding: 8px 10px 10px;
-    margin: 0;
-  }
-  legend {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0 4px;
   }
   hr {
     width: 100%;
@@ -141,7 +136,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 0.9rem;
+    font-size: 0.787rem;
   }
   .changed span {
     font-weight: 600;
@@ -152,7 +147,7 @@
   .warning,
   .note {
     margin: -2px 0 2px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
   .warning {
     color: var(--warn);
