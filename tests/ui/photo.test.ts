@@ -77,6 +77,12 @@ describe('масштаб і зсув', () => {
     expect(fitView(640, 480, 800, 300)).toEqual({ zoom: 0.625, panX: 200, panY: 0 })
   })
 
+  it('вписує між смугами керування над вікном', () => {
+    // Вільно 800×240 від y = 44
+    expect(fitView(640, 480, 800, 300, { top: 44, bottom: 16 })).toEqual({ zoom: 0.5, panX: 240, panY: 44 })
+    expect(fitView(640, 480, 800, 1000, { top: 44, bottom: 0 })).toEqual({ zoom: 1.25, panX: 0, panY: 222 })
+  })
+
   it('точка під курсором лишається на місці, межі масштабу', () => {
     const v = zoomAt({ zoom: 1, panX: 10, panY: 20 }, 2, 110, 70)
     expect(v).toEqual({ zoom: 2, panX: -90, panY: -30 })
@@ -175,9 +181,9 @@ describe('PhotoPanel', () => {
     // Суміщення ІЧ-шару — лише в режимі накладення (стартовий режим — «Фото»)
     expect(body).not.toContain('Масштаб ІЧ-шару')
     expect(body).toContain('Сховати видиме фото')
-    // Керування — оверлеєм після вікна фото; довідка — під «?»
+    // Керування — оверлеєм після вікна фото; довідка «?» (про суміщення) — лише в накладенні
     expect(body.indexOf('class="viewport')).toBeLessThan(body.indexOf('class="float-bar top'))
-    expect(body).toContain('aria-label="Довідка щодо керування"')
+    expect(body).not.toContain('aria-label="Довідка щодо керування"')
     expect(body).not.toContain('Shift + колесо')
     expect(body).not.toContain('Фото ↔ ІЧ')
   })
@@ -227,6 +233,25 @@ describe('суміщення і синхронізація з ІЧ', () => {
     const back = irViewFor(v, layer, 80, offset)
     expect(back.panX).toBeCloseTo(ir.panX)
     expect(back.panY).toBeCloseTo(ir.panY)
+  })
+
+  it('центри вікон — частин між смугами керування: вписані зображення синхронні', () => {
+    // ІЧ-вікно 600×400 зі смугою 44 px, вікно фото 300×400 зі смугою 40 px і нижньою 20 px
+    const irInsets = { top: 44, bottom: 0 }
+    const photoInsets = { top: 40, bottom: 20 }
+    const offset = centerOffset(600, 400, 300, 400, irInsets, photoInsets)
+    expect(offset).toEqual({ x: -150, y: (420 - 444) / 2 })
+    // Центр вільної частини ІЧ-вікна (300, 222) ↔ центр вільної частини вікна фото (150, 210)
+    const layer = layerRect(base, NO_ALIGNMENT)
+    const v = syncedPhotoView(ir, layer, 80, offset)
+    const k = layer.width / 80
+    const [sx, sy] = screen(
+      v,
+      layer.x + ((300 - ir.panX) / ir.zoom) * k,
+      layer.y + ((222 - ir.panY) / ir.zoom) * k,
+    )
+    expect(sx).toBeCloseTo(150)
+    expect(sy).toBeCloseTo(210)
   })
 
   it('синхронно Shift + колесо: ІЧ не рухається, точка фото під курсором — теж', () => {

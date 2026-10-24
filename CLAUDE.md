@@ -90,7 +90,8 @@
   перегляд сторінок — `pdftoppm -r 80 -png file.pdf page`; ODT → PDF — `soffice --headless --convert-to pdf file.odt`
   (LibreOffice ставить `setup_sandbox.sh`).
 - У `.svelte` з `<tr>` не імпортувати store перекладу як `tr` (Svelte сприймає `<tr>` як компонент) — `tr as t`. Межі параметрів — `PARAM_LIMITS` у `src/core/temperature.ts`. Справжнього браузера в sandbox немає, але є headless Chromium
-  (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу; `COLOR_SCHEME=dark` — темна тема).
+  (Playwright у `/home/agent/tools/playwright`): знімки на кількох ширинах — `tools/ui_screens.mjs` (запуск — у шапці файлу; `COLOR_SCHEME=dark` — темна тема);
+  сценарії станів UI з перевірками (перекриття смуг, фокус, прокрутка) і фрагментами-знімками — `tools/ui_qa.mjs`.
   Остаточно UI перевіряє викладач. Мінімальна ширина інтерфейсу — 1024 px; вужче — заглушка в `App.svelte`.
 - Функції оригіналу та рішення MVP (погоджено): `docs/spec/features.md`. Палітри — таблиці `ColorPalette.dll`
   (декомпільовано в `reference/decompiled/ColorPalette`), звіт оригіналу — `reference/decompiled/LibControls`.

@@ -1,6 +1,6 @@
 /** Видиме фото й накладення ІЧ-кадру (docs/spec/features.md §2.6). Без DOM — тестується в Node. */
 
-import type { View } from './view'
+import { NO_INSETS, type Insets, type View } from './view'
 
 export interface Rect {
   x: number
@@ -84,14 +84,26 @@ function alignmentFor(base: Rect, r: Rect): Alignment {
   }
 }
 
-/** Зсув вікна фото відносно ІЧ-вікна, за якого їхні центри збігаються: (розмір фото − розмір ІЧ) / 2. */
+/** Зсув вікна фото відносно ІЧ-вікна. */
 export interface Offset {
   x: number
   y: number
 }
 
-export function centerOffset(irW: number, irH: number, photoW: number, photoH: number): Offset {
-  return { x: (photoW - irW) / 2, y: (photoH - irH) / 2 }
+/**
+ * Зсув, за якого збігаються центри вікон: (розмір фото − розмір ІЧ) / 2; зі смугами керування над вікнами —
+ * центри частин вікон між смугами (туди вписуються зображення).
+ */
+export function centerOffset(
+  irW: number,
+  irH: number,
+  photoW: number,
+  photoH: number,
+  irInsets: Insets = NO_INSETS,
+  photoInsets: Insets = NO_INSETS,
+): Offset {
+  const center = (h: number, i: Insets) => (h + i.top - i.bottom) / 2
+  return { x: (photoW - irW) / 2, y: center(photoH, photoInsets) - center(irH, irInsets) }
 }
 
 /**

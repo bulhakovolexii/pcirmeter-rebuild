@@ -22,7 +22,7 @@
     syncedPhotoView,
     type Alignment,
   } from './photo'
-  import { fitView, wheelFactor, ZOOM_STEP, zoomAt, type View } from './view'
+  import { fitView, wheelFactor, ZOOM_STEP, zoomAt, type Insets, type View } from './view'
 
   interface Props {
     /** JPEG видимого фото. */
@@ -33,8 +33,8 @@
     frameHeight: number
     /** Вид ІЧ-вікна; за синхронізації вид фото виводиться з нього, а зміни виду фото передаються в `onirview`. */
     irView: View
-    /** Розмір ІЧ-вікна, px: синхронізація — відносно центрів вікон. */
-    irViewSize: { width: number; height: number }
+    /** Розмір ІЧ-вікна й смуги над ним, px: синхронізація — відносно центрів вікон (частин між смугами). */
+    irViewSize: { width: number; height: number; insets: Insets }
     onirview: (view: View) => void
     /** «Вписати» за синхронізації — вписати ІЧ-зображення. */
     onirfit: () => void
@@ -88,13 +88,18 @@
   /** Власний вид — лише без синхронізації. */
   let ownView = $state<View>({ zoom: 1, panX: 0, panY: 0 })
   let autoFit = $state(true)
+  /** Висота смуги керування над фото: фото вписується нижче за неї (відступ смуги 6 px зверху й знизу). */
+  let barHeight = $state(0)
+  const insets: Insets = $derived({ top: barHeight > 0 ? barHeight + 12 : 0, bottom: 0 })
 
-  const offset = $derived(centerOffset(irViewSize.width, irViewSize.height, viewWidth, viewHeight))
+  const offset = $derived(
+    centerOffset(irViewSize.width, irViewSize.height, viewWidth, viewHeight, irViewSize.insets, insets),
+  )
   const view = $derived(sync && layer ? syncedPhotoView(irView, layer, frameWidth, offset) : ownView)
 
   $effect(() => {
     if (sync || !autoFit || !size || viewWidth === 0 || viewHeight === 0) return
-    ownView = fitView(size.width, size.height, viewWidth, viewHeight)
+    ownView = fitView(size.width, size.height, viewWidth, viewHeight, insets)
   })
 
   function setView(next: View) {
@@ -267,7 +272,7 @@
       ></canvas>
     {/if}
   </div>
-  <div class="float-bar top dark">
+  <div class="float-bar top dark" bind:offsetHeight={barHeight}>
     <div class="float-group">
       <RadioGroup.Root
         class="segmented"
@@ -308,11 +313,6 @@
         </ButtonGroup.Root>
         <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
       {/if}
-      <HelpTip
-        label={$tr('view.help')}
-        items={mode === 'overlay' ? [$tr('view.hint'), $tr('photo.hint.align')] : [$tr('view.hint')]}
-        align="right"
-      />
       <Button
         variant="outline"
         size="icon-sm"
@@ -359,6 +359,9 @@
           title={$tr('photo.resetAlign')}
           aria-label={$tr('photo.resetAlign')}><RotateCcwIcon /></Button
         >
+        <!-- Довідка — лише в накладенні (масштаб і зсув вікна — у довідці над ІЧ-кадром); тут, а не вгорі,
+             щоб верхня смуга вміщалась в один рядок на 1024 px -->
+        <HelpTip label={$tr('view.help')} items={[$tr('view.hint'), $tr('photo.hint.align')]} align="right" />
       </div>
     {/if}
   </div>

@@ -89,7 +89,7 @@
     type MeasureObject,
     type ShapeKind,
   } from './tools'
-  import { fitView, wheelFactor, ZOOM_STEP, zoomAt } from './view'
+  import { fitView, wheelFactor, ZOOM_STEP, zoomAt, type Insets } from './view'
 
   interface Props {
     file: OpenedFile
@@ -182,10 +182,13 @@
   let panY = $state(0)
   /** Поки користувач не змінив масштаб, кадр вписується у вікно при кожній зміні розміру. */
   let autoFit = $state(true)
+  /** Висота смуги масштабу над кадром: кадр вписується нижче за неї (відступ смуги 6 px зверху й знизу). */
+  let barHeight = $state(0)
+  const insets: Insets = $derived({ top: barHeight > 0 ? barHeight + 12 : 0, bottom: 0 })
 
   $effect(() => {
     if (!autoFit || viewWidth === 0 || viewHeight === 0) return
-    ;({ zoom, panX, panY } = fitView(ir.width, ir.height, viewWidth, viewHeight))
+    ;({ zoom, panX, panY } = fitView(ir.width, ir.height, viewWidth, viewHeight, insets))
   })
 
   function zoomTo(next: number, cx = viewWidth / 2, cy = viewHeight / 2) {
@@ -489,12 +492,14 @@
   const markers = $derived(
     (['max', 'min'] as const).map((kind) => {
       const p = extremes[kind]
-      return {
-        kind,
-        cx: panX + (p.x + 0.5) * zoom,
-        cy: panY + (p.y + 0.5) * zoom,
-        label: `${kind === 'max' ? 'Max' : 'Min'} ${fmt(model.toCelsius(p.ad))}`,
-      }
+      const cx = panX + (p.x + 0.5) * zoom
+      const cy = panY + (p.y + 0.5) * zoom
+      const label = `${kind === 'max' ? 'Max' : 'Min'} ${fmt(model.toCelsius(p.ad))}`
+      // Підпис праворуч угорі від маркера; біля правого краю — ліворуч, під смугою масштабу чи біля верхнього
+      // краю — знизу (як у звіті, figures.ts); ширина — оцінка для шрифту 12 px
+      const left = cx + 12 + label.length * 7 > viewWidth
+      const below = cy - 20 < insets.top
+      return { kind, cx, cy, label, lx: left ? -12 : 12, ly: below ? 20 : -8, anchor: left ? 'end' : 'start' }
     }),
   )
 
@@ -875,14 +880,14 @@
                   <g class="marker {m.kind}" transform="translate({m.cx} {m.cy})">
                     <circle r="7" />
                     <path d="M -11 0 H -4 M 4 0 H 11 M 0 -11 V -4 M 0 4 V 11" />
-                    <text x="12" y="-8">{m.label}</text>
+                    <text x={m.lx} y={m.ly} text-anchor={m.anchor}>{m.label}</text>
                   </g>
                 {/each}
               {/if}
             </svg>
           </div>
           <!-- Масштаб і довідка — оверлеєм над кадром (як у видимого фото), щоб тулбар уміщався в один рядок -->
-          <div class="float-bar top dark">
+          <div class="float-bar top dark" bind:offsetHeight={barHeight}>
             <span></span>
             <div class="float-group">
               <ButtonGroup.Root aria-label={$tr('view.zoom')}>
@@ -932,7 +937,7 @@
           frameWidth={ir.width}
           frameHeight={ir.height}
           irView={{ zoom, panX, panY }}
-          irViewSize={{ width: viewWidth, height: viewHeight }}
+          irViewSize={{ width: viewWidth, height: viewHeight, insets }}
           onirview={(v) => {
             ;({ zoom, panX, panY } = v)
             autoFit = false

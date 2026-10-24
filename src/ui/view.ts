@@ -11,10 +11,25 @@ export const MIN_ZOOM = 0.25
 export const MAX_ZOOM = 64
 export const ZOOM_STEP = 1.25
 
-/** Вписує зображення у вікно по центру. */
-export function fitView(width: number, height: number, viewWidth: number, viewHeight: number): View {
-  const zoom = Math.min(viewWidth / width, viewHeight / height)
-  return { zoom, panX: (viewWidth - width * zoom) / 2, panY: (viewHeight - height * zoom) / 2 }
+/** Смуги над вікном (керування оверлеєм), px: зображення вписується між ними. */
+export interface Insets {
+  top: number
+  bottom: number
+}
+
+export const NO_INSETS: Insets = { top: 0, bottom: 0 }
+
+/** Вписує зображення у вікно по центру — у частину вікна між смугами `insets`. */
+export function fitView(
+  width: number,
+  height: number,
+  viewWidth: number,
+  viewHeight: number,
+  insets: Insets = NO_INSETS,
+): View {
+  const free = Math.max(1, viewHeight - insets.top - insets.bottom)
+  const zoom = Math.min(viewWidth / width, free / height)
+  return { zoom, panX: (viewWidth - width * zoom) / 2, panY: insets.top + (free - height * zoom) / 2 }
 }
 
 /** Новий масштаб у межах [MIN_ZOOM, MAX_ZOOM]; точка вікна (cx, cy) лишається на місці. */
