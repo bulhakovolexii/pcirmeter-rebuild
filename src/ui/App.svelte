@@ -10,6 +10,7 @@
   import FileTabs from './FileTabs.svelte'
   import ReportDialog from './ReportDialog.svelte'
   import Viewer from './Viewer.svelte'
+  import logoUrl from './images/kafedra-logo.svg'
 
   interface Props {
     /** Початково відкриті файли (для тестів і майбутнього відкриття з URL). */
@@ -106,7 +107,7 @@
 <div class="app">
   <header>
     <div class="brand">
-      <span class="logo" aria-hidden="true">ІЧ</span>
+      <img class="logo" src={logoUrl} alt={$tr('app.logo')} />
       <h1>{$tr('app.title')}</h1>
     </div>
     <div class="tabs">
@@ -203,7 +204,7 @@
 <!-- Вужче за 1024 px інтерфейс не вміщається — замість нього заглушка (застосунок лишається змонтованим,
      відкриті файли не губляться) -->
 <div class="narrow" role="alert">
-  <span class="logo" aria-hidden="true">ІЧ</span>
+  <img class="logo" src={logoUrl} alt={$tr('app.logo')} />
   <h1>{$tr('narrow.title')}</h1>
   <p>{$tr('narrow.text')}</p>
 </div>
@@ -236,15 +237,13 @@
     align-items: center;
     gap: 10px;
   }
+  /* Логотип кафедри (tools/extract_logo.py) — на світлій плашці: його кільця й синусоїда розраховані на білий фон */
   .logo {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
+    display: block;
+    height: 30px;
+    padding: 3px 7px;
     border-radius: 8px;
-    background: #a0001b;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    background: #fff;
   }
   h1 {
     font-size: 1.15rem;
@@ -361,10 +360,7 @@
       text-align: center;
     }
     .narrow .logo {
-      width: 48px;
-      height: 48px;
-      font-size: 1.2rem;
-      color: #fff;
+      height: 64px;
     }
     .narrow p {
       max-width: 420px;

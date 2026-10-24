@@ -66,6 +66,7 @@
   логіка без DOM — `src/ui/files.ts`, `format.ts`, `params.ts` (поля параметрів, одиниці, межі), `tools.ts` (редагування
   об'єктів), `results.ts` (вимірювання, CSV, профіль лінії), `isotherms.ts` (стан ізотерм), `chart.ts` (поділки осей),
   store одиниць і розмірів панелей — `settings.ts` (тестуються в Node); межа-роздільник панелей — `Splitter.svelte`; довідка «?» — `HelpTip.svelte`; вкладки файлів у шапці — `FileTabs.svelte`.
+  Логотип кафедри — `src/ui/images/kafedra-logo.svg` (з `docs/brand/kafedra-logo.cdr`, `tools/extract_logo.py`).
   Оформлення — токени в `src/ui/app.css` (стиль ir-lab-1 / ХПІ), шрифт Fira Sans — локально в `src/ui/fonts/` (офлайн);
   смуги керування поверх зображень — глобальні класи `.float-bar` / `.float-group` там само. Аналіз: `ProfileChart.svelte`, `DistributionChart.svelte` (розподіл температур прямокутника), `IsothermPanel.svelte`, `Histogram.svelte`.
   Видиме фото й накладення — `PhotoPanel.svelte` + `photo.ts` (розміщення, розмір JPEG); масштаб/зсув — `view.ts`;

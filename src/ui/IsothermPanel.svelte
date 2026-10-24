@@ -3,7 +3,7 @@
   import { isValidIsotherm } from '../core/isotherms'
   import { fromCelsius, toCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
-  import { formatNumber, TEMPERATURE_SYMBOL } from './format'
+  import { formatShare, TEMPERATURE_SYMBOL } from './format'
   import { ISOTHERM_MODES, toIsotherm, type IsothermState } from './isotherms'
   import { units } from './settings'
 
@@ -100,7 +100,7 @@
     {#if !valid}
       <p class="warning" role="alert">{$tr('isotherm.invalid')}</p>
     {:else if share !== null}
-      <p class="muted">{$tr('isotherm.share')}: {formatNumber(share * 100, $locale, 1)} %</p>
+      <p class="muted">{$tr('isotherm.share')}: {formatShare(share, $locale)}</p>
     {/if}
   {/if}
 </div>

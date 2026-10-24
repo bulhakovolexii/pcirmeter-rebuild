@@ -22,6 +22,7 @@ import type { MessageKey } from '../i18n/uk'
 import { decodeUserText } from '../ui/attachments'
 import {
   formatNumber,
+  formatShare,
   formatSavedAt,
   formatTemperature,
   LENGTH_SYMBOL,
@@ -256,10 +257,10 @@ export function fileSection(file: ReportFile, index: number, ctx: SectionContext
     const { lo, hi } = isothermBounds(i.iso)
     const bounds =
       i.iso.mode === 'above' ? fmtT(lo) : i.iso.mode === 'below' ? fmtT(hi) : `${fmtT(lo)} … ${fmtT(hi)}`
-    const share = formatNumber(((counts[k] ?? 0) / ir.ad.length) * 100, locale, 1)
+    const share = formatShare((counts[k] ?? 0) / ir.ad.length, locale)
     return {
       color: i.state.color,
-      text: `${t('isotherm.title')} ${i.number}: ${t(`isotherm.${i.iso.mode}`).toLocaleLowerCase(locale)} ${bounds} — ${t('isotherm.share').toLocaleLowerCase(locale)} ${share} %`,
+      text: `${t('isotherm.title')} ${i.number}: ${t(`isotherm.${i.iso.mode}`).toLocaleLowerCase(locale)} ${bounds} — ${t('isotherm.share').toLocaleLowerCase(locale)} ${share}`,
     }
   })
 

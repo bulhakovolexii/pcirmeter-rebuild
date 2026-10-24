@@ -4,7 +4,7 @@ import { render } from 'svelte/server'
 import { describe, expect, it } from 'vitest'
 import App from '../../src/ui/App.svelte'
 import { openFiles, planSync, restoreFiles, type FileSource } from '../../src/ui/files'
-import { formatTemperature, formatSavedAt, temperatureStatus } from '../../src/ui/format'
+import { formatSavedAt, formatShare, formatTemperature, temperatureStatus } from '../../src/ui/format'
 import {
   BOTTOM,
   HISTOGRAM,
@@ -101,6 +101,15 @@ describe('форматування', () => {
     expect(formatTemperature(25.04, 'uk')).toBe('25,0 °C')
     expect(formatTemperature(-3.25, 'en')).toMatch(/^-3\.[23] °C$/)
     expect(formatTemperature(NaN, 'uk')).toBe('—')
+  })
+
+  it('частка: дрібна ненульова — «<0,1 %», майже вся — «>99,9 %»', () => {
+    expect(formatShare(0, 'uk')).toBe('0,0 %')
+    expect(formatShare(0.0004, 'uk')).toBe('<0,1 %')
+    expect(formatShare(0.0005, 'uk')).toBe('0,1 %')
+    expect(formatShare(0.25, 'en')).toBe('25.0 %')
+    expect(formatShare(0.9996, 'uk')).toBe('>99,9 %')
+    expect(formatShare(1, 'uk')).toBe('100,0 %')
   })
 
   it('дата зйомки', () => {

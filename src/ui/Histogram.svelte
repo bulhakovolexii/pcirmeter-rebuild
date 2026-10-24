@@ -1,6 +1,6 @@
 <script lang="ts">
   import { locale, tr } from '../i18n'
-  import { formatNumber } from './format'
+  import { formatShare } from './format'
   import { histogramHeight } from './settings'
 
   interface Props {
@@ -79,7 +79,7 @@
         <span>{label}</span>
         <span
           ><strong>{n}</strong>
-          {$tr('histogram.pixels')} ({formatNumber(total ? (n / total) * 100 : 0, $locale, 1)} %)</span
+          {$tr('histogram.pixels')} ({formatShare(total ? n / total : 0, $locale)})</span
         >
       </div>
     {/if}

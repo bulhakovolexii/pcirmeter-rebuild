@@ -10,7 +10,7 @@ import { palette, type PaletteId } from '../core/palettes'
 import { frameExtremes } from '../core/render'
 import { fromCelsius } from '../core/units'
 import { niceTicks, tickDigits } from '../ui/chart'
-import { formatNumber } from '../ui/format'
+import { formatNumber, formatShare } from '../ui/format'
 import { toIsotherm } from '../ui/isotherms'
 import type { ProfilePoint } from '../ui/results'
 import type { FileSection, SectionContext } from './content'
@@ -292,8 +292,8 @@ export function distributionSvg(
           `fill="rgb(${rgb[i]},${rgb[i + 1]},${rgb[i + 2]})" stroke="${INK}" stroke-width="0.3"/>`,
       )
     }
-    const share = formatNumber(total ? (b.count / total) * 100 : 0, locale, 1)
-    parts.push(text(`${b.count} (${share} %)`, x + barW / 2, Y(b.count) - 3, { anchor: 'middle', fill: INK }))
+    const share = formatShare(total ? b.count / total : 0, locale)
+    parts.push(text(`${b.count} (${share})`, x + barW / 2, Y(b.count) - 3, { anchor: 'middle', fill: INK }))
     parts.push(text(`${temp(b.from)} … ${temp(b.to)}`, x + barW / 2, Y(0) + SMALL + 3, { anchor: 'middle' }))
   })
   parts.push(line(left, Y(0), left + plotW, Y(0), MUTED, 0.6))

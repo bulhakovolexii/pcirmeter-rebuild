@@ -23,6 +23,17 @@ export function formatNumber(value: number, locale: Locale, digits = 1): string 
   return f.format(value)
 }
 
+/**
+ * Частка (0…1) у відсотках з одним знаком. Ненульова частка, що округлилась би до 0,0 % (або ненеповна — до
+ * 100,0 %), показується як «<0,1 %» («>99,9 %»), щоб не здавалось, що пікселів немає (або що це всі).
+ */
+export function formatShare(share: number, locale: Locale): string {
+  const pct = share * 100
+  if (pct > 0 && pct < 0.05) return `<${formatNumber(0.1, locale, 1)} %`
+  if (pct < 100 && pct >= 99.95) return `>${formatNumber(99.9, locale, 1)} %`
+  return `${formatNumber(pct, locale, 1)} %`
+}
+
 /** Температура (вхід — °C) у заданій одиниці з одним знаком; `NaN` → «—». */
 export function formatTemperature(celsius: number, locale: Locale, unit: TemperatureUnit = 'C'): string {
   if (Number.isNaN(celsius)) return '—'

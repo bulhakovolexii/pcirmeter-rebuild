@@ -557,187 +557,188 @@
 
 <div class="viewer" bind:this={viewerEl} style:--sidebar-width="{$sidebarWidth}px">
   <aside class="controls">
-    <section class="readout" aria-live="polite">
-      <h2>{$tr('cursor.title')}</h2>
-      <!-- Однакова висота з курсором і без — вміст панелі нижче не стрибає -->
-      <p class="temp" class:flag={cursor && cursor.status !== 'ok'} class:muted={!cursor}>
-        {cursor ? fmt(cursor.t) : '—'}
-      </p>
-      <p class="warning slot">
-        {#if cursor?.status === 'out-of-range'}
-          {$tr('cursor.outOfRange')}
-        {:else if cursor?.status === 'no-calibration'}
-          {$tr('cursor.noCalibration')}
-        {/if}
-      </p>
-      <p class="muted">{$tr('cursor.pixel')}: {cursor ? `${cursor.x}, ${cursor.y}` : '—'}</p>
-    </section>
-
-    <section>
-      <h2>{$tr('info.title')}</h2>
-      <dl>
-        <dt>{$tr('info.frame')}</dt>
-        <dd>{ir.width} × {ir.height}</dd>
-        <dt>{$tr('info.date')}</dt>
-        <dd>{formatSavedAt(info.savedAt)}</dd>
-        {#if info.model || info.producer}
-          <dt>{$tr('info.camera')}</dt>
-          <dd>{[info.producer, info.model].filter(Boolean).join(' ')}</dd>
-        {/if}
-        <dt>{$tr('info.range')}</dt>
-        <dd>
-          {formatNumber(fromCelsius(range.min, $units.temperature), $locale, 0)} …
-          {formatNumber(fromCelsius(range.max, $units.temperature), $locale, 0)}
-          {TEMPERATURE_SYMBOL[$units.temperature]}
-        </dd>
-        <dt>{$tr('info.frameMax')}</dt>
-        <dd>{fmt(model.toCelsius(extremes.max.ad))}</dd>
-        <dt>{$tr('info.frameMin')}</dt>
-        <dd>{fmt(model.toCelsius(extremes.min.ad))}</dd>
-      </dl>
-      {#if note}
-        <h3>{$tr('info.note')}</h3>
-        <p class="note-text">{note}</p>
-      {/if}
-    </section>
-
-    {#if audio}
-      <section>
-        <h2>{$tr('audio.title')}</h2>
-        <audio controls src={audioUrl}></audio>
-        <button
-          type="button"
-          disabled={!audioUrl}
-          onclick={() =>
-            audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
-          >{$tr('audio.save')}</button
-        >
+    <!-- «Під курсором» і «Файл» закріплені вгорі; прокручується решта панелі -->
+    <div class="pinned">
+      <section class="readout" aria-live="polite">
+        <h2>{$tr('cursor.title')}</h2>
+        <!-- Однакова висота з курсором і без — вміст панелі нижче не стрибає -->
+        <p class="temp" class:flag={cursor && cursor.status !== 'ok'} class:muted={!cursor}>
+          {cursor ? fmt(cursor.t) : '—'}
+        </p>
+        <p class="warning slot">
+          {#if cursor?.status === 'out-of-range'}
+            {$tr('cursor.outOfRange')}
+          {:else if cursor?.status === 'no-calibration'}
+            {$tr('cursor.noCalibration')}
+          {/if}
+        </p>
+        <p class="muted">{$tr('cursor.pixel')}: {cursor ? `${cursor.x}, ${cursor.y}` : '—'}</p>
       </section>
-    {/if}
 
-    <fieldset>
-      <legend>{$tr('scale.title')}</legend>
-      <div class="segmented">
-        <label>
-          <input
-            type="radio"
-            name="scale-{file.id}"
-            checked={scaleMode === 'auto'}
-            onchange={() => setScaleMode('auto')}
-          />
-          {$tr('scale.auto')}
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="scale-{file.id}"
-            checked={scaleMode === 'manual'}
-            onchange={() => setScaleMode('manual')}
-          />
-          {$tr('scale.manual')}
-        </label>
-      </div>
-      {#if scaleMode === 'manual'}
-        <div class="limits">
-          <label class="field">
-            <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-            <input
-              type="number"
-              step="0.1"
-              bind:value={scaleInput.max}
-              oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
-            />
-          </label>
-          <label class="field">
-            <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-            <input
-              type="number"
-              step="0.1"
-              bind:value={scaleInput.min}
-              oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
-            />
-          </label>
-        </div>
-        {#if !manualValid}
-          <p class="warning" role="alert">{$tr('scale.invalid')}</p>
+      <section>
+        <h2>{$tr('info.title')}</h2>
+        <dl>
+          <dt>{$tr('info.frame')}</dt>
+          <dd>{ir.width} × {ir.height}</dd>
+          <dt>{$tr('info.date')}</dt>
+          <dd>{formatSavedAt(info.savedAt)}</dd>
+          {#if info.model || info.producer}
+            <dt>{$tr('info.camera')}</dt>
+            <dd>{[info.producer, info.model].filter(Boolean).join(' ')}</dd>
+          {/if}
+          <dt>{$tr('info.range')}</dt>
+          <dd>
+            {formatNumber(fromCelsius(range.min, $units.temperature), $locale, 0)} …
+            {formatNumber(fromCelsius(range.max, $units.temperature), $locale, 0)}
+            {TEMPERATURE_SYMBOL[$units.temperature]}
+          </dd>
+        </dl>
+        {#if note}
+          <h3>{$tr('info.note')}</h3>
+          <p class="note-text">{note}</p>
         {/if}
-      {/if}
-      <Histogram
-        bins={histogram}
-        rgb={palette(paletteId)}
-        {bands}
-        minLabel={fmt(scaleLabels.min)}
-        maxLabel={fmt(scaleLabels.max)}
-        {binLabel}
-      />
-    </fieldset>
-
-    <!-- Межа між «Шкалою» та «Ізотермами» змінює висоту гістограми -->
-    <div class="histogram-resize">
-      <Splitter
-        label={$tr('histogram.height')}
-        orientation="horizontal"
-        valuenow={$histogramHeight}
-        valuemin={HISTOGRAM.min}
-        valuemax={HISTOGRAM.max}
-        onstart={() => (dragFrom = $histogramHeight)}
-        ondrag={(dy) => setHistogramHeight(dragFrom + dy)}
-        onstep={(n) => setHistogramHeight($histogramHeight + 8 * n)}
-        onreset={() => setHistogramHeight(HISTOGRAM.default)}
-      />
+      </section>
     </div>
 
-    <fieldset class="isotherms">
-      <legend>{$tr('isotherm.section')}</legend>
-      {#each isotherms as iso, k (k)}
-        <IsothermPanel
-          index={k + 1}
-          value={iso}
-          onchange={(v) => (isotherms[k] = v)}
-          share={frame.shares[k] ?? null}
-        />
-      {/each}
-      {#if isotherms.every((i) => i.enabled)}
-        <p class="note">{$tr('isotherm.priority')}</p>
+    <div class="scroll">
+      {#if audio}
+        <section>
+          <h2>{$tr('audio.title')}</h2>
+          <audio controls src={audioUrl}></audio>
+          <button
+            type="button"
+            disabled={!audioUrl}
+            onclick={() =>
+              audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
+            >{$tr('audio.save')}</button
+          >
+        </section>
       {/if}
-    </fieldset>
 
-    <ParamsPanel
-      title={$tr('params.title')}
-      base={fileParams}
-      {overrides}
-      onchange={(o) => (overrides = o)}
-      baseLabel={$tr('params.fromFile')}
-      resetLabel={$tr('params.reset')}
-      tau={model.tau}
-    >
-      <label class="field">
-        <span>{$tr('palette.title')}</span>
-        <select bind:value={paletteId}>
-          {#each PALETTE_IDS as id (id)}
-            <option value={id}>{$tr(`palette.${id}`)}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="check">
-        <input type="checkbox" bind:checked={showExtremes} />
-        {$tr('view.extremes')}
-      </label>
-    </ParamsPanel>
-
-    {#if selected && selectedResult}
-      {#key selected.id}
-        <ParamsPanel
-          title="{$tr('objectParams.title')} {selected.name}"
-          base={params}
-          overrides={selected.overrides}
-          onchange={(o) => updateObject(selected.id, { overrides: o })}
-          baseLabel={$tr('objectParams.inherit')}
-          resetLabel={$tr('objectParams.reset')}
-          tau={temperatureModel(ir, { ...overrides, ...selected.overrides }).tau}
+      <fieldset>
+        <legend>{$tr('scale.title')}</legend>
+        <div class="segmented">
+          <label>
+            <input
+              type="radio"
+              name="scale-{file.id}"
+              checked={scaleMode === 'auto'}
+              onchange={() => setScaleMode('auto')}
+            />
+            {$tr('scale.auto')}
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="scale-{file.id}"
+              checked={scaleMode === 'manual'}
+              onchange={() => setScaleMode('manual')}
+            />
+            {$tr('scale.manual')}
+          </label>
+        </div>
+        {#if scaleMode === 'manual'}
+          <div class="limits">
+            <label class="field">
+              <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+              <input
+                type="number"
+                step="0.1"
+                bind:value={scaleInput.max}
+                oninput={(e) => setScaleLimit('max', e.currentTarget.valueAsNumber)}
+              />
+            </label>
+            <label class="field">
+              <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
+              <input
+                type="number"
+                step="0.1"
+                bind:value={scaleInput.min}
+                oninput={(e) => setScaleLimit('min', e.currentTarget.valueAsNumber)}
+              />
+            </label>
+          </div>
+          {#if !manualValid}
+            <p class="warning" role="alert">{$tr('scale.invalid')}</p>
+          {/if}
+        {/if}
+        <Histogram
+          bins={histogram}
+          rgb={palette(paletteId)}
+          {bands}
+          minLabel={fmt(scaleLabels.min)}
+          maxLabel={fmt(scaleLabels.max)}
+          {binLabel}
         />
-      {/key}
-    {/if}
+      </fieldset>
+
+      <!-- Межа між «Шкалою» та «Ізотермами» змінює висоту гістограми -->
+      <div class="histogram-resize">
+        <Splitter
+          label={$tr('histogram.height')}
+          orientation="horizontal"
+          valuenow={$histogramHeight}
+          valuemin={HISTOGRAM.min}
+          valuemax={HISTOGRAM.max}
+          onstart={() => (dragFrom = $histogramHeight)}
+          ondrag={(dy) => setHistogramHeight(dragFrom + dy)}
+          onstep={(n) => setHistogramHeight($histogramHeight + 8 * n)}
+          onreset={() => setHistogramHeight(HISTOGRAM.default)}
+        />
+      </div>
+
+      <fieldset class="isotherms">
+        <legend>{$tr('isotherm.section')}</legend>
+        {#each isotherms as iso, k (k)}
+          <IsothermPanel
+            index={k + 1}
+            value={iso}
+            onchange={(v) => (isotherms[k] = v)}
+            share={frame.shares[k] ?? null}
+          />
+        {/each}
+        {#if isotherms.every((i) => i.enabled)}
+          <p class="note">{$tr('isotherm.priority')}</p>
+        {/if}
+      </fieldset>
+
+      <ParamsPanel
+        title={$tr('params.title')}
+        base={fileParams}
+        {overrides}
+        onchange={(o) => (overrides = o)}
+        baseLabel={$tr('params.fromFile')}
+        resetLabel={$tr('params.reset')}
+        tau={model.tau}
+      >
+        <label class="field">
+          <span>{$tr('palette.title')}</span>
+          <select bind:value={paletteId}>
+            {#each PALETTE_IDS as id (id)}
+              <option value={id}>{$tr(`palette.${id}`)}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="check">
+          <input type="checkbox" bind:checked={showExtremes} />
+          {$tr('view.extremes')}
+        </label>
+      </ParamsPanel>
+
+      {#if selected && selectedResult}
+        {#key selected.id}
+          <ParamsPanel
+            title="{$tr('objectParams.title')} {selected.name}"
+            base={params}
+            overrides={selected.overrides}
+            onchange={(o) => updateObject(selected.id, { overrides: o })}
+            baseLabel={$tr('objectParams.inherit')}
+            resetLabel={$tr('objectParams.reset')}
+            tau={temperatureModel(ir, { ...overrides, ...selected.overrides }).tau}
+          />
+        {/key}
+      {/if}
+    </div>
   </aside>
 
   <Splitter
@@ -974,12 +975,29 @@
   .controls {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    overflow-y: auto;
     min-height: 0;
-    /* Відступ від смуги прокрутки; місце під смугу зарезервоване — вміст не зсувається, коли вона з'являється */
+  }
+  .pinned,
+  .scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    /* Відступ від смуги прокрутки; місце під смугу зарезервоване в обох частинах — вони вирівняні,
+       і вміст не зсувається, коли смуга з'являється */
     padding-right: 8px;
     scrollbar-gutter: stable;
+  }
+  .pinned {
+    flex-shrink: 0;
+    overflow: hidden;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
   h2 {
     margin: 0 0 4px;
@@ -1156,6 +1174,9 @@
     font-size: 0.85rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+    /* Довга примітка не забирає місце в закріпленій частині панелі */
+    max-height: 5lh;
+    overflow-y: auto;
   }
   audio {
     width: 100%;

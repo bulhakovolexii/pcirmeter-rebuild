@@ -3,7 +3,7 @@
   import { fromCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
   import { niceTicks } from './chart'
-  import { formatNumber, TEMPERATURE_SYMBOL } from './format'
+  import { formatNumber, formatShare, TEMPERATURE_SYMBOL } from './format'
   import { units } from './settings'
 
   interface Props {
@@ -48,7 +48,7 @@
   let hovered = $state<number | null>(null)
   const temp = (c: number) => formatNumber(fromCelsius(c, $units.temperature), $locale, 1)
   const range = (b: TemperatureBin) => `${temp(b.from)}…${temp(b.to)}`
-  const share = (b: TemperatureBin) => formatNumber(total ? (b.count / total) * 100 : 0, $locale, 1)
+  const share = (b: TemperatureBin) => formatShare(total ? b.count / total : 0, $locale)
 </script>
 
 <section class="distribution">
@@ -58,7 +58,7 @@
       {#if hovered !== null && hovered < bins.length}
         {@const b = bins[hovered]!}
         {range(b)}
-        {TEMPERATURE_SYMBOL[$units.temperature]}: <strong>{b.count}</strong> ({share(b)} %)
+        {TEMPERATURE_SYMBOL[$units.temperature]}: <strong>{b.count}</strong> ({share(b)})
       {:else if bins.length === 0}
         {$tr('distribution.noData')}
       {:else}

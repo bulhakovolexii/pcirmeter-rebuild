@@ -2,6 +2,7 @@ import type { MessageKey } from './uk'
 
 export const en: Record<MessageKey, string> = {
   'app.title': 'Thermogram Analysis',
+  'app.logo': 'Department of Electric Power Stations, NTU “KhPI”',
   'app.language': 'Interface language',
   'narrow.title': 'The window is too narrow',
   'narrow.text':

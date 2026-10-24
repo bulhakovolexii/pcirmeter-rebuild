@@ -1,5 +1,6 @@
 export const uk = {
   'app.title': 'Аналіз термограм',
+  'app.logo': 'Кафедра «Електричні станції» НТУ «ХПІ»',
   'app.language': 'Мова інтерфейсу',
   'narrow.title': 'Вікно завузьке',
   'narrow.text':

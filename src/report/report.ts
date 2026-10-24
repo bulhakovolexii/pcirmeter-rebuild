@@ -22,7 +22,7 @@ import { frameExtremes } from '../core/render'
 import type { TemperatureModel } from '../core/temperature'
 import { fromCelsius } from '../core/units'
 import { niceTicks, tickDigits } from '../ui/chart'
-import { formatNumber } from '../ui/format'
+import { formatNumber, formatShare } from '../ui/format'
 import { toIsotherm } from '../ui/isotherms'
 import type { ProfilePoint, ResultRow } from '../ui/results'
 import {
@@ -792,8 +792,8 @@ function drawDistribution(
         borderWidth: 0.3,
       })
     }
-    const share = formatNumber(total ? (b.count / total) * 100 : 0, locale, 1)
-    const label = `${b.count} (${share} %)`
+    const share = formatShare(total ? b.count / total : 0, locale)
+    const label = `${b.count} (${share})`
     page.drawText(label, {
       x: x + barW / 2 - L.regular.widthOfTextAtSize(label, SMALL) / 2,
       y: Y(b.count) + 3,
