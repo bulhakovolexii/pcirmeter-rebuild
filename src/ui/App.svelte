@@ -107,7 +107,6 @@
 <div class="app">
   <header>
     <div class="brand">
-      <img class="logo" src={logoUrl} alt={$tr('app.logo')} />
       <h1>{$tr('app.title')}</h1>
     </div>
     <div class="tabs">
@@ -237,14 +236,6 @@
     align-items: center;
     gap: 10px;
   }
-  /* Логотип кафедри (tools/extract_logo.py) — на світлій плашці: його кільця й синусоїда розраховані на білий фон */
-  .logo {
-    display: block;
-    height: 30px;
-    padding: 3px 7px;
-    border-radius: 8px;
-    background: #fff;
-  }
   h1 {
     font-size: 1.15rem;
     font-weight: 600;
@@ -359,8 +350,9 @@
       padding: 24px 16px;
       text-align: center;
     }
+    /* Логотип кафедри (tools/extract_logo.py) */
     .narrow .logo {
-      height: 64px;
+      height: 120px;
     }
     .narrow p {
       max-width: 420px;
