@@ -1061,7 +1061,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0;
+    /* Нижній відступ — як у заголовків h2 */
+    margin: 0 0 4px;
     font-size: 1.6rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
