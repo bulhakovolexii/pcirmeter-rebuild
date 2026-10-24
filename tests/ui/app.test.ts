@@ -191,7 +191,7 @@ describe('App', () => {
       expect(at('Маркери Max/Min кадру')).toBeGreaterThan(at('Палітра'))
       expect(at('Коефіцієнт випромінювання')).toBeGreaterThan(at('Маркери Max/Min кадру'))
       // Без курсора — заглушка «—», щоб панель не стрибала; координат пікселя немає (рішення викладача)
-      expect(body).toMatch(/class="temp[^"]*"[^>]*>\s*—/)
+      expect(body).toMatch(/class="temp[^"]*"[^>]*>\s*<span>—<\/span>/)
       expect(body).not.toContain('Піксель')
       expect(body).toContain('--sidebar-width: 320px')
       // Чотири межі: бічна панель, висота гістограми (між «Шкалою» та «Ізотермами»), ІЧ | фото (у зразку є видиме фото), зображення / нижня смуга

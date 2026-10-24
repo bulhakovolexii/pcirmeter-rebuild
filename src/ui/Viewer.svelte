@@ -561,15 +561,13 @@
     <div class="pinned">
       <section class="readout" aria-live="polite">
         <h2>{$tr('cursor.title')}</h2>
-        <!-- Однакова висота з курсором і без — вміст панелі нижче не стрибає -->
+        <!-- Позначка «поза діапазоном» — праворуч у тому ж рядку: висота блока не змінюється, панель не стрибає -->
         <p class="temp" class:flag={cursor && cursor.status !== 'ok'} class:muted={!cursor}>
-          {cursor ? fmt(cursor.t) : '—'}
-        </p>
-        <p class="warning slot">
+          <span>{cursor ? fmt(cursor.t) : '—'}</span>
           {#if cursor?.status === 'out-of-range'}
-            {$tr('cursor.outOfRange')}
+            <span class="status">{$tr('cursor.outOfRange')}</span>
           {:else if cursor?.status === 'no-calibration'}
-            {$tr('cursor.noCalibration')}
+            <span class="status">{$tr('cursor.noCalibration')}</span>
           {/if}
         </p>
       </section>
@@ -988,6 +986,7 @@
   }
   .pinned {
     flex-shrink: 0;
+    gap: 0;
     overflow: hidden;
     padding-bottom: 10px;
     margin-bottom: 10px;
@@ -1059,19 +1058,24 @@
     font-size: 0.9rem;
   }
   .readout .temp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     font-size: 1.6rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .temp.flag {
     color: var(--warn);
   }
-  .readout p {
-    margin: 2px 0;
-  }
-  .readout .slot {
-    min-height: 1lh;
+  /* До двох рядків дрібним шрифтом — не вищі за рядок температури */
+  .temp .status {
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.15;
+    white-space: normal;
   }
   .warning {
     margin: 4px 0 0;
