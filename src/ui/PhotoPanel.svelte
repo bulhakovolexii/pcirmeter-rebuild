@@ -303,6 +303,9 @@
             title={$tr('view.zoomOut')}
             aria-label={$tr('view.zoomOut')}><MinusIcon /></Button
           >
+          <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+            >{Math.round(view.zoom * 100)} %</ButtonGroup.Text
+          >
           <Button
             variant="outline"
             size="icon-sm"

@@ -63,16 +63,18 @@
       aria-label={$tr('files.prev')}><ChevronLeftIcon /></Button
     >
   {/if}
+  <!-- Доповнення до shadcn: фон списку — напівпрозорий білий (bg-muted у світлій темі збігається з кольором
+       шапки), неактивна вкладка підсвічується під вказівником -->
   <Tabs.List
     bind:ref={strip}
-    class="max-w-full min-w-0 justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    class="max-w-full min-w-0 justify-start overflow-x-auto bg-white/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
   >
     {#each files as f (f.id)}
       <div class="relative flex h-full shrink-0">
         <Tabs.Trigger
           value={String(f.id)}
           title={f.name}
-          class="max-w-56 flex-none pe-7"
+          class="max-w-56 flex-none pe-7 hover:text-foreground data-[state=inactive]:hover:bg-white/10"
           onkeydown={(e) => {
             if (e.key === 'Delete') onclose(f.id)
           }}

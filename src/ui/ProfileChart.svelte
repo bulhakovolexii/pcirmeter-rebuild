@@ -115,7 +115,9 @@
       {#each xTicks as n (n)}
         <text class="tick" x={px(n - 1)} y={height - 6} text-anchor="middle">{n}</text>
       {/each}
+      <!-- Величини осей — у вільних кутах ліворуч: Y — угорі, X — у рядку підписів X -->
       <text class="unit" x={4} y={PAD.top + 4}>{TEMPERATURE_SYMBOL[$units.temperature]}</text>
+      <text class="unit" x={4} y={height - 6}>{$tr('profile.axis')}</text>
       <rect class="frame" x={PAD.left} y={PAD.top} width={plotW} height={plotH} />
       <path class="line" d={path} />
       {#if extremes.max >= 0}

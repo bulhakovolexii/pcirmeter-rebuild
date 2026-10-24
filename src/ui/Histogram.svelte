@@ -67,26 +67,19 @@
         <line class="cursor" x1={hovered + 0.5} x2={hovered + 0.5} y1="0" y2="100" />
       {/if}
     </svg>
+  </div>
+  <!-- Під курсором — стовпець замість підписів шкали: підказка над графіком обрізалась би краєм блока панелі -->
+  <figcaption aria-live="polite">
     {#if hovered !== null && label !== null}
       {@const n = bins[hovered]!}
-      <div
-        class="tip"
-        class:start={hovered < 64}
-        class:end={hovered >= 192}
-        style:left="{((hovered + 0.5) / 256) * 100}%"
-        role="status"
+      <span class="readout"
+        >{label} · <strong>{n}</strong>
+        {$tr('histogram.pixels')} ({formatShare(total ? n / total : 0, $locale)})</span
       >
-        <span>{label}</span>
-        <span
-          ><strong>{n}</strong>
-          {$tr('histogram.pixels')} ({formatShare(total ? n / total : 0, $locale)})</span
-        >
-      </div>
+    {:else}
+      <span>{minLabel}</span>
+      <span>{maxLabel}</span>
     {/if}
-  </div>
-  <figcaption>
-    <span>{minLabel}</span>
-    <span>{maxLabel}</span>
   </figcaption>
 </figure>
 
@@ -113,35 +106,20 @@
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
   }
-  /* Підказка над графіком; біля країв прив'язана до краю, щоб не виходити за панель */
-  .tip {
-    position: absolute;
-    bottom: calc(100% + 4px);
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    padding: 3px 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
-    font-size: 0.7rem;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 2;
-  }
-  .tip.start {
-    transform: translateX(-8px);
-  }
-  .tip.end {
-    transform: translateX(calc(-100% + 8px));
-  }
   figcaption {
     display: flex;
     justify-content: space-between;
     font-size: 0.7rem;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+  }
+  .readout {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    color: var(--fg);
   }
 </style>

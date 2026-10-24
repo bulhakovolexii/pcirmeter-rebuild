@@ -93,7 +93,9 @@
           >{formatNumber(n, $locale, 0)}</text
         >
       {/each}
+      <!-- Величини осей — у вільних кутах ліворуч: Y — угорі, X — у рядку підписів X -->
       <text class="unit" x={4} y={PAD.top - 6}>{$tr('results.pixels')}</text>
+      <text class="unit" x={4} y={height - 6}>{TEMPERATURE_SYMBOL[$units.temperature]}</text>
       <rect class="frame" x={PAD.left} y={PAD.top} width={plotW} height={plotH} />
       {#each bins as b, k (k)}
         <g class="bar" class:active={hovered === k} role="presentation" onpointerenter={() => (hovered = k)}>

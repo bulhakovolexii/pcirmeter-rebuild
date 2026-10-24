@@ -139,7 +139,13 @@ body {
   [data-slot]::before,
   [data-slot]::after {
     box-sizing: border-box;
-    border: 0 solid var(--color-border);
+    /* var(--border), а не var(--color-border): та обчислюється на :root і в .dark-смугах лишалась би світлою */
+    border: 0 solid var(--border);
+  }
+  /* Іконки — блочні, як у preflight: інакше SVG стоїть на базовій лінії (галочка чекбокса не по центру) */
+  [data-slot] svg {
+    display: block;
+    vertical-align: middle;
   }
   button[data-slot],
   input[data-slot],
@@ -167,6 +173,10 @@ body {
     padding: 0;
     border: 0;
     background: none;
+  }
+  /* Tailwind 4 не задає вказівник кнопкам — рядок з інструкції shadcn-svelte щодо Tailwind v4 */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
     cursor: pointer;
   }
 

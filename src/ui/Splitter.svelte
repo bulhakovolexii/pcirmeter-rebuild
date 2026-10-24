@@ -131,6 +131,14 @@
     border-radius: 2px;
     background: var(--border);
     color: var(--fg);
+    /* Ручка — лише під вказівником, під час перетягування й у фокусі; лінія межі видна завжди */
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .splitter:hover .grip,
+  .splitter.active .grip,
+  .splitter:focus-visible .grip {
+    opacity: 1;
   }
   .horizontal .grip {
     width: 16px;

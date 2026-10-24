@@ -1025,10 +1025,21 @@
     margin-bottom: 10px;
     border-bottom: 1px solid var(--border);
   }
+  /* Прокрутка й згортання (overflow) обрізають кільце фокуса (3 px) біля країв — запас 4 px усередині,
+     компенсований від'ємним полем, щоб вміст не зсувався */
   .scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    margin-left: -4px;
+    padding-left: 4px;
+  }
+  .controls :global([data-slot='accordion-content']) {
+    margin: -4px -4px 0;
+  }
+  .controls :global([data-slot='accordion-content'] > div) {
+    padding-inline: 4px;
+    padding-top: 4px;
   }
   h2 {
     margin: 0 0 4px;

@@ -319,7 +319,7 @@
     display: none;
   }
   @media (max-width: 1279px) {
-    .brand h1 {
+    .brand {
       display: none;
     }
   }

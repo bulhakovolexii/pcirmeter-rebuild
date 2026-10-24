@@ -143,12 +143,14 @@
     border: none;
     border-radius: 4px;
   }
+  /* Одне поле (вище / нижче порогу) — на всю ширину, два — порівну */
   .limits {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 8px;
   }
   .field {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;

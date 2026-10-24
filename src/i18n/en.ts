@@ -110,6 +110,7 @@ export const en: Record<MessageKey, string> = {
   'objectParams.reset': 'Same as frame',
   'profile.title': 'Profile',
   'profile.points': 'points; hover over the chart',
+  'profile.axis': 'Point #',
   'profile.index': 'No.',
   'profile.export': 'Save profile CSV',
   'profile.hint': 'The profile is shown for the selected line.',

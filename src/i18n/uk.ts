@@ -109,6 +109,7 @@ export const uk = {
   'profile.title': 'Профіль',
   'profile.points': 'точок; наведіть курсор на графік',
   'profile.index': '№',
+  'profile.axis': '№ точки',
   'profile.export': 'Зберегти профіль CSV',
   'profile.hint': 'Профіль показується для вибраної лінії.',
   'distribution.title': 'Розподіл температур',
