@@ -572,7 +572,6 @@
             {$tr('cursor.noCalibration')}
           {/if}
         </p>
-        <p class="muted">{$tr('cursor.pixel')}: {cursor ? `${cursor.x}, ${cursor.y}` : '—'}</p>
       </section>
 
       <section>

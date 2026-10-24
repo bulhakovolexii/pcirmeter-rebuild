@@ -59,7 +59,6 @@ export const uk = {
   'view.help': 'Довідка щодо керування',
   'view.hint': 'Колесо — масштаб, перетягування — зсув',
   'cursor.title': 'Під курсором',
-  'cursor.pixel': 'Піксель',
   'cursor.outOfRange': 'поза діапазоном камери',
   'cursor.noCalibration': 'поза калібруванням',
   'info.title': 'Файл',

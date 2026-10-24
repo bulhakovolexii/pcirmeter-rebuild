@@ -61,7 +61,6 @@ export const en: Record<MessageKey, string> = {
   'view.help': 'Controls help',
   'view.hint': 'Wheel — zoom, drag — pan',
   'cursor.title': 'Under cursor',
-  'cursor.pixel': 'Pixel',
   'cursor.outOfRange': 'outside camera range',
   'cursor.noCalibration': 'outside calibration',
   'info.title': 'File',
