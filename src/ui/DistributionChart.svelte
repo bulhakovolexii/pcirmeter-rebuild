@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button'
   import type { TemperatureBin } from '../core/objects'
   import { fromCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
@@ -65,7 +66,8 @@
         {total} {$tr('distribution.pixels')}
       {/if}
     </span>
-    <button type="button" disabled={bins.length === 0} onclick={onexport}>{$tr('distribution.export')}</button
+    <Button class="shrink-0" disabled={bins.length === 0} onclick={onexport}
+      >{$tr('distribution.export')}</Button
     >
   </div>
   <div class="chart" bind:clientWidth={width} bind:clientHeight={height}>
@@ -150,8 +152,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  h2,
-  .head button {
+  h2 {
     flex-shrink: 0;
     white-space: nowrap;
   }

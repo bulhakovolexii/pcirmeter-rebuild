@@ -6,6 +6,9 @@
   import { formatShare, TEMPERATURE_SYMBOL } from './format'
   import { ISOTHERM_MODES, toIsotherm, type IsothermState } from './isotherms'
   import { units } from './settings'
+  import { Checkbox } from '$lib/components/ui/checkbox'
+  import { Input } from '$lib/components/ui/input'
+  import SelectField from './SelectField.svelte'
 
   interface Props {
     /** Номер ізотерми (1, 2). */
@@ -48,11 +51,7 @@
 <div class="isotherm">
   <div class="row">
     <label class="check">
-      <input
-        type="checkbox"
-        checked={value.enabled}
-        onchange={(e) => onchange({ ...value, enabled: e.currentTarget.checked })}
-      />
+      <Checkbox checked={value.enabled} onCheckedChange={(enabled) => onchange({ ...value, enabled })} />
       {`${$tr('isotherm.title')} ${index}`}
     </label>
     <input
@@ -64,20 +63,18 @@
     />
   </div>
   {#if value.enabled}
-    <select
-      aria-label="{$tr('isotherm.mode')} {index}"
+    <SelectField
+      class="w-full"
+      ariaLabel="{$tr('isotherm.mode')} {index}"
       value={value.mode}
-      onchange={(e) => onchange({ ...value, mode: e.currentTarget.value as IsothermState['mode'] })}
-    >
-      {#each ISOTHERM_MODES as m (m)}
-        <option value={m}>{$tr(`isotherm.${m}`)}</option>
-      {/each}
-    </select>
+      onchange={(mode: IsothermState['mode']) => onchange({ ...value, mode })}
+      options={ISOTHERM_MODES.map((m) => ({ value: m, label: $tr(`isotherm.${m}`) }))}
+    />
     <div class="limits">
       {#if value.mode !== 'below'}
         <label class="field">
           <span>{$tr(value.mode === 'between' ? 'isotherm.from' : 'isotherm.threshold')}, {unit}</span>
-          <input
+          <Input
             type="number"
             step="0.1"
             bind:value={input.from}
@@ -88,7 +85,7 @@
       {#if value.mode !== 'above'}
         <label class="field">
           <span>{$tr(value.mode === 'between' ? 'isotherm.to' : 'isotherm.threshold')}, {unit}</span>
-          <input
+          <Input
             type="number"
             step="0.1"
             bind:value={input.to}
@@ -135,10 +132,6 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-  }
-  .limits input {
-    width: 100%;
-    box-sizing: border-box;
   }
   .field {
     display: flex;

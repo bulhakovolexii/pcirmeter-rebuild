@@ -13,6 +13,12 @@
   } from './report'
   import { rasterizeSvg } from './rasterize'
   import { units } from './settings'
+  import { Button, buttonVariants } from '$lib/components/ui/button'
+  import { Checkbox } from '$lib/components/ui/checkbox'
+  import * as Dialog from '$lib/components/ui/dialog'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
+  import { Input } from '$lib/components/ui/input'
+  import { Textarea } from '$lib/components/ui/textarea'
 
   interface Props {
     open: boolean
@@ -23,7 +29,6 @@
 
   let { open, files, onclose }: Props = $props()
 
-  let dialog: HTMLDialogElement | undefined = $state()
   /** Файли, вилучені зі звіту (нові файли за замовчуванням входять). */
   let excluded = $state<Record<number, boolean>>({})
   let comments = $state<Record<number, string>>({})
@@ -33,23 +38,19 @@
   let error = $state('')
   let warning = $state('')
   let menuOpen = $state(false)
-  let menu: HTMLDivElement | undefined = $state()
 
   const FORMATS: readonly ReportFormat[] = ['pdf', 'odt']
 
   const selected = $derived(files.filter((f) => !excluded[f.id]))
 
   $effect(() => {
-    if (!dialog) return
-    if (open && !dialog.open) {
-      untrack(() => {
-        error = ''
-        warning = ''
-        menuOpen = false
-        void updateThumbnails()
-      })
-      dialog.showModal()
-    } else if (!open && dialog.open) dialog.close()
+    if (!open) return
+    untrack(() => {
+      error = ''
+      warning = ''
+      menuOpen = false
+      void updateThumbnails()
+    })
   })
 
   async function updateThumbnails() {
@@ -62,40 +63,6 @@
       } catch (err) {
         console.error(err)
       }
-    }
-  }
-
-  // Меню формату закривається кліком поза ним
-  $effect(() => {
-    if (!menuOpen) return
-    const onpointerdown = (e: PointerEvent) => {
-      if (menu && !menu.contains(e.target as Node)) menuOpen = false
-    }
-    document.addEventListener('pointerdown', onpointerdown)
-    return () => document.removeEventListener('pointerdown', onpointerdown)
-  })
-
-  function onMenuKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && menuOpen) {
-      // Escape закриває меню, а не весь діалог
-      e.preventDefault()
-      e.stopPropagation()
-      menuOpen = false
-      menu?.querySelector<HTMLButtonElement>('[aria-haspopup]')?.focus()
-    } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && menuOpen) {
-      e.preventDefault()
-      const items = [...(menu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])]
-      const i = items.indexOf(document.activeElement as HTMLButtonElement)
-      const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i - 1 + items.length) % items.length
-      items[next]?.focus()
-    }
-  }
-
-  async function toggleMenu() {
-    menuOpen = !menuOpen
-    if (menuOpen) {
-      await Promise.resolve()
-      menu?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
     }
   }
 
@@ -143,39 +110,43 @@
   }
 </script>
 
-<dialog bind:this={dialog} aria-labelledby="report-title" {onclose}>
-  <form onsubmit={(e) => e.preventDefault()}>
-    <header>
-      <h2 id="report-title">{$tr('report.dialog')}</h2>
-      <button type="button" class="close" aria-label={$tr('report.cancel')} onclick={onclose}>×</button>
-    </header>
+<Dialog.Root {open} onOpenChange={(v) => !v && onclose()}>
+  <!-- Портал — лише в браузері: SSR-смоук-тести (svelte/server) бачать вміст діалогу на місці -->
+  <Dialog.Content closeLabel={$tr('report.cancel')} portalProps={{ disabled: typeof window === 'undefined' }}>
+    <Dialog.Header class="dialog-head">
+      <Dialog.Title>{$tr('report.dialog')}</Dialog.Title>
+    </Dialog.Header>
 
     <div class="body">
       <div class="grid">
         <label class="wide">
           <span>{$tr('report.subject')}</span>
-          <input type="text" bind:value={$reportMeta.subject} />
+          <Input type="text" bind:value={$reportMeta.subject} />
         </label>
         <label>
           <span>{$tr('report.author')}</span>
-          <input type="text" bind:value={$reportMeta.author} autocomplete="name" />
+          <Input type="text" bind:value={$reportMeta.author} autocomplete="name" />
         </label>
         <label>
           <span>{$tr('report.group')}</span>
-          <input type="text" bind:value={$reportMeta.group} />
+          <Input type="text" bind:value={$reportMeta.group} />
         </label>
         <label>
           <span>{$tr('report.teacher')}</span>
-          <input type="text" bind:value={$reportMeta.teacher} />
+          <Input type="text" bind:value={$reportMeta.teacher} />
         </label>
         <label>
           <span>{$tr('report.date')}</span>
-          <input type="date" bind:value={$reportMeta.date} />
+          <Input type="date" bind:value={$reportMeta.date} />
         </label>
         <label class="wide">
           <span>{$tr('report.description')}</span>
-          <textarea rows="2" bind:value={$reportMeta.description} placeholder={$tr('report.descriptionHint')}
-          ></textarea>
+          <Textarea
+            class="min-h-0"
+            rows={2}
+            bind:value={$reportMeta.description}
+            placeholder={$tr('report.descriptionHint')}
+          />
         </label>
       </div>
       <p class="hint">{$tr('report.remember')}</p>
@@ -186,20 +157,18 @@
           {#each files as f (f.id)}
             <li class:excluded={excluded[f.id]}>
               <label class="check">
-                <input
-                  type="checkbox"
-                  checked={!excluded[f.id]}
-                  onchange={(e) => (excluded[f.id] = !e.currentTarget.checked)}
-                />
+                <Checkbox checked={!excluded[f.id]} onCheckedChange={(c) => (excluded[f.id] = !c)} />
                 <strong>{f.name}</strong>
               </label>
               {#if !excluded[f.id]}
-                <textarea
-                  rows="3"
+                <Textarea
+                  class="comment"
+                  rows={3}
                   aria-label="{$tr('report.comment')}: {f.name}"
                   placeholder={$tr('report.commentHint')}
                   value={comments[f.id] ?? ''}
-                  oninput={(e) => (comments[f.id] = e.currentTarget.value)}></textarea>
+                  oninput={(e) => (comments[f.id] = e.currentTarget.value)}
+                />
               {/if}
               <div class="thumb">
                 {#if thumbs[f.id]}
@@ -213,7 +182,7 @@
 
       <label class="block">
         <span>{$tr('report.conclusion')}</span>
-        <textarea rows="3" bind:value={$reportMeta.conclusion}></textarea>
+        <Textarea class="min-h-0" rows={3} bind:value={$reportMeta.conclusion} />
       </label>
     </div>
 
@@ -227,72 +196,36 @@
           <span class="warning">{error}</span>
         {/if}
       </p>
-      <button type="button" onclick={onclose}>{$tr('report.cancel')}</button>
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="menu-wrap" bind:this={menu} onkeydown={onMenuKeydown}>
-        <button
-          type="button"
-          class="primary"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          disabled={busy}
-          onclick={toggleMenu}>{$tr('report.create')} <span aria-hidden="true">▾</span></button
-        >
-        {#if menuOpen}
-          <div class="menu" role="menu" aria-label={$tr('report.format')}>
-            {#each FORMATS as format (format)}
-              <button type="button" role="menuitem" onclick={() => create(format)}>
-                <strong>{format.toUpperCase()}</strong>
-                <span>{$tr(`report.format.${format}`)}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
+      <Button onclick={onclose}>{$tr('report.cancel')}</Button>
+      <DropdownMenu.Root bind:open={menuOpen}>
+        <DropdownMenu.Trigger class={buttonVariants({ variant: 'primary' })} disabled={busy}>
+          {$tr('report.create')} <span aria-hidden="true">▾</span>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content side="top" align="end" class="min-w-64" aria-label={$tr('report.format')}>
+          {#each FORMATS as format (format)}
+            <DropdownMenu.Item class="flex-col items-start gap-0" onSelect={() => create(format)}>
+              <strong>{format.toUpperCase()}</strong>
+              <span class="text-muted-foreground text-xs">{$tr(`report.format.${format}`)}</span>
+            </DropdownMenu.Item>
+          {/each}
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
     </footer>
-  </form>
-</dialog>
+  </Dialog.Content>
+</Dialog.Root>
 
 <style>
-  dialog {
-    width: min(720px, calc(100vw - 32px));
-    max-height: calc(100vh - 48px);
-    padding: 0;
-    border: 1px solid var(--border-strong);
-    border-top: 3px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--fg);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  }
-  dialog::backdrop {
-    background: rgba(0, 0, 0, 0.45);
-  }
-  form {
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 52px);
-  }
-  header,
+  :global(.dialog-head),
   footer {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
   }
-  header {
-    justify-content: space-between;
+  :global(.dialog-head) {
+    flex-direction: row;
+    min-height: 44px;
     border-bottom: 1px solid var(--border);
-  }
-  h2 {
-    margin: 0;
-    font-size: 1.05rem;
-  }
-  .close {
-    border: none;
-    background: none;
-    font-size: 1.3rem;
-    line-height: 1;
   }
   .body {
     overflow-y: auto;
@@ -314,20 +247,6 @@
   }
   label > span {
     color: var(--muted);
-  }
-  input[type='text'],
-  input[type='date'],
-  textarea {
-    font: inherit;
-    font-size: 0.9rem;
-    color: inherit;
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: 7px;
-    padding: 4px 8px;
-  }
-  textarea {
-    resize: vertical;
   }
   .hint {
     margin: 6px 0 10px;
@@ -358,7 +277,7 @@
     grid-template-rows: auto 1fr;
     gap: 4px 10px;
   }
-  .files li > textarea {
+  .files li > :global(.comment) {
     grid-column: 1;
     min-height: 60px;
   }
@@ -404,50 +323,5 @@
   }
   .warning {
     color: var(--warn);
-  }
-  .menu-wrap {
-    position: relative;
-  }
-  .menu {
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + 4px);
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 260px;
-    padding: 4px;
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  }
-  .menu button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-    border: none;
-    background: none;
-    text-align: left;
-    padding: 6px 10px;
-  }
-  .menu button:hover,
-  .menu button:focus-visible {
-    background: var(--error-bg);
-  }
-  .menu span {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-  }
-  .primary:not(:disabled):hover {
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
   }
 </style>

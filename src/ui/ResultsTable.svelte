@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Input } from '$lib/components/ui/input'
+  import { Button } from '$lib/components/ui/button'
   // Store перекладу імпортовано як `t`: ім'я `tr` у шаблоні з <tr> Svelte сприймає як компонент
   import { locale, tr as t } from '../i18n'
   import { formatNumber, formatTemperature, LENGTH_SYMBOL, TEMPERATURE_SYMBOL } from './format'
@@ -30,7 +32,8 @@
     {:else}
       <span class="note"></span>
     {/if}
-    <button type="button" disabled={results.length === 0} onclick={onexport}>{$t('results.export')}</button>
+    <Button class="shrink-0" disabled={results.length === 0} onclick={onexport}>{$t('results.export')}</Button
+    >
   </div>
   <!-- Висоту задає нижня смуга (межу тягнуть); далі — прокрутка: додавання об'єктів не зсуває решту інтерфейсу -->
   <div class="table-wrap">
@@ -75,9 +78,9 @@
               <td>{formatNumber(displayValue(k, r.params[k], $units), $locale, paramDigits(k))}</td>
             {/each}
             <td class="note-col">
-              <input
+              <Input
                 type="text"
-                maxlength="200"
+                maxlength={200}
                 value={r.object.note ?? ''}
                 title={r.object.note || undefined}
                 placeholder={$t('objectNote.hint')}
@@ -107,8 +110,7 @@
     gap: 8px;
     margin-bottom: 6px;
   }
-  h2,
-  .head button {
+  h2 {
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -204,7 +206,8 @@
     min-width: 180px;
     padding: 0 4px;
   }
-  .note-col input {
+  /* Поле примітки — «вбудоване» в рядок: рамка лише при наведенні на рядок або у фокусі */
+  .note-col :global(input) {
     box-sizing: border-box;
     width: 100%;
     height: 20px;
@@ -215,17 +218,17 @@
     border-radius: 5px;
     text-overflow: ellipsis;
   }
-  .note-col input::placeholder {
+  .note-col :global(input::placeholder) {
     color: var(--muted);
     opacity: 0;
   }
-  tr:hover .note-col input,
-  .note-col input:focus {
+  tr:hover .note-col :global(input),
+  .note-col :global(input:focus) {
     border-color: var(--border-strong);
     background: var(--surface);
   }
-  tr:hover .note-col input::placeholder,
-  .note-col input:focus::placeholder {
+  tr:hover .note-col :global(input::placeholder),
+  .note-col :global(input:focus::placeholder) {
     opacity: 1;
   }
   td.flag {

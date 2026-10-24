@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button'
+  import { Input } from '$lib/components/ui/input'
   import { untrack, type Snippet } from 'svelte'
   import { PARAM_LIMITS, type EditableParam, type ObjectParams } from '../core/temperature'
   import { locale, tr } from '../i18n'
@@ -91,7 +93,7 @@
       `${formatNumber(displayValue(key, v, $units), $locale, paramDigits(key))}${unit ? ` ${unit}` : ''}`}
     <label class="field" class:changed={fieldChanged}>
       <span>{$tr(`params.${key}`)}{unit ? `, ${unit}` : ''}</span>
-      <input
+      <Input
         type="number"
         min={displayLimits(key, $units).min}
         max={displayLimits(key, $units).max}
@@ -110,7 +112,7 @@
     {/if}
   {/each}
   <p class="note">{$tr('params.tau')} = {formatNumber(tau, $locale, 3)}</p>
-  <button type="button" disabled={!changed} onclick={reset}>{resetLabel}</button>
+  <Button class="self-start" disabled={!changed} onclick={reset}>{resetLabel}</Button>
 </fieldset>
 
 <style>
@@ -141,14 +143,10 @@
     gap: 4px;
     font-size: 0.9rem;
   }
-  input {
-    width: 100%;
-    box-sizing: border-box;
-  }
   .changed span {
     font-weight: 600;
   }
-  .changed input {
+  .changed :global(input) {
     border-color: var(--accent);
   }
   .warning,
@@ -161,8 +159,5 @@
   }
   .note {
     color: var(--muted);
-  }
-  button {
-    align-self: flex-start;
   }
 </style>

@@ -32,6 +32,12 @@
     temperatureStatus,
   } from './format'
   import HelpTip from './HelpTip.svelte'
+  import { Button } from '$lib/components/ui/button'
+  import { Checkbox } from '$lib/components/ui/checkbox'
+  import { Input } from '$lib/components/ui/input'
+  import * as RadioGroup from '$lib/components/ui/radio-group'
+  import * as ToggleGroup from '$lib/components/ui/toggle-group'
+  import SelectField from './SelectField.svelte'
   import Histogram from './Histogram.svelte'
   import IsothermPanel from './IsothermPanel.svelte'
   import { defaultIsotherms, isothermBand, toIsotherm, type IsothermState } from './isotherms'
@@ -602,43 +608,36 @@
         <section>
           <h2>{$tr('audio.title')}</h2>
           <audio controls src={audioUrl}></audio>
-          <button
-            type="button"
+          <Button
             disabled={!audioUrl}
             onclick={() =>
               audioUrl && download(audioUrl, audioMime === 'audio/wav' ? 'audio.wav' : 'audio.bin')}
-            >{$tr('audio.save')}</button
+            >{$tr('audio.save')}</Button
           >
         </section>
       {/if}
 
       <fieldset>
         <legend>{$tr('scale.title')}</legend>
-        <div class="segmented">
-          <label>
-            <input
-              type="radio"
-              name="scale-{file.id}"
-              checked={scaleMode === 'auto'}
-              onchange={() => setScaleMode('auto')}
-            />
-            {$tr('scale.auto')}
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="scale-{file.id}"
-              checked={scaleMode === 'manual'}
-              onchange={() => setScaleMode('manual')}
-            />
-            {$tr('scale.manual')}
-          </label>
-        </div>
+        <RadioGroup.Root
+          class="segmented"
+          orientation="horizontal"
+          aria-label={$tr('scale.title')}
+          value={scaleMode}
+          onValueChange={(v) => setScaleMode(v as 'auto' | 'manual')}
+        >
+          {#each ['auto', 'manual'] as const as m (m)}
+            <label class="check">
+              <RadioGroup.Item value={m} />
+              {$tr(`scale.${m}`)}
+            </label>
+          {/each}
+        </RadioGroup.Root>
         {#if scaleMode === 'manual'}
           <div class="limits">
             <label class="field">
               <span>{$tr('scale.max')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 bind:value={scaleInput.max}
@@ -647,7 +646,7 @@
             </label>
             <label class="field">
               <span>{$tr('scale.min')}, {TEMPERATURE_SYMBOL[$units.temperature]}</span>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 bind:value={scaleInput.min}
@@ -708,16 +707,17 @@
         resetLabel={$tr('params.reset')}
         tau={model.tau}
       >
-        <label class="field">
-          <span>{$tr('palette.title')}</span>
-          <select bind:value={paletteId}>
-            {#each PALETTE_IDS as id (id)}
-              <option value={id}>{$tr(`palette.${id}`)}</option>
-            {/each}
-          </select>
-        </label>
+        <div class="field">
+          <label for="palette-{file.id}">{$tr('palette.title')}</label>
+          <SelectField
+            id="palette-{file.id}"
+            class="w-full"
+            bind:value={paletteId}
+            options={PALETTE_IDS.map((id) => ({ value: id, label: $tr(`palette.${id}`) }))}
+          />
+        </div>
         <label class="check">
-          <input type="checkbox" bind:checked={showExtremes} />
+          <Checkbox bind:checked={showExtremes} />
           {$tr('view.extremes')}
         </label>
       </ParamsPanel>
@@ -751,28 +751,23 @@
 
   <section class="image-area" bind:clientHeight={areaHeight}>
     <div class="toolbar">
-      <div class="tools" role="radiogroup" aria-label={$tr('tools.title')}>
+      <ToggleGroup.Root
+        type="single"
+        variant="outline"
+        role="radiogroup"
+        aria-label={$tr('tools.title')}
+        value={tool}
+        onValueChange={(v) => v && selectTool(v as typeof tool)}
+      >
         {#each ['select', 'point', 'rect', 'line'] as const as t (t)}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={tool === t}
-            class:active={tool === t}
-            onclick={() => selectTool(t)}
-          >
-            {$tr(`tools.${t}`)}
-          </button>
+          <ToggleGroup.Item value={t}>{$tr(`tools.${t}`)}</ToggleGroup.Item>
         {/each}
-      </div>
-      <button type="button" disabled={selectedId === null} onclick={deleteSelected}
-        >{$tr('tools.deleteSelected')}</button
-      >
-      <button type="button" disabled={objects.length === 0} onclick={deleteAll}
-        >{$tr('tools.deleteAll')}</button
-      >
+      </ToggleGroup.Root>
+      <Button disabled={selectedId === null} onclick={deleteSelected}>{$tr('tools.deleteSelected')}</Button>
+      <Button disabled={objects.length === 0} onclick={deleteAll}>{$tr('tools.deleteAll')}</Button>
       {#if photo}
         <label class="check">
-          <input type="checkbox" bind:checked={showPhoto} />
+          <Checkbox bind:checked={showPhoto} />
           {$tr('photo.show')}
         </label>
       {/if}
@@ -871,15 +866,23 @@
           <div class="float-bar top">
             <span></span>
             <div class="float-group">
-              <button type="button" onclick={() => zoomTo(zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
-                >−</button
+              <Button
+                variant="overlay"
+                size="icon-sm"
+                onclick={() => zoomTo(zoom / ZOOM_STEP)}
+                title={$tr('view.zoomOut')}
+                aria-label={$tr('view.zoomOut')}>−</Button
               >
               <span class="zoom">{Math.round(zoom * 100)} %</span>
-              <button type="button" onclick={() => zoomTo(zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}
-                >+</button
+              <Button
+                variant="overlay"
+                size="icon-sm"
+                onclick={() => zoomTo(zoom * ZOOM_STEP)}
+                title={$tr('view.zoomIn')}
+                aria-label={$tr('view.zoomIn')}>+</Button
               >
-              <button type="button" onclick={() => (autoFit = true)}>{$tr('view.fit')}</button>
-              <button type="button" onclick={() => zoomTo(1)}>{$tr('view.actual')}</button>
+              <Button variant="overlay" size="sm" onclick={() => (autoFit = true)}>{$tr('view.fit')}</Button>
+              <Button variant="overlay" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
               <HelpTip label={$tr('view.help')} items={help} align="right" />
             </div>
           </div>
@@ -902,7 +905,6 @@
           frame={frame.rgba}
           frameWidth={ir.width}
           frameHeight={ir.height}
-          id={file.id}
           irView={{ zoom, panX, panY }}
           irViewSize={{ width: viewWidth, height: viewHeight }}
           onirview={(v) => {
@@ -1032,19 +1034,16 @@
     font-weight: 600;
     padding: 0 4px;
   }
-  .segmented {
+  .controls :global(.segmented) {
     display: flex;
     gap: 16px;
+    margin-bottom: 6px;
   }
   .limits {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-top: 8px;
-  }
-  .limits input {
-    width: 100%;
-    box-sizing: border-box;
   }
   .note {
     margin: 4px 0 0;
@@ -1113,9 +1112,6 @@
     gap: 6px;
     flex-wrap: wrap;
   }
-  .toolbar button {
-    min-width: 2rem;
-  }
   .frame {
     position: relative;
     flex: 1;
@@ -1126,27 +1122,6 @@
     min-width: 3.8em;
     text-align: center;
     font-variant-numeric: tabular-nums;
-  }
-  .tools {
-    display: flex;
-  }
-  .tools button {
-    border-radius: 0;
-    margin-left: -1px;
-  }
-  .tools button:first-child {
-    border-radius: 7px 0 0 7px;
-    margin-left: 0;
-  }
-  .tools button:last-child {
-    border-radius: 0 7px 7px 0;
-  }
-  .tools button.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    position: relative;
   }
   .views {
     flex: 1;

@@ -1,3 +1,12 @@
+/* Tailwind 4 для компонентів shadcn-svelte (src/ui/lib/components/ui). Без preflight: він скидає стилі
+   заголовків, списків, canvas тощо, а решта інтерфейсу — власні scoped-стилі компонентів. Порядок шарів —
+   явний; стилі поза шарами (scoped у .svelte) сильніші за утиліти, тому елементи бібліотеки не стилізувати
+   глобальними селекторами за тегом — лише класами. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@source '../';
+@import 'tw-animate-css';
 @import './fonts/fonts.css';
 
 /* Кольори й шрифт — за стилем лабораторних робіт кафедри (bulhakov.dev/ir-lab-1, стиль-гайд ХПІ) */
@@ -17,6 +26,8 @@
   --header: #2a2a2a;
   --warn: #b54708;
   --error-bg: #fbe9ec;
+  /* Підсвічений пункт списку / меню */
+  --accent-soft: #fbe9ec;
   --radius: 10px;
   --shadow: 0 2px 10px rgba(42, 42, 42, 0.06);
   font-family:
@@ -47,6 +58,7 @@
     --header: #111111;
     --warn: #f5a524;
     --error-bg: #3a1d21;
+    --accent-soft: #3a1d21;
     --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
 }
@@ -57,53 +69,85 @@ body {
   background: var(--bg);
 }
 
-button,
-select,
-input {
-  font: inherit;
-  color: inherit;
+/* Токени shadcn-svelte → наші змінні (імена shadcn у класах компонентів: bg-popover, text-muted-foreground…).
+   Увага: --color-accent тут — фон підсвіченого пункту (у shadcn), а не наш червоний --accent (він — primary). */
+@theme inline {
+  /* Компактніше за типовий shadcn: корінь — 14 px, крок відступів ≈ 2,9 px (h-9 ≈ 26 px — як наші поля) */
+  --spacing: 0.21rem;
+  --text-xs: 0.85rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.4;
+  --font-sans: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--fg);
+  --color-primary: var(--accent);
+  --color-primary-hover: var(--accent-hover);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--surface-alt);
+  --color-secondary-foreground: var(--fg);
+  --color-muted: var(--surface-alt);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--fg);
+  --color-destructive: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--border-strong);
+  --color-ring: var(--gold);
+  --color-gold: var(--gold);
+  --color-stage: var(--stage);
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: var(--radius);
+  --radius-xl: 14px;
 }
 
-button,
-select,
-input[type='number'] {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 7px;
-  padding: 3px 8px;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
-}
+@layer base {
+  /* Частковий preflight лише для елементів бібліотеки (data-slot): рамки — через утиліти border-* */
+  [data-slot],
+  [data-slot] *,
+  [data-slot]::before,
+  [data-slot]::after {
+    box-sizing: border-box;
+    border: 0 solid var(--color-border);
+  }
+  button[data-slot],
+  input[data-slot],
+  textarea[data-slot] {
+    margin: 0;
+    padding: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+  }
 
-button {
-  cursor: pointer;
-}
+  /* Нативні елементи поза бібліотекою (вкладки файлів, назва об'єкта в таблиці, вибір кольору) */
+  button,
+  input {
+    font: inherit;
+    color: inherit;
+  }
 
-button:not(:disabled):hover,
-select:hover {
-  border-color: var(--fg);
-}
+  button:not([data-slot]) {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-input[type='checkbox'],
-input[type='radio'],
-input[type='range'] {
-  accent-color: var(--accent);
-}
-
-:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 1px;
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
 }
 
 /* Смуги керування поверх зображення (ІЧ-кадр, видиме фото). Батько — position: relative.
-   Між групами кліки проходять до зображення. Без backdrop-filter / z-index: інакше група стає окремим
-   шаром і спливна довідка «?» опиняється під сусідньою панеллю. */
+   Між групами кліки проходять до зображення. Спливні панелі (довідка «?», списки) — у порталі поверх усього. */
 .float-bar {
   position: absolute;
   left: 6px;
@@ -134,23 +178,6 @@ input[type='range'] {
   color: #fff;
   white-space: nowrap;
   pointer-events: auto;
-  --help-size: 22px;
-  --help-bg: rgba(255, 255, 255, 0.1);
-  --help-border: rgba(255, 255, 255, 0.24);
-  --help-fg: #fff;
-  --help-active: var(--gold);
-}
-.float-group button {
-  min-width: 1.9rem;
-  padding: 1px 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.24);
-  color: #fff;
-}
-.float-group button:not(:disabled):hover,
-.float-group button[aria-expanded='true'] {
-  border-color: var(--gold);
-  color: var(--gold);
 }
 
 /* Тонкі смуги прокрутки (4 px). Chromium/Safari — через ::-webkit-scrollbar; стандартні scrollbar-width /

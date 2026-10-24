@@ -105,6 +105,12 @@
 ## Технічні рішення
 
 - TypeScript (strict) + Vite; UI — Svelte; рендеринг — Canvas 2D (WebGL лише за потреби).
+- Елементи керування — shadcn-svelte (bits-ui + Tailwind 4) у `src/ui/lib/components/ui/` (аліас `$lib` → `src/ui/lib`;
+  нові — `npx shadcn-svelte add <name>`, потім підігнати класи під компактний стиль). Tailwind — без preflight;
+  токени — `@theme inline` в `app.css`. `cn` = clsx без tailwind-merge: конфліктні утиліти не передавати через `class`,
+  вигляд змінювати варіантами (`variant="overlay"` — на темних смугах) або scoped `:global(...)`.
+  Спливні елементи — у порталі (у SSR-тестах не рендеряться; діалог звіту вимикає портал на сервері).
+  Список із фіксованими значеннями — `src/ui/SelectField.svelte`. Діалог звіту вантажиться окремим chunk-ом.
 - Ядро (`src/core/`) — чистий TS без залежностей від DOM: парсер, обчислення температур, статистика. Важкі обчислення — у Web Worker.
 - Тести: Vitest; «золоті» значення температур отримуються з оригінальної програми (див. PLAN, фаза 2).
 - PDF-звіти: pdf-lib; графіки — власний SVG у Svelte (`ProfileChart`, `Histogram`; поділки осі — `src/ui/chart.ts`). Офлайн — PWA. Деплой — статичний (GitHub Pages).

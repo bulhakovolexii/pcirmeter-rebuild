@@ -14,7 +14,8 @@
     "allowJs": true,
     "checkJs": true,
     "moduleDetection": "force",
-    "noEmit": true
+    "noEmit": true,
+    "paths": { "$lib": ["./src/ui/lib"], "$lib/*": ["./src/ui/lib/*"] }
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
   "exclude": ["src/sw/**"]

@@ -117,7 +117,7 @@ describe('ResultsTable', () => {
     })
     expect(body).toContain('Примітка')
     // Клітинка «Примітка» — поле введення з текстом об'єкта
-    const input = /<input type="text"[^>]*>/.exec(body.slice(body.indexOf('<tbody')))?.[0] ?? ''
+    const input = /<input[^>]*type="text"[^>]*>/.exec(body.slice(body.indexOf('<tbody')))?.[0] ?? ''
     expect(input).toContain('value="кут укосу"')
     expect(input).toContain('aria-label="Примітка до об\'єкта P1"')
   })

@@ -81,24 +81,28 @@ describe('титульні поля', () => {
 
 describe('ReportDialog (смоук)', () => {
   it('поля титулу, файли з прапорцями й коментарем, висновок', () => {
-    const { body } = render(ReportDialog, { props: { open: false, files: [file], onclose: () => {} } })
-    expect(body).toContain('<dialog')
+    // Вміст діалогу (shadcn-svelte Dialog) рендериться лише відкритим
+    expect(
+      render(ReportDialog, { props: { open: false, files: [file], onclose: () => {} } }).body,
+    ).not.toContain('role="dialog"')
+    const { body } = render(ReportDialog, { props: { open: true, files: [file], onclose: () => {} } })
+    expect(body).toContain('role="dialog"')
     for (const text of ["Об'єкт обстеження", 'Виконавець', 'Група', 'Викладач', 'Дата звіту', 'Висновок']) {
       expect(body).toContain(text)
     }
     expect(body).toContain('130604_0002T.jpg')
-    expect(body).toMatch(/type="checkbox"[^>]*checked/)
+    expect(body).toMatch(/role="checkbox"[^>]*aria-checked="true"/)
     expect(body).toContain('Коментар до термограми: 130604_0002T.jpg')
     // Замість кнопки «Створити PDF» — меню формату (PDF / ODT); місце під мініатюру — біля коментаря
-    expect(body).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*>Створити звіт/)
+    expect(body).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*>(<!---->)?\s*Створити звіт/)
     expect(body).toContain('class="thumb')
   })
 
   it('кнопка «Звіт» у шапці неактивна без файлів', () => {
     const empty = render(App).body
-    expect(empty).toMatch(/<button[^>]*disabled[^>]*>Звіт<\/button>/)
-    expect(empty).not.toContain('<dialog')
+    expect(empty).toMatch(/<button[^>]*disabled=""[^>]*>(<!---->)?Звіт(<!---->)?<\/button>/)
+    expect(empty).not.toContain('role="dialog"')
     const withFile = render(App, { props: { initialFiles: [file] } }).body
-    expect(withFile).toMatch(/<button(?![^>]*disabled)[^>]*>Звіт<\/button>/)
+    expect(withFile).toMatch(/<button(?![^>]*disabled="")[^>]*>(<!---->)?Звіт(<!---->)?<\/button>/)
   })
 })

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button'
   import { fromCelsius } from '../core/units'
   import { locale, tr } from '../i18n'
   import { niceTicks, tickDigits } from './chart'
@@ -92,7 +93,8 @@
         {points.length} {$tr('profile.points')}
       {/if}
     </span>
-    <button type="button" disabled={points.length === 0} onclick={onexport}>{$tr('profile.export')}</button>
+    <Button class="shrink-0" disabled={points.length === 0} onclick={onexport}>{$tr('profile.export')}</Button
+    >
   </div>
   <div class="chart" bind:clientWidth={width} bind:clientHeight={height}>
     <svg
@@ -163,8 +165,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  h2,
-  .head button {
+  h2 {
     flex-shrink: 0;
     white-space: nowrap;
   }

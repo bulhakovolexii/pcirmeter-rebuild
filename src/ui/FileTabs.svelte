@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button'
   // Вкладки відкритих файлів у шапці. Якщо не вміщаються — кнопки «‹ ›» перемикають на попередню / наступну,
   // активна вкладка прокручується в поле зору.
   import { tr } from '../i18n'
@@ -46,13 +47,14 @@
 
 <div class="file-tabs">
   {#if overflow}
-    <button
-      type="button"
-      class="arrow"
+    <Button
+      variant="overlay"
+      size="icon"
+      class="shrink-0 font-bold"
       disabled={index <= 0}
       onclick={() => step(-1)}
       title={$tr('files.prev')}
-      aria-label={$tr('files.prev')}>‹</button
+      aria-label={$tr('files.prev')}>‹</Button
     >
   {/if}
   <div class="strip" role="tablist" bind:this={strip}>
@@ -78,17 +80,18 @@
     {/each}
   </div>
   {#if overflow}
-    <button
-      type="button"
-      class="arrow"
+    <Button
+      variant="overlay"
+      size="icon"
+      class="shrink-0 font-bold"
       disabled={index >= files.length - 1}
       onclick={() => step(1)}
       title={$tr('files.next')}
-      aria-label={$tr('files.next')}>›</button
+      aria-label={$tr('files.next')}>›</Button
     >
   {/if}
   {#if files.length > 1}
-    <button type="button" class="close-all" onclick={oncloseall}>{$tr('files.closeAll')}</button>
+    <Button variant="overlay" class="shrink-0" onclick={oncloseall}>{$tr('files.closeAll')}</Button>
   {/if}
 </div>
 
@@ -145,24 +148,5 @@
   }
   .close:hover {
     color: #fff;
-  }
-  .arrow,
-  .close-all {
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
-    color: #fff;
-  }
-  .arrow {
-    min-width: 28px;
-    padding: 3px 6px;
-    font-weight: 700;
-  }
-  .arrow:not(:disabled):hover,
-  .close-all:hover {
-    border-color: var(--gold);
-  }
-  .close-all {
-    white-space: nowrap;
   }
 </style>

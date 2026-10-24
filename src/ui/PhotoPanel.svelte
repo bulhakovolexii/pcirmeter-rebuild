@@ -1,6 +1,10 @@
 <script lang="ts">
   import { tr } from '../i18n'
   import HelpTip from './HelpTip.svelte'
+  import { Button } from '$lib/components/ui/button'
+  import { Checkbox } from '$lib/components/ui/checkbox'
+  import * as RadioGroup from '$lib/components/ui/radio-group'
+  import { Slider } from '$lib/components/ui/slider'
   import {
     centerOffset,
     defaultPlacement,
@@ -22,8 +26,6 @@
     frame: Uint8ClampedArray<ArrayBuffer>
     frameWidth: number
     frameHeight: number
-    /** Унікальний префікс для імен радіокнопок. */
-    id: number
     /** Вид ІЧ-вікна; за синхронізації вид фото виводиться з нього, а зміни виду фото передаються в `onirview`. */
     irView: View
     /** Розмір ІЧ-вікна, px: синхронізація — відносно центрів вікон. */
@@ -43,7 +45,6 @@
     frame,
     frameWidth,
     frameHeight,
-    id,
     irView,
     irViewSize,
     onirview,
@@ -263,63 +264,89 @@
   </div>
   <div class="float-bar top">
     <div class="float-group">
-      <div class="segmented" role="radiogroup" aria-label={$tr('photo.mode')}>
+      <RadioGroup.Root
+        class="segmented"
+        orientation="horizontal"
+        aria-label={$tr('photo.mode')}
+        bind:value={() => mode, (v) => (mode = v as typeof mode)}
+      >
         {#each ['photo', 'overlay'] as const as m (m)}
           <label>
-            <input type="radio" name="photo-mode-{id}" checked={mode === m} onchange={() => (mode = m)} />
+            <RadioGroup.Item value={m} />
             {$tr(`photo.mode.${m}`)}
           </label>
         {/each}
-      </div>
+      </RadioGroup.Root>
       <label class="check">
-        <input type="checkbox" checked={sync} onchange={(e) => setSync(e.currentTarget.checked)} />
+        <Checkbox checked={sync} onCheckedChange={setSync} />
         {$tr('photo.sync')}
       </label>
     </div>
     <div class="float-group">
       <!-- За синхронізації масштаб фото — це масштаб ІЧ (кнопки над кадром), власні не потрібні -->
       {#if !sync}
-        <button type="button" onclick={() => zoomTo(view.zoom / ZOOM_STEP)} title={$tr('view.zoomOut')}
-          >−</button
+        <Button
+          variant="overlay"
+          size="icon-sm"
+          onclick={() => zoomTo(view.zoom / ZOOM_STEP)}
+          title={$tr('view.zoomOut')}
+          aria-label={$tr('view.zoomOut')}>−</Button
         >
-        <button type="button" onclick={() => zoomTo(view.zoom * ZOOM_STEP)} title={$tr('view.zoomIn')}
-          >+</button
+        <Button
+          variant="overlay"
+          size="icon-sm"
+          onclick={() => zoomTo(view.zoom * ZOOM_STEP)}
+          title={$tr('view.zoomIn')}
+          aria-label={$tr('view.zoomIn')}>+</Button
         >
-        <button type="button" onclick={fit}>{$tr('view.fit')}</button>
+        <Button variant="overlay" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
       {/if}
       <HelpTip
         label={$tr('view.help')}
         items={mode === 'overlay' ? [$tr('view.hint'), $tr('photo.hint.align')] : [$tr('view.hint')]}
         align="right"
       />
-      <button type="button" onclick={onclose} title={$tr('photo.hide')} aria-label={$tr('photo.hide')}
-        >×</button
+      <Button
+        variant="overlay"
+        size="icon-sm"
+        onclick={onclose}
+        title={$tr('photo.hide')}
+        aria-label={$tr('photo.hide')}>×</Button
       >
     </div>
   </div>
   <div class="float-bar bottom">
     <!-- Прозорість і суміщення ІЧ-шару мають сенс лише в режимі накладення -->
     {#if mode === 'overlay'}
-      <label class="float-group blend">
-        <span>{$tr('photo.blend')}</span>
-        <input type="range" min="0" max="100" step="5" bind:value={blend} />
+      <div class="float-group blend">
+        <span aria-hidden="true">{$tr('photo.blend')}</span>
+        <Slider type="single" min={0} max={100} step={5} bind:value={blend} thumbLabel={$tr('photo.blend')} />
         <span class="value">{blend} %</span>
-      </label>
+      </div>
       <div class="float-group">
         <span>{$tr('photo.layerScale')}</span>
-        <button type="button" onclick={() => scaleLayer(1 / ALIGN_STEP)} title={$tr('photo.layerSmaller')}
-          >−</button
+        <Button
+          variant="overlay"
+          size="icon-sm"
+          onclick={() => scaleLayer(1 / ALIGN_STEP)}
+          title={$tr('photo.layerSmaller')}
+          aria-label={$tr('photo.layerSmaller')}>−</Button
         >
         <span class="value">{Math.round(alignment.scale * 100)} %</span>
-        <button type="button" onclick={() => scaleLayer(ALIGN_STEP)} title={$tr('photo.layerLarger')}
-          >+</button
+        <Button
+          variant="overlay"
+          size="icon-sm"
+          onclick={() => scaleLayer(ALIGN_STEP)}
+          title={$tr('photo.layerLarger')}
+          aria-label={$tr('photo.layerLarger')}>+</Button
         >
-        <button
-          type="button"
+        <Button
+          variant="overlay"
+          size="icon-sm"
           disabled={!aligned}
           onclick={() => onalign(NO_ALIGNMENT)}
           title={$tr('photo.resetAlign')}
-          aria-label={$tr('photo.resetAlign')}>↺</button
+          aria-label={$tr('photo.resetAlign')}>↺</Button
         >
       </div>
     {/if}
@@ -333,11 +360,11 @@
     min-width: 0;
     min-height: 0;
   }
-  .segmented {
+  .photo :global(.segmented) {
     display: flex;
     gap: 10px;
   }
-  .segmented label,
+  .photo :global(.segmented label),
   .check {
     display: flex;
     gap: 4px;
@@ -350,7 +377,7 @@
     flex: 1 1 200px;
     max-width: 320px;
   }
-  .blend input {
+  .blend :global([data-slot='slider']) {
     flex: 1;
     min-width: 60px;
   }

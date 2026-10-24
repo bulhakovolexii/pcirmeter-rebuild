@@ -153,7 +153,6 @@ describe('PhotoPanel', () => {
         frame: new Uint8ClampedArray(160 * 120 * 4),
         frameWidth: 160,
         frameHeight: 120,
-        id: 1,
         irView: { zoom: 4, panX: 0, panY: 0 },
         onirview: () => {},
         onirfit: () => {},

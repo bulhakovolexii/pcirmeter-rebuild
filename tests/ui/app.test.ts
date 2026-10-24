@@ -129,8 +129,10 @@ describe('App', () => {
   it('рендериться з українським інтерфейсом за замовчуванням', () => {
     const { body } = render(App)
     expect(body).toContain('Аналіз термограм')
-    expect(body).toContain('English')
     expect(body).toContain('Відкрити файли')
+    // Список мов (shadcn-svelte Select) рендерить пункти лише відкритим — у SSR видно поточне значення
+    expect(body).toMatch(/role="combobox"[^>]*>(<!---->)?Українська/)
+    expect(body).toContain('aria-label="Мова інтерфейсу"')
   })
 
   it('показує переглядач відкритого файлу', async () => {

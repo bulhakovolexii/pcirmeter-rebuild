@@ -59,7 +59,7 @@ await tool(/Лінія|Line/)
 await drag([0.1, 0.2], [0.8, 0.7])
 
 await page.getByRole('button', { name: /^(Звіт|Report)$/ }).click()
-const dialog = page.locator('dialog[open]')
+const dialog = page.locator('[role=dialog]')
 await dialog.getByLabel(/Об'єкт обстеження|Inspected object/).fill('Корпус У2, ауд. 301')
 await dialog.getByLabel(/Виконавець|Performed by/).fill('Іваненко Іван')
 await dialog.getByLabel(/Група|Group/).fill('ЕМ-121')
@@ -76,7 +76,8 @@ for (const format of ['PDF', 'ODT']) {
   if (format === 'PDF') await page.screenshot({ path: `${out}/menu.png` })
   const [download] = await Promise.all([
     page.waitForEvent('download', { timeout: 30_000 }),
-    dialog.getByRole('menuitem', { name: new RegExp(format) }).click(),
+    // Меню формату — у порталі поза діалогом
+    page.getByRole('menuitem', { name: new RegExp(format) }).click(),
   ])
   const path = `${out}/${download.suggestedFilename()}`
   await download.saveAs(path)

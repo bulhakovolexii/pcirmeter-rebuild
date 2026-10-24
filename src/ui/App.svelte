@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Button } from '$lib/components/ui/button'
   import { onMount, untrack } from 'svelte'
   import { locale, tr } from '../i18n'
   import { openFiles, restoreFiles, type FileSource, type OpenError, type OpenedFile } from './files'
@@ -8,7 +9,7 @@
   import { openTabSession, type TabSession } from './session'
   import { units } from './settings'
   import FileTabs from './FileTabs.svelte'
-  import ReportDialog from './ReportDialog.svelte'
+  import SelectField from './SelectField.svelte'
   import Viewer from './Viewer.svelte'
   import logoUrl from './images/kafedra-logo.svg'
 
@@ -26,6 +27,9 @@
   let dragging = $state(false)
   let input: HTMLInputElement | undefined = $state()
   let reportOpen = $state(false)
+  /** Діалог звіту (Dialog, DropdownMenu) — окремий chunk: вантажиться з першим натисканням «Звіт»
+   *  і далі лишається змонтованим (зберігає вибір файлів і коментарі між відкриттями). */
+  let reportDialog: Promise<typeof import('./ReportDialog.svelte')> | undefined = $state()
 
   async function open(sources: Iterable<FileSource>) {
     const { opened, errors: failed } = await openFiles(sources)
@@ -121,7 +125,7 @@
       {/if}
     </div>
     <div class="actions">
-      <button type="button" class="primary" onclick={() => input?.click()}>{$tr('files.open')}</button>
+      <Button variant="primary" onclick={() => input?.click()}>{$tr('files.open')}</Button>
       <input
         bind:this={input}
         type="file"
@@ -130,38 +134,48 @@
         hidden
         onchange={onInputChange}
       />
-      <button
-        type="button"
+      <Button
+        variant="overlay"
         disabled={files.length === 0}
         title={$tr('report.buttonTitle')}
-        onclick={() => (reportOpen = true)}>{$tr('report.button')}</button
+        onclick={() => {
+          reportDialog ??= import('./ReportDialog.svelte')
+          reportOpen = true
+        }}>{$tr('report.button')}</Button
       >
-      <select bind:value={$units.temperature} aria-label={$tr('units.temperature')}>
-        {#each ['C', 'F', 'K'] as const as u (u)}
-          <option value={u}>{TEMPERATURE_SYMBOL[u]}</option>
-        {/each}
-      </select>
-      <select bind:value={$units.length} aria-label={$tr('units.length')}>
-        {#each ['m', 'ft'] as const as u (u)}
-          <option value={u}>{LENGTH_SYMBOL[u][$locale]}</option>
-        {/each}
-      </select>
-      <select bind:value={$locale} aria-label={$tr('app.language')}>
-        <option value="uk">Українська</option>
-        <option value="en">English</option>
-      </select>
+      <SelectField
+        bind:value={$units.temperature}
+        ariaLabel={$tr('units.temperature')}
+        variant="overlay"
+        options={(['C', 'F', 'K'] as const).map((u) => ({ value: u, label: TEMPERATURE_SYMBOL[u] }))}
+      />
+      <SelectField
+        bind:value={$units.length}
+        ariaLabel={$tr('units.length')}
+        variant="overlay"
+        options={(['m', 'ft'] as const).map((u) => ({ value: u, label: LENGTH_SYMBOL[u][$locale] }))}
+      />
+      <SelectField
+        bind:value={$locale}
+        ariaLabel={$tr('app.language')}
+        variant="overlay"
+        options={[
+          { value: 'uk', label: 'Українська' },
+          { value: 'en', label: 'English' },
+        ]}
+      />
     </div>
   </header>
 
   {#if $pwa.update}
     <div class="notice" role="status">
       <span>{$tr('pwa.update')}</span>
-      <button type="button" class="primary" onclick={applyUpdate}>{$tr('pwa.reload')}</button>
+      <Button variant="primary" onclick={applyUpdate}>{$tr('pwa.reload')}</Button>
     </div>
   {:else if $pwa.offlineReady}
     <div class="notice" role="status">
       <span>{$tr('pwa.offlineReady')}</span>
-      <button type="button" onclick={dismissOfflineReady}>{$tr('error.dismiss')}</button>
+      <Button onclick={dismissOfflineReady}>{$tr('error.dismiss')}</Button>
     </div>
   {/if}
 
@@ -172,7 +186,7 @@
           <li><strong>{err.name}</strong>: {$tr(`error.${err.reason}`)}</li>
         {/each}
       </ul>
-      <button type="button" onclick={() => (errors = [])}>{$tr('error.dismiss')}</button>
+      <Button onclick={() => (errors = [])}>{$tr('error.dismiss')}</Button>
     </div>
   {/if}
 
@@ -192,7 +206,11 @@
   {/if}
 
   {#if files.length > 0}
-    <ReportDialog open={reportOpen} {files} onclose={() => (reportOpen = false)} />
+    {#await reportDialog then module}
+      {#if module}
+        <module.default open={reportOpen} {files} onclose={() => (reportOpen = false)} />
+      {/if}
+    {/await}
   {/if}
 
   {#if dragging}
@@ -246,35 +264,12 @@
     display: flex;
     gap: 6px;
   }
-  header select,
-  header button:not(.primary) {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
-    color: #fff;
-  }
-  header select:hover,
-  header button:not(.primary):hover {
-    border-color: var(--gold);
-  }
-  header option {
-    color: var(--fg);
-    background: var(--surface);
-  }
-  .primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-  }
-  .primary:not(:disabled):hover {
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
-  }
-  header .primary {
+  /* У шапці (темна в обох темах) — червоний ХПІ і в темній темі; рамка при наведенні — золота */
+  header :global([data-slot='button'][class*='bg-primary']) {
     background: #a0001b;
     border-color: #a0001b;
   }
-  header .primary:hover {
+  header :global([data-slot='button'][class*='bg-primary']:hover) {
     border-color: var(--gold);
   }
   .notice {

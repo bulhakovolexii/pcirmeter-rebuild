@@ -1,5 +1,7 @@
 /// <reference types="vitest/config" />
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import tailwindcss from '@tailwindcss/vite'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { demo, DEMO_SAMPLES } from './vite.demo.ts'
 import { pwa } from './vite.pwa.ts'
@@ -8,7 +10,9 @@ export default defineConfig({
   // Відносні шляхи — щоб збірка працювала з підкаталогу GitHub Pages і з file://
   base: './',
   // Порядок важливий: `pwa` має бачити демо-сторінку в збірці
-  plugins: [svelte(), demo(), pwa()],
+  plugins: [tailwindcss(), svelte(), demo(), pwa()],
+  // Компоненти shadcn-svelte імпортують `$lib/…` (components.json)
+  resolve: { alias: { $lib: fileURLToPath(new URL('./src/ui/lib', import.meta.url)) } },
   build: {
     // PDF-звіт (pdf-lib + fontkit, ≈ 1,1 МБ) — окремий chunk, що вантажиться лише при створенні звіту
     chunkSizeWarningLimit: 1200,
