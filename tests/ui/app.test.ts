@@ -163,7 +163,7 @@ describe('App', () => {
     expect(body).toContain('Коефіцієнт випромінювання ε')
     expect(body).toContain('Відстань, м')
     expect(body).toContain('Пропускання атмосфери τ')
-    expect(body).toContain('Скинути до значень із файлу')
+    expect(body).toMatch(/>(<!---->)?Скинути(<!---->)?<\/button>/)
   })
 
   it('показує інструменти аналізу й порожню таблицю результатів', async () => {

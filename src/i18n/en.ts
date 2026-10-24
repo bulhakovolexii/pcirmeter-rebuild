@@ -42,7 +42,7 @@ export const en: Record<MessageKey, string> = {
   'params.tau': 'Atmospheric transmittance τ',
   'params.fromFile': 'in file',
   'params.allowed': 'Allowed',
-  'params.reset': 'Reset to file values',
+  'params.reset': 'Reset',
   'scale.title': 'Scale',
   'scale.auto': 'Auto',
   'scale.manual': 'Manual',

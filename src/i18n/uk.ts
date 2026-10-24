@@ -40,7 +40,7 @@ export const uk = {
   'params.tau': 'Пропускання атмосфери τ',
   'params.fromFile': 'у файлі',
   'params.allowed': 'Допустимо',
-  'params.reset': 'Скинути до значень із файлу',
+  'params.reset': 'Скинути',
   'scale.title': 'Шкала',
   'scale.auto': 'Авто',
   'scale.manual': 'Ручна',
