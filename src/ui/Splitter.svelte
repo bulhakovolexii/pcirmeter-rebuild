@@ -105,7 +105,10 @@
     left: calc(50% - 0.5px);
     width: 1px;
     background: var(--border);
-    transition: background 0.15s;
+    opacity: 0;
+    transition:
+      background 0.15s,
+      opacity 0.15s;
   }
   .splitter.horizontal {
     width: auto;
@@ -131,7 +134,7 @@
     border-radius: 2px;
     background: var(--border);
     color: var(--fg);
-    /* Ручка — лише під вказівником, під час перетягування й у фокусі; лінія межі видна завжди */
+    /* Ручка й лінія межі — лише під вказівником, під час перетягування й у фокусі */
     opacity: 0;
     transition: opacity 0.15s;
   }
@@ -147,6 +150,11 @@
   .splitter:hover::before,
   .splitter.active::before {
     background: var(--border-strong);
+  }
+  .splitter:hover::before,
+  .splitter.active::before,
+  .splitter:focus-visible::before {
+    opacity: 1;
   }
   .splitter:focus-visible .grip {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 50%, transparent);

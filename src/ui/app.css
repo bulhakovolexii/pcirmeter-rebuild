@@ -213,7 +213,8 @@ body {
   gap: 6px;
   padding: 3px 6px;
   border-radius: var(--radius-lg);
-  background: rgba(42, 42, 42, 0.85);
+  /* Майже непрозорий: над світлим фото рамки елементів (--border-strong) інакше зливаються з фоном */
+  background: rgba(42, 42, 42, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
   white-space: nowrap;

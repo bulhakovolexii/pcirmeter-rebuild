@@ -314,7 +314,10 @@
             aria-label={$tr('view.zoomIn')}><PlusIcon /></Button
           >
         </ButtonGroup.Root>
-        <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
+        <ButtonGroup.Root>
+          <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
+          <Button variant="outline" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
+        </ButtonGroup.Root>
       {/if}
       <Button
         variant="outline"

@@ -284,15 +284,21 @@
     viewport?.focus()
   }
 
-  // Профіль — лише для вибраної лінії, розподіл температур — лише для вибраного прямокутника
-  const profileObject = $derived(selected?.shape.kind === 'line' ? selected : undefined)
+  // Графік — для останньої вибраної лінії (профіль) або прямокутника (розподіл температур): вибір точки чи
+  // зняття вибору його не ховає, і нижня смуга не «стрибає»
+  let chartId = $state<number | null>(null)
+  $effect(() => {
+    if (selected && selected.shape.kind !== 'point') chartId = selected.id
+  })
+  const chartObject = $derived(objects.find((o) => o.id === chartId))
+  const profileObject = $derived(chartObject?.shape.kind === 'line' ? chartObject : undefined)
   const profile = $derived(profileObject ? lineProfile(ir, profileObject, overrides) : [])
   let profileHover = $state<number | null>(null)
   const profileMarker = $derived(
     profileHover !== null && profileHover < profile.length ? profile[profileHover]! : null,
   )
 
-  const distributionObject = $derived(selected?.shape.kind === 'rect' ? selected : undefined)
+  const distributionObject = $derived(chartObject?.shape.kind === 'rect' ? chartObject : undefined)
   const distribution = $derived(distributionObject ? areaDistribution(ir, distributionObject, overrides) : [])
 
   function download(href: string, suffix: string) {
