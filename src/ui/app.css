@@ -217,7 +217,7 @@ body {
 .float-button {
   /* Напівпрозорий (зображення трохи видно крізь смугу), але досить темний, щоб рамки елементів не зливались
      зі світлим фото */
-  background-color: rgba(42, 42, 42, 0.75);
+  background-color: rgba(42, 42, 42, 0.8);
   pointer-events: auto;
 }
 .float-group {
