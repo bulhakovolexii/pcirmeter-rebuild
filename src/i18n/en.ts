@@ -173,6 +173,8 @@ export const en: Record<MessageKey, string> = {
   'report.format.pdf': 'For printing and submission — layout is fixed',
   'report.format.odt': 'For editing in LibreOffice Writer or Word',
   'report.thumbnail': 'Thumbnail',
+  'report.rename': 'Rename in the report',
+  'report.renameField': 'Thermogram name in the report',
   'report.creating': 'Creating report…',
   'report.cancel': 'Close',
   'report.error': 'Could not create the report',

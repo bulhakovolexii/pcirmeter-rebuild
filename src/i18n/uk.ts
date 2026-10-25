@@ -171,6 +171,8 @@ export const uk = {
   'report.format.pdf': 'Для друку й здачі — вигляд не зміниться',
   'report.format.odt': 'Для редагування в LibreOffice Writer чи Word',
   'report.thumbnail': 'Мініатюра',
+  'report.rename': 'Перейменувати у звіті',
+  'report.renameField': 'Назва термограми у звіті',
   'report.creating': 'Створюю звіт…',
   'report.cancel': 'Закрити',
   'report.error': 'Не вдалося створити звіт',

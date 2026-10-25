@@ -97,6 +97,8 @@ describe('ReportDialog (смоук)', () => {
     expect(body).toContain('130604_0002T.jpg')
     expect(body).toMatch(/role="checkbox"[^>]*aria-checked="true"/)
     expect(body).toContain('Коментар до термограми: 130604_0002T.jpg')
+    // Перейменування лише у звіті — кнопка біля назви
+    expect(body).toMatch(/<button[^>]*aria-label="Перейменувати у звіті: 130604_0002T.jpg"/)
     // Замість кнопки «Створити PDF» — меню формату (PDF / ODT); місце під мініатюру — біля коментаря
     expect(body).toMatch(/<button[^>]*aria-haspopup="menu"[^>]*>(<!---->)?\s*Створити звіт/)
     expect(html).toContain('class="thumb')

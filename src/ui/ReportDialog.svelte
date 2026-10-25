@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
+  import { tick, untrack } from 'svelte'
   import { locale, tr } from '../i18n'
   import type { ReportFile, ReportFormat } from '../report/content'
   import type { OpenedFile } from './files'
@@ -20,6 +20,7 @@
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
   import ChevronDownIcon from '@lucide/svelte/icons/chevron-down'
+  import PencilIcon from '@lucide/svelte/icons/pencil'
   import { Textarea } from '$lib/components/ui/textarea'
 
   interface Props {
@@ -34,6 +35,10 @@
   /** Файли, вилучені зі звіту (нові файли за замовчуванням входять). */
   let excluded = $state<Record<number, boolean>>({})
   let comments = $state<Record<number, string>>({})
+  /** Назви термограм у звіті, змінені в діалозі (сам файл і вкладка не перейменовуються). */
+  let names = $state<Record<number, string>>({})
+  /** Файл, назва якого зараз редагується. */
+  let renaming = $state<number | null>(null)
   /** Мініатюри (`data:` URL) — оновлюються щоразу, коли діалог відкривається. */
   let thumbs = $state<Record<number, string>>({})
   let busy = $state(false)
@@ -44,6 +49,24 @@
   const FORMATS: readonly ReportFormat[] = ['pdf', 'odt']
 
   const selected = $derived(files.filter((f) => !excluded[f.id]))
+
+  const nameOf = (f: OpenedFile) => names[f.id] ?? f.name
+
+  /**
+   * Завершити перейменування (`null` — скасувати); порожня назва повертає початкову. Після Enter / Esc фокус
+   * повертається на кнопку перейменування, після кліку деінде — лишається там.
+   */
+  function rename(f: OpenedFile, value: string | null, refocus = false) {
+    if (renaming !== f.id) return
+    renaming = null
+    if (value !== null) {
+      const name = value.trim()
+      if (name && name !== f.name) names[f.id] = name
+      else delete names[f.id]
+    }
+    if (refocus)
+      void tick().then(() => document.querySelector<HTMLElement>(`[data-rename="${f.id}"]`)?.focus())
+  }
 
   $effect(() => {
     if (!open) return
@@ -79,7 +102,7 @@
     const snapshots: ReportFile[] = []
     for (const f of selected) {
       const s = viewerSnapshot(f.id)
-      if (s) snapshots.push({ ...s, comment: comments[f.id] ?? '' })
+      if (s) snapshots.push({ ...s, name: nameOf(f), comment: comments[f.id] ?? '' })
     }
     busy = true
     try {
@@ -162,15 +185,51 @@
         <ol class="files">
           {#each files as f (f.id)}
             <li class:excluded={excluded[f.id]}>
-              <Label class="col-start-1">
-                <Checkbox checked={!excluded[f.id]} onCheckedChange={(c) => (excluded[f.id] = !c)} />
-                {f.name}
-              </Label>
+              <div class="name col-start-1">
+                <Checkbox
+                  id="report-file-{f.id}"
+                  aria-label={renaming === f.id ? nameOf(f) : undefined}
+                  checked={!excluded[f.id]}
+                  onCheckedChange={(c) => (excluded[f.id] = !c)}
+                />
+                {#if renaming === f.id}
+                  <Input
+                    type="text"
+                    class="h-8"
+                    aria-label={$tr('report.renameField')}
+                    value={nameOf(f)}
+                    onblur={(e) => rename(f, e.currentTarget.value)}
+                    onkeydown={(e) => {
+                      if (e.key === 'Enter') {
+                        // Інакше keypress того ж Enter натисне кнопку, на яку повернувся фокус
+                        e.preventDefault()
+                        rename(f, e.currentTarget.value, true)
+                      } else if (e.key === 'Escape') {
+                        // Esc скасовує перейменування, а не закриває діалог
+                        e.preventDefault()
+                        e.stopPropagation()
+                        rename(f, null, true)
+                      }
+                    }}
+                    {@attach (el) => el.select()}
+                  />
+                {:else}
+                  <Label for="report-file-{f.id}">{nameOf(f)}</Label>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    data-rename={f.id}
+                    title={$tr('report.rename')}
+                    aria-label="{$tr('report.rename')}: {nameOf(f)}"
+                    onclick={() => (renaming = f.id)}><PencilIcon /></Button
+                  >
+                {/if}
+              </div>
               {#if !excluded[f.id]}
                 <Textarea
                   class="col-start-1"
                   rows={3}
-                  aria-label="{$tr('report.comment')}: {f.name}"
+                  aria-label="{$tr('report.comment')}: {nameOf(f)}"
                   placeholder={$tr('report.commentHint')}
                   value={comments[f.id] ?? ''}
                   oninput={(e) => (comments[f.id] = e.currentTarget.value)}
@@ -178,7 +237,7 @@
               {/if}
               <div class="thumb">
                 {#if thumbs[f.id]}
-                  <img src={thumbs[f.id]} alt="{$tr('report.thumbnail')}: {f.name}" />
+                  <img src={thumbs[f.id]} alt="{$tr('report.thumbnail')}: {nameOf(f)}" />
                 {/if}
               </div>
             </li>
@@ -235,6 +294,12 @@
     grid-template-columns: 1fr auto;
     grid-template-rows: auto 1fr;
     gap: 8px 12px;
+  }
+  .name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
   }
   .thumb {
     grid-column: 2;
