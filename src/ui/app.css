@@ -187,8 +187,13 @@ body {
 }
 
 /* Смуги керування поверх зображення (ІЧ-кадр, видиме фото). Батько — position: relative.
-   Між групами кліки проходять до зображення. Спливні панелі (довідка «?», списки) — у порталі поверх усього. */
+   Між групами кліки проходять до зображення. Спливні панелі (довідка «?», списки) — у порталі поверх усього.
+   Усі групи однакової висоти: найвищі в них — кнопки size="sm" / "icon-sm" (h-8 = var(--spacing) * 8),
+   + поля й рамка групи; групи лише з текстом чи повзунком тягнуться до тієї ж висоти (--float-height). */
 .float-bar {
+  --float-pad-y: 3px;
+  --float-border: 1px;
+  --float-height: calc(var(--spacing) * 8 + 2 * (var(--float-pad-y) + var(--float-border)));
   position: absolute;
   left: 6px;
   right: 6px;
@@ -207,18 +212,33 @@ body {
   bottom: 6px;
   align-items: flex-end;
 }
+.float-group,
+.float-button {
+  /* Майже непрозорий: над світлим фото рамки елементів (--border-strong) інакше зливаються з фоном */
+  background-color: rgba(42, 42, 42, 0.95);
+  pointer-events: auto;
+}
 .float-group {
+  border: var(--float-border) solid rgba(255, 255, 255, 0.14);
+  color: #fff;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 6px;
+  box-sizing: border-box;
+  min-height: var(--float-height);
+  padding: var(--float-pad-y) 6px;
   border-radius: var(--radius-lg);
-  /* Майже непрозорий: над світлим фото рамки елементів (--border-strong) інакше зливаються з фоном */
-  background: rgba(42, 42, 42, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #fff;
   white-space: nowrap;
-  pointer-events: auto;
+}
+/* Єдина кнопка замість групи з однієї кнопки (без «коробки в коробці»): квадрат заввишки з групу.
+   Рамка й фокус — від variant="outline"; підсвітка під вказівником — шаром поверх фону групи */
+.float-button {
+  width: var(--float-height);
+  height: var(--float-height);
+  border-radius: var(--radius-lg);
+}
+.float-button:hover {
+  background-image: linear-gradient(rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.1));
 }
 
 /* Тонкі смуги прокрутки (4 px). Chromium/Safari — через ::-webkit-scrollbar; стандартні scrollbar-width /

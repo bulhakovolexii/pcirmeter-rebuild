@@ -292,9 +292,22 @@
         {$tr('photo.sync')}
       </label>
     </div>
-    <div class="float-group">
-      <!-- За синхронізації масштаб фото — це масштаб ІЧ (кнопки над кадром), власні не потрібні -->
-      {#if !sync}
+    {#snippet hide(cls?: string)}
+      <Button
+        variant="outline"
+        size="icon-sm"
+        class={cls}
+        onclick={onclose}
+        title={$tr('photo.hide')}
+        aria-label={$tr('photo.hide')}><XIcon /></Button
+      >
+    {/snippet}
+    <!-- За синхронізації масштаб фото — це масштаб ІЧ (кнопки над кадром), власні не потрібні; лишається
+         сама кнопка «Сховати», без групи навколо -->
+    {#if sync}
+      {@render hide('float-button')}
+    {:else}
+      <div class="float-group">
         <ButtonGroup.Root aria-label={$tr('view.zoom')}>
           <Button
             variant="outline"
@@ -318,15 +331,9 @@
           <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
           <Button variant="outline" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
         </ButtonGroup.Root>
-      {/if}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onclick={onclose}
-        title={$tr('photo.hide')}
-        aria-label={$tr('photo.hide')}><XIcon /></Button
-      >
-    </div>
+        {@render hide()}
+      </div>
+    {/if}
   </div>
   <div class="float-bar bottom dark">
     <!-- Прозорість і суміщення ІЧ-шару мають сенс лише в режимі накладення -->
