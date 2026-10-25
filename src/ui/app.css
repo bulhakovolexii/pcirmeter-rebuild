@@ -188,12 +188,13 @@ body {
 
 /* Смуги керування поверх зображення (ІЧ-кадр, видиме фото). Батько — position: relative.
    Між групами кліки проходять до зображення. Спливні панелі (довідка «?», списки) — у порталі поверх усього.
-   Усі групи однакової висоти: найвищі в них — кнопки size="sm" / "icon-sm" (h-8 = var(--spacing) * 8),
+   Усі групи однакової висоти: найвищі в них — кнопки size="xs" / "icon-xs" (h-6 = var(--spacing) * 6;
+   менші за звичайні — смуги дублюють елементи керування на панелях),
    + поля й рамка групи; групи лише з текстом чи повзунком тягнуться до тієї ж висоти (--float-height). */
 .float-bar {
   --float-pad-y: 3px;
   --float-border: 1px;
-  --float-height: calc(var(--spacing) * 8 + 2 * (var(--float-pad-y) + var(--float-border)));
+  --float-height: calc(var(--spacing) * 6 + 2 * (var(--float-pad-y) + var(--float-border)));
   position: absolute;
   left: 6px;
   right: 6px;

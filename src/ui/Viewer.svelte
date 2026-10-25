@@ -899,26 +899,26 @@
               <ButtonGroup.Root aria-label={$tr('view.zoom')}>
                 <Button
                   variant="outline"
-                  size="icon-sm"
+                  size="icon-xs"
                   onclick={() => zoomTo(zoom / ZOOM_STEP)}
                   title={$tr('view.zoomOut')}
                   aria-label={$tr('view.zoomOut')}><MinusIcon /></Button
                 >
-                <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+                <ButtonGroup.Text class="h-6 min-w-14 justify-center px-2 text-xs tabular-nums"
                   >{Math.round(zoom * 100)} %</ButtonGroup.Text
                 >
                 <Button
                   variant="outline"
-                  size="icon-sm"
+                  size="icon-xs"
                   onclick={() => zoomTo(zoom * ZOOM_STEP)}
                   title={$tr('view.zoomIn')}
                   aria-label={$tr('view.zoomIn')}><PlusIcon /></Button
                 >
               </ButtonGroup.Root>
               <ButtonGroup.Root>
-                <Button variant="outline" size="sm" onclick={() => (autoFit = true)}>{$tr('view.fit')}</Button
+                <Button variant="outline" size="xs" onclick={() => (autoFit = true)}>{$tr('view.fit')}</Button
                 >
-                <Button variant="outline" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
+                <Button variant="outline" size="xs" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
               </ButtonGroup.Root>
               <HelpTip label={$tr('view.help')} items={help} align="right" />
             </div>

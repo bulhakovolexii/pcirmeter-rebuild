@@ -295,7 +295,7 @@
     {#snippet hide(cls?: string)}
       <Button
         variant="outline"
-        size="icon-sm"
+        size="icon-xs"
         class={cls}
         onclick={onclose}
         title={$tr('photo.hide')}
@@ -311,25 +311,25 @@
         <ButtonGroup.Root aria-label={$tr('view.zoom')}>
           <Button
             variant="outline"
-            size="icon-sm"
+            size="icon-xs"
             onclick={() => zoomTo(view.zoom / ZOOM_STEP)}
             title={$tr('view.zoomOut')}
             aria-label={$tr('view.zoomOut')}><MinusIcon /></Button
           >
-          <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+          <ButtonGroup.Text class="h-6 min-w-14 justify-center px-2 text-xs tabular-nums"
             >{Math.round(view.zoom * 100)} %</ButtonGroup.Text
           >
           <Button
             variant="outline"
-            size="icon-sm"
+            size="icon-xs"
             onclick={() => zoomTo(view.zoom * ZOOM_STEP)}
             title={$tr('view.zoomIn')}
             aria-label={$tr('view.zoomIn')}><PlusIcon /></Button
           >
         </ButtonGroup.Root>
         <ButtonGroup.Root>
-          <Button variant="outline" size="sm" onclick={fit}>{$tr('view.fit')}</Button>
-          <Button variant="outline" size="sm" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
+          <Button variant="outline" size="xs" onclick={fit}>{$tr('view.fit')}</Button>
+          <Button variant="outline" size="xs" onclick={() => zoomTo(1)}>{$tr('view.actual')}</Button>
         </ButtonGroup.Root>
         {@render hide()}
       </div>
@@ -348,17 +348,17 @@
         <ButtonGroup.Root>
           <Button
             variant="outline"
-            size="icon-sm"
+            size="icon-xs"
             onclick={() => scaleLayer(1 / ALIGN_STEP)}
             title={$tr('photo.layerSmaller')}
             aria-label={$tr('photo.layerSmaller')}><MinusIcon /></Button
           >
-          <ButtonGroup.Text class="h-8 min-w-16 justify-center px-2 tabular-nums"
+          <ButtonGroup.Text class="h-6 min-w-14 justify-center px-2 text-xs tabular-nums"
             >{Math.round(alignment.scale * 100)} %</ButtonGroup.Text
           >
           <Button
             variant="outline"
-            size="icon-sm"
+            size="icon-xs"
             onclick={() => scaleLayer(ALIGN_STEP)}
             title={$tr('photo.layerLarger')}
             aria-label={$tr('photo.layerLarger')}><PlusIcon /></Button
@@ -366,7 +366,7 @@
         </ButtonGroup.Root>
         <Button
           variant="outline"
-          size="icon-sm"
+          size="icon-xs"
           disabled={!aligned}
           onclick={() => onalign(NO_ALIGNMENT)}
           title={$tr('photo.resetAlign')}
